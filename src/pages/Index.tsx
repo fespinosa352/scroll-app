@@ -1,11 +1,175 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search } from "lucide-react";
+import AchievementLogger from "@/components/AchievementLogger";
+import ResumeVersions from "@/components/ResumeVersions";
+import JobAnalyzer from "@/components/JobAnalyzer";
+import SkillsAssessment from "@/components/SkillsAssessment";
+import ATSOptimizer from "@/components/ATSOptimizer";
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Mock data for demonstration
+  const weeklyStats = {
+    achievementsLogged: 7,
+    resumesGenerated: 2,
+    skillsImproved: 3,
+    atsScore: 85
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">CareerFlow</h1>
+                <p className="text-sm text-slate-600">Your Living Resume Companion</p>
+              </div>
+            </div>
+            <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Log Wins
+            </TabsTrigger>
+            <TabsTrigger value="resumes" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Resumes
+            </TabsTrigger>
+            <TabsTrigger value="jobs" className="flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Job Match
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Skills
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Weekly Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-blue-900">Achievements</CardTitle>
+                  <CardDescription className="text-blue-700">This week</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-900">{weeklyStats.achievementsLogged}</div>
+                  <p className="text-sm text-blue-700 mt-1">Keep the momentum going!</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-emerald-900">Resumes</CardTitle>
+                  <CardDescription className="text-emerald-700">Generated</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-emerald-900">{weeklyStats.resumesGenerated}</div>
+                  <p className="text-sm text-emerald-700 mt-1">Tailored for success</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-purple-900">Skills</CardTitle>
+                  <CardDescription className="text-purple-700">Improved</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-900">{weeklyStats.skillsImproved}</div>
+                  <p className="text-sm text-purple-700 mt-1">Growing stronger</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-orange-900">ATS Score</CardTitle>
+                  <CardDescription className="text-orange-700">Average</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-900">{weeklyStats.atsScore}%</div>
+                  <Progress value={weeklyStats.atsScore} className="mt-2" />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your latest career developments</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="font-medium">Led cross-functional team for Q4 product launch</p>
+                    <p className="text-sm text-slate-600">2 hours ago • Achievement logged</p>
+                  </div>
+                  <Badge variant="secondary">Leadership</Badge>
+                </div>
+                <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="font-medium">Resume tailored for Senior PM role at TechCorp</p>
+                    <p className="text-sm text-slate-600">1 day ago • Resume generated</p>
+                  </div>
+                  <Badge variant="outline">ATS: 92%</Badge>
+                </div>
+                <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="font-medium">Started AWS Solutions Architect prep course</p>
+                    <p className="text-sm text-slate-600">3 days ago • Skill development</p>
+                  </div>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements">
+            <AchievementLogger />
+          </TabsContent>
+
+          <TabsContent value="resumes">
+            <ResumeVersions />
+          </TabsContent>
+
+          <TabsContent value="jobs">
+            <JobAnalyzer />
+          </TabsContent>
+
+          <TabsContent value="skills">
+            <SkillsAssessment />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
