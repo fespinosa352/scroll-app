@@ -11,9 +11,11 @@ import ResumeVersions from "@/components/ResumeVersions";
 import JobAnalyzer from "@/components/JobAnalyzer";
 import SkillsAssessment from "@/components/SkillsAssessment";
 import ATSOptimizer from "@/components/ATSOptimizer";
+import GettingStarted from "@/components/GettingStarted";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isFirstTime, setIsFirstTime] = useState(true); // This would be determined by checking if user has any data
 
   // Mock data for demonstration
   const weeklyStats = {
@@ -22,6 +24,11 @@ const Index = () => {
     skillsImproved: 3,
     atsScore: 85
   };
+
+  // Show Getting Started for first-time users
+  if (isFirstTime) {
+    return <GettingStarted />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
