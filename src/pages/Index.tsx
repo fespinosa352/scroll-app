@@ -51,7 +51,7 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1 lg:w-auto">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Dashboard
@@ -89,46 +89,46 @@ const Index = () => {
           <TabsContent value="dashboard" className="space-y-6">
             {/* Weekly Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <Card className="bg-slate-50 border-slate-200">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-blue-900">Achievements</CardTitle>
-                  <CardDescription className="text-blue-700">This week</CardDescription>
+                  <CardTitle className="text-lg text-slate-900">Achievements</CardTitle>
+                  <CardDescription className="text-slate-600">This week</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">{weeklyStats.achievementsLogged}</div>
-                  <p className="text-sm text-blue-700 mt-1">Keep the momentum going!</p>
+                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.achievementsLogged}</div>
+                  <p className="text-sm text-slate-600 mt-1">Keep the momentum going!</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+              <Card className="bg-slate-50 border-slate-200">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-emerald-900">Resumes</CardTitle>
-                  <CardDescription className="text-emerald-700">Generated</CardDescription>
+                  <CardTitle className="text-lg text-slate-900">Resumes</CardTitle>
+                  <CardDescription className="text-slate-600">Generated</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-emerald-900">{weeklyStats.resumesGenerated}</div>
-                  <p className="text-sm text-emerald-700 mt-1">Tailored for success</p>
+                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.resumesGenerated}</div>
+                  <p className="text-sm text-slate-600 mt-1">Tailored for success</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+              <Card className="bg-slate-50 border-slate-200">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-purple-900">Skills</CardTitle>
-                  <CardDescription className="text-purple-700">Improved</CardDescription>
+                  <CardTitle className="text-lg text-slate-900">Skills</CardTitle>
+                  <CardDescription className="text-slate-600">Improved</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900">{weeklyStats.skillsImproved}</div>
-                  <p className="text-sm text-purple-700 mt-1">Growing stronger</p>
+                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.skillsImproved}</div>
+                  <p className="text-sm text-slate-600 mt-1">Growing stronger</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+              <Card className="bg-slate-50 border-slate-200">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-orange-900">ATS Score</CardTitle>
-                  <CardDescription className="text-orange-700">Average</CardDescription>
+                  <CardTitle className="text-lg text-slate-900">ATS Score</CardTitle>
+                  <CardDescription className="text-slate-600">Average</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-900">{weeklyStats.atsScore}%</div>
+                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.atsScore}%</div>
                   <Progress value={weeklyStats.atsScore} className="mt-2" />
                 </CardContent>
               </Card>
