@@ -5,13 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Scroll } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Scroll, Briefcase, Calendar, Activity } from "lucide-react";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import JobAnalyzer from "@/components/JobAnalyzer";
 import SkillsAssessment from "@/components/SkillsAssessment";
 import ATSOptimizer from "@/components/ATSOptimizer";
 import GettingStarted from "@/components/GettingStarted";
+import WorkExperience from "@/components/WorkExperience";
+import WeeklyDigest from "@/components/WeeklyDigest";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -32,7 +34,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Scroll className="w-6 h-6 text-white" />
+                <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">Scroll</h1>
@@ -49,7 +51,7 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-7">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Dashboard
@@ -73,6 +75,14 @@ const Index = () => {
             <TabsTrigger value="skills" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Skills
+            </TabsTrigger>
+            <TabsTrigger value="experience" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              Experience
+            </TabsTrigger>
+            <TabsTrigger value="digest" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Digest
             </TabsTrigger>
           </TabsList>
 
@@ -177,6 +187,14 @@ const Index = () => {
 
           <TabsContent value="skills">
             <SkillsAssessment />
+          </TabsContent>
+
+          <TabsContent value="experience">
+            <WorkExperience />
+          </TabsContent>
+
+          <TabsContent value="digest">
+            <WeeklyDigest />
           </TabsContent>
         </Tabs>
       </div>

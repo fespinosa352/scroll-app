@@ -158,10 +158,18 @@ const JobAnalyzer = () => {
                 <Progress value={analysis.matchScore} className="mt-4 h-3" />
               </div>
               
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-4">
                 <Button onClick={handleGenerateResume} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700">
                   <FileText className="w-4 h-4 mr-2" />
                   Generate Tailored Resume
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => toast.success("Optimization suggestions will help improve your match score!")}
+                  className="border-blue-200 hover:bg-blue-50"
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  Improve Match Score
                 </Button>
               </div>
             </CardContent>
