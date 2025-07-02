@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle } from "lucide-react";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import JobAnalyzer from "@/components/JobAnalyzer";
@@ -15,7 +15,6 @@ import GettingStarted from "@/components/GettingStarted";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [isFirstTime, setIsFirstTime] = useState(true); // This would be determined by checking if user has any data
 
   // Mock data for demonstration
   const weeklyStats = {
@@ -24,11 +23,6 @@ const Index = () => {
     skillsImproved: 3,
     atsScore: 85
   };
-
-  // Show Getting Started for first-time users
-  if (isFirstTime) {
-    return <GettingStarted />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -55,10 +49,14 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="getting-started" className="flex items-center gap-2">
+              <PlayCircle className="w-4 h-4" />
+              Get Started
             </TabsTrigger>
             <TabsTrigger value="achievements" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
@@ -159,6 +157,10 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="getting-started">
+            <GettingStarted />
           </TabsContent>
 
           <TabsContent value="achievements">

@@ -39,7 +39,6 @@ interface UploadedResume {
 const GettingStarted = () => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -182,177 +181,150 @@ const GettingStarted = () => {
   const canProceed = completedResumes.length > 0;
 
   const handleCompleteSetup = () => {
-    toast.success("Welcome to CareerFlow! Your resumes have been imported successfully.");
-    // This would typically trigger a state change in the parent component
-    // to hide the getting started flow and show the main dashboard
+    toast.success("Your resumes have been imported successfully!");
+    // This would typically save the data to the backend
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to CareerFlow</h1>
-          <p className="text-slate-600">Let's get started by importing your existing resumes</p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">Import Your Existing Resumes</h2>
+        <p className="text-slate-600">Upload your current resume versions and let our AI extract your achievements, skills, and experience</p>
+      </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                1
-              </div>
-              <span className="ml-2 text-sm font-medium text-blue-600">Upload Resumes</span>
-            </div>
-            <div className="w-16 h-0.5 bg-gray-300"></div>
-            <div className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                canProceed ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
-                2
-              </div>
-              <span className={`ml-2 text-sm font-medium ${
-                canProceed ? 'text-blue-600' : 'text-gray-600'
-              }`}>Review & Complete</span>
-            </div>
+      {/* Upload Area */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Resume Files</CardTitle>
+          <CardDescription>
+            Upload one or more versions of your resume. Our AI will parse them and extract your achievements, skills, and experience.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              isDragging 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+          >
+            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Drop your resume files here
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Support for PDF, DOC, and DOCX files
+            </p>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="resume-upload"
+            />
+            <label htmlFor="resume-upload">
+              <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
+                Choose Files
+              </Button>
+            </label>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Upload Area */}
-        <Card className="mb-6">
+      {/* Uploaded Files List */}
+      {uploadedResumes.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle>Upload Your Existing Resumes</CardTitle>
+            <CardTitle>Processing Resumes</CardTitle>
             <CardDescription>
-              Upload one or more versions of your resume. Our AI will parse them and extract your achievements, skills, and experience.
+              Our AI is analyzing your resumes and extracting key information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {uploadedResumes.map((resume) => (
+              <div key={resume.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={getStatusColor(resume.status)}>
+                    {getStatusIcon(resume.status)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">{resume.name}</p>
+                    <p className="text-sm text-slate-600">
+                      {resume.status === "uploading" && "Uploading..."}
+                      {resume.status === "parsing" && "Parsing with AI..."}
+                      {resume.status === "completed" && "Parsing complete"}
+                      {resume.status === "error" && "Error occurred"}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={resume.status === "completed" ? "default" : "secondary"}>
+                  {resume.status}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Summary of Parsed Data */}
+      {completedResumes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Extracted Information</CardTitle>
+            <CardDescription>
+              Here's what we found in your resumes
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging 
-                  ? 'border-blue-400 bg-blue-50' 
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Drop your resume files here
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Support for PDF, DOC, and DOCX files
-              </p>
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="resume-upload"
-              />
-              <label htmlFor="resume-upload">
-                <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
-                  Choose Files
-                </Button>
-              </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600 mb-1">
+                  {completedResumes.reduce((acc, resume) => 
+                    acc + (resume.parsedData?.experience.length || 0), 0
+                  )}
+                </div>
+                <div className="text-sm text-slate-600">Work Experiences</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-600 mb-1">
+                  {completedResumes.reduce((acc, resume) => 
+                    acc + (resume.parsedData?.skills.length || 0), 0
+                  )}
+                </div>
+                <div className="text-sm text-slate-600">Skills Identified</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600 mb-1">
+                  {completedResumes.reduce((acc, resume) => 
+                    acc + resume.parsedData?.experience.reduce((expAcc, exp) => 
+                      expAcc + exp.achievements.length, 0
+                    ) || 0, 0
+                  )}
+                </div>
+                <div className="text-sm text-slate-600">Achievements Found</div>
+              </div>
             </div>
+
+            {canProceed && (
+              <div className="text-center">
+                <Button 
+                  onClick={handleCompleteSetup}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                >
+                  Save Imported Data
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Uploaded Files List */}
-        {uploadedResumes.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Processing Resumes</CardTitle>
-              <CardDescription>
-                Our AI is analyzing your resumes and extracting key information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {uploadedResumes.map((resume) => (
-                <div key={resume.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={getStatusColor(resume.status)}>
-                      {getStatusIcon(resume.status)}
-                    </div>
-                    <div>
-                      <p className="font-medium text-slate-900">{resume.name}</p>
-                      <p className="text-sm text-slate-600">
-                        {resume.status === "uploading" && "Uploading..."}
-                        {resume.status === "parsing" && "Parsing with AI..."}
-                        {resume.status === "completed" && "Parsing complete"}
-                        {resume.status === "error" && "Error occurred"}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant={resume.status === "completed" ? "default" : "secondary"}>
-                    {resume.status}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Summary of Parsed Data */}
-        {completedResumes.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Extracted Information</CardTitle>
-              <CardDescription>
-                Here's what we found in your resumes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 mb-1">
-                    {completedResumes.reduce((acc, resume) => 
-                      acc + (resume.parsedData?.experience.length || 0), 0
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-600">Work Experiences</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    {completedResumes.reduce((acc, resume) => 
-                      acc + (resume.parsedData?.skills.length || 0), 0
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-600">Skills Identified</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600 mb-1">
-                    {completedResumes.reduce((acc, resume) => 
-                      acc + resume.parsedData?.experience.reduce((expAcc, exp) => 
-                        expAcc + exp.achievements.length, 0
-                      ) || 0, 0
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-600">Achievements Found</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Complete Setup Button */}
-        {canProceed && (
-          <div className="text-center">
-            <Button 
-              onClick={handleCompleteSetup}
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
-            >
-              Complete Setup & Start Using CareerFlow
-            </Button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
