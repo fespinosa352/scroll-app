@@ -1,11 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Scroll, Briefcase, Calendar, Activity } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Scroll, Briefcase, Calendar, Activity, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import JobAnalyzer from "@/components/JobAnalyzer";
@@ -17,6 +19,34 @@ import WeeklyDigest from "@/components/WeeklyDigest";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { user, session, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate('/auth');
+    }
+  }, [loading, session, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null; // Will redirect to auth
+  }
 
   // Mock data for demonstration
   const weeklyStats = {
@@ -41,10 +71,19 @@ const Index = () => {
                 <p className="text-sm text-slate-600">Your Living Resume Companion</p>
               </div>
             </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </Button>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-slate-600">
+                Welcome, {user?.user_metadata?.display_name || user?.email}
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
