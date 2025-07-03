@@ -24,6 +24,107 @@ const JobAnalyzer = () => {
   const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Enhanced keyword extraction and analysis
+  const extractKeywords = (text: string) => {
+    const commonSkills = [
+      'python', 'javascript', 'react', 'node.js', 'sql', 'aws', 'docker', 'kubernetes',
+      'agile', 'scrum', 'product management', 'data analysis', 'machine learning',
+      'project management', 'leadership', 'communication', 'teamwork', 'problem solving',
+      'strategic planning', 'user experience', 'ux', 'ui', 'design', 'figma',
+      'stakeholder management', 'cross-functional', 'b2b', 'saas', 'api', 'rest',
+      'microservices', 'ci/cd', 'git', 'jira', 'confluence', 'adobe', 'salesforce'
+    ];
+
+    const requirements = [
+      'bachelor', 'master', 'degree', 'years experience', 'experience in',
+      'required', 'must have', 'essential', 'preferred', 'certification'
+    ];
+
+    const lowerText = text.toLowerCase();
+    
+    const foundSkills = commonSkills.filter(skill => 
+      lowerText.includes(skill.toLowerCase())
+    );
+
+    const foundRequirements = requirements.filter(req =>
+      lowerText.includes(req.toLowerCase())
+    );
+
+    // Extract year requirements
+    const yearMatches = text.match(/(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/gi) || [];
+    
+    // Extract specific requirements by sentence
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    const keyRequirements = sentences
+      .filter(sentence => {
+        const lower = sentence.toLowerCase();
+        return lower.includes('required') || lower.includes('must') || 
+               lower.includes('essential') || lower.includes('experience') ||
+               lower.includes('degree') || lower.includes('certification');
+      })
+      .slice(0, 5)
+      .map(req => req.trim());
+
+    return { foundSkills, foundRequirements, yearMatches, keyRequirements };
+  };
+
+  const analyzeJobMatch = (jobDescription: string) => {
+    const { foundSkills, keyRequirements } = extractKeywords(jobDescription);
+    
+    // Simulate user's existing skills (in real app, this would come from user profile)
+    const userSkills = [
+      'product management', 'agile', 'scrum', 'data analysis', 'leadership',
+      'stakeholder management', 'cross-functional', 'strategic planning',
+      'user experience', 'communication', 'teamwork', 'problem solving'
+    ];
+
+    const matchedSkills = foundSkills.filter(skill => 
+      userSkills.some(userSkill => 
+        userSkill.toLowerCase().includes(skill.toLowerCase()) ||
+        skill.toLowerCase().includes(userSkill.toLowerCase())
+      )
+    );
+
+    const missingSkills = foundSkills.filter(skill => 
+      !matchedSkills.includes(skill)
+    ).slice(0, 6);
+
+    // Calculate match score based on skills overlap
+    const matchScore = Math.min(
+      Math.round((matchedSkills.length / Math.max(foundSkills.length, 1)) * 85) + 15,
+      95
+    );
+
+    // Generate personalized recommendations
+    const recommendations = [
+      `Emphasize ${matchedSkills.slice(0, 2).join(' and ')} prominently in your resume summary`,
+      `Use specific metrics when describing your ${matchedSkills[0] || 'experience'} achievements`,
+      missingSkills.length > 0 ? `Consider highlighting any experience with ${missingSkills[0]} or related technologies` : 'Your skills align well with this role',
+      `Mirror the job's language - use "${foundSkills[0] || 'relevant keywords'}" instead of synonyms`,
+      'Quantify your achievements with specific numbers and percentages'
+    ].filter(Boolean);
+
+    return {
+      matchScore,
+      matchedSkills: matchedSkills.map(skill => 
+        skill.split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')
+      ).slice(0, 8),
+      missingSkills: missingSkills.map(skill => 
+        skill.split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')
+      ),
+      keyRequirements: keyRequirements.length > 0 ? keyRequirements : [
+        'Review the full job description for specific requirements',
+        'Experience in relevant field',
+        'Strong communication and collaboration skills'
+      ],
+      recommendations
+    };
+  };
+
   const handleAnalyze = async () => {
     if (!jobDescription.trim()) {
       toast.error("Please paste a job description to analyze");
@@ -32,44 +133,13 @@ const JobAnalyzer = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate AI analysis
+    // Simulate processing time for better UX
     setTimeout(() => {
-      const mockAnalysis: JobAnalysis = {
-        matchScore: 78,
-        matchedSkills: [
-          "Product Management",
-          "Cross-functional Leadership",
-          "Agile/Scrum",
-          "Data Analysis",
-          "Strategic Planning",
-          "User Experience",
-          "Stakeholder Management"
-        ],
-        missingSkills: [
-          "Machine Learning",
-          "SQL",
-          "A/B Testing",
-          "Go-to-Market Strategy"
-        ],
-        keyRequirements: [
-          "5+ years product management experience",
-          "Experience with B2B SaaS products",
-          "Strong analytical and problem-solving skills",
-          "Experience leading cross-functional teams",
-          "Bachelor's degree in relevant field"
-        ],
-        recommendations: [
-          "Highlight your cross-functional leadership experience from Q4 product launch",
-          "Emphasize data-driven decision making in your achievements",
-          "Consider adding SQL certification to bridge skill gap",
-          "Frame your user research experience as UX expertise"
-        ]
-      };
-      
-      setAnalysis(mockAnalysis);
+      const analysis = analyzeJobMatch(jobDescription);
+      setAnalysis(analysis);
       setIsAnalyzing(false);
       toast.success("Job analysis complete!");
-    }, 2000);
+    }, 1500);
   };
 
   const handleGenerateResume = () => {
