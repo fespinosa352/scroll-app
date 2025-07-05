@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Upload, FileText, Target, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useJobAnalysis, type JobAnalysis } from "@/hooks/useJobAnalysis";
+import { useResumeVersions } from "@/hooks/useResumeVersions";
 
 const JobAnalyzer = () => {
   const [jobDescription, setJobDescription] = useState("");
@@ -18,6 +19,7 @@ const JobAnalyzer = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const { getUserSkillNames, saveJobAnalysis, loading } = useJobAnalysis();
+  const { generateResumeFromAnalysis } = useResumeVersions();
 
   // Enhanced keyword extraction and analysis
   const extractKeywords = (text: string) => {
@@ -151,7 +153,12 @@ const JobAnalyzer = () => {
   };
 
   const handleGenerateResume = () => {
-    toast.success("AI-tailored resume generated! Check your Resume Versions tab.");
+    if (!analysis) {
+      toast.error("Please analyze a job first before generating a resume");
+      return;
+    }
+    
+    generateResumeFromAnalysis(analysis);
   };
 
   return (

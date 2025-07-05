@@ -1,56 +1,14 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FileText, Plus, Calendar, User, Download } from "lucide-react";
 import { toast } from "sonner";
-
-interface ResumeVersion {
-  id: string;
-  name: string;
-  targetRole: string;
-  company: string;
-  createdDate: string;
-  atsScore: number;
-  status: "draft" | "active" | "archived";
-  matchedAchievements: number;
-}
+import { useResumeVersions } from "@/hooks/useResumeVersions";
 
 const ResumeVersions = () => {
-  const [resumes, setResumes] = useState<ResumeVersion[]>([
-    {
-      id: "1",
-      name: "Senior Product Manager - TechCorp",
-      targetRole: "Senior Product Manager",
-      company: "TechCorp",
-      createdDate: "2024-12-20",
-      atsScore: 92,
-      status: "active",
-      matchedAchievements: 12
-    },
-    {
-      id: "2",
-      name: "VP Product - StartupX",
-      targetRole: "VP of Product",
-      company: "StartupX",
-      createdDate: "2024-12-18",
-      atsScore: 87,
-      status: "draft",
-      matchedAchievements: 10
-    },
-    {
-      id: "3",
-      name: "Product Director - Enterprise Corp",
-      targetRole: "Product Director",
-      company: "Enterprise Corp",
-      createdDate: "2024-12-15",
-      atsScore: 89,
-      status: "archived",
-      matchedAchievements: 14
-    }
-  ]);
+  const { resumes, duplicateResume } = useResumeVersions();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,18 +30,7 @@ const ResumeVersions = () => {
   };
 
   const handleDuplicate = (resumeId: string) => {
-    const original = resumes.find(r => r.id === resumeId);
-    if (original) {
-      const duplicate: ResumeVersion = {
-        ...original,
-        id: Date.now().toString(),
-        name: `${original.name} (Copy)`,
-        status: "draft",
-        createdDate: new Date().toISOString().split('T')[0]
-      };
-      setResumes([duplicate, ...resumes]);
-      toast.success("Resume duplicated successfully!");
-    }
+    duplicateResume(resumeId);
   };
 
   return (
