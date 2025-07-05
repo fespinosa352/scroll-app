@@ -127,83 +127,68 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Weekly Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-slate-50 border-slate-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-900">Achievements</CardTitle>
-                  <CardDescription className="text-slate-600">This week</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.achievementsLogged}</div>
-                  <p className="text-sm text-slate-600 mt-1">Keep the momentum going!</p>
-                </CardContent>
-              </Card>
+            {/* Next Action Card - Primary Focus */}
+            <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-6">
+                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Target className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-3">Your Next Recommended Action</h2>
+                    <p className="text-lg text-slate-700 mb-6">
+                      Upload a job description to get your personalized ATS optimization score and tailored resume suggestions.
+                    </p>
+                    <Button size="lg" className="text-lg px-8 py-4">
+                      <Search className="w-5 h-5 mr-2" />
+                      Analyze a Job Posting
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="bg-slate-50 border-slate-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-900">Resumes</CardTitle>
-                  <CardDescription className="text-slate-600">Generated</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.resumesGenerated}</div>
-                  <p className="text-sm text-slate-600 mt-1">Tailored for success</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-50 border-slate-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-900">Skills</CardTitle>
-                  <CardDescription className="text-slate-600">Improved</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.skillsImproved}</div>
-                  <p className="text-sm text-slate-600 mt-1">Growing stronger</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-50 border-slate-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-slate-900">ATS Score</CardTitle>
-                  <CardDescription className="text-slate-600">Average</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-slate-900">{weeklyStats.atsScore}%</div>
-                  <Progress value={weeklyStats.atsScore} className="mt-2" />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent Activity */}
+            {/* Recently Logged Achievements */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest career developments</CardDescription>
+                <CardTitle className="flex items-center space-x-2">
+                  <Plus className="w-5 h-5" />
+                  <span>Recently Logged Achievements</span>
+                </CardTitle>
+                <CardDescription>Your latest career wins</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="font-medium">Led cross-functional team for Q4 product launch</p>
-                    <p className="text-sm text-slate-600">2 hours ago • Achievement logged</p>
+                    <p className="font-medium text-slate-900">Led cross-functional team for Q4 product launch</p>
+                    <p className="text-sm text-slate-600">2 hours ago • +3 ATS score impact</p>
                   </div>
                   <Badge variant="secondary">Leadership</Badge>
                 </div>
                 <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="font-medium">Resume tailored for Senior PM role at TechCorp</p>
-                    <p className="text-sm text-slate-600">1 day ago • Resume generated</p>
+                    <p className="font-medium text-slate-900">Completed AWS Solutions Architect certification</p>
+                    <p className="text-sm text-slate-600">1 day ago • +5 ATS score impact</p>
                   </div>
-                  <Badge variant="outline">ATS: 92%</Badge>
+                  <Badge variant="secondary">Technical</Badge>
                 </div>
                 <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="font-medium">Started AWS Solutions Architect prep course</p>
-                    <p className="text-sm text-slate-600">3 days ago • Skill development</p>
+                    <p className="font-medium text-slate-900">Increased team productivity by implementing new workflow</p>
+                    <p className="text-sm text-slate-600">3 days ago • +4 ATS score impact</p>
                   </div>
-                  <Badge variant="outline">In Progress</Badge>
+                  <Badge variant="secondary">Process Improvement</Badge>
+                </div>
+                
+                {/* Quick Add Achievement */}
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 hover:border-slate-400 transition-colors">
+                  <Button variant="ghost" className="w-full justify-start text-slate-600 hover:text-slate-900">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Quick add: "I just achieved..."
+                  </Button>
                 </div>
               </CardContent>
             </Card>
