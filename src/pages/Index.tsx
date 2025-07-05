@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import JobAnalyzer from "@/components/JobAnalyzer";
+import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
 import ATSOptimizer from "@/components/ATSOptimizer";
 import GettingStarted from "@/components/GettingStarted";

@@ -9,6 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          category: string | null
+          created_at: string
+          date_achieved: string | null
+          description: string | null
+          id: string
+          metrics: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          date_achieved?: string | null
+          description?: string | null
+          id?: string
+          metrics?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          date_achieved?: string | null
+          description?: string | null
+          id?: string
+          metrics?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_analyses: {
+        Row: {
+          company: string | null
+          created_at: string
+          id: string
+          job_description: string
+          job_title: string
+          key_requirements: string[]
+          match_score: number
+          matched_skills: string[]
+          missing_skills: string[]
+          recommendations: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          job_description: string
+          job_title: string
+          key_requirements?: string[]
+          match_score: number
+          matched_skills?: string[]
+          missing_skills?: string[]
+          recommendations?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          job_description?: string
+          job_title?: string
+          key_requirements?: string[]
+          match_score?: number
+          matched_skills?: string[]
+          missing_skills?: string[]
+          recommendations?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -36,6 +117,36 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_skills: {
+        Row: {
+          created_at: string
+          id: string
+          proficiency_level: string | null
+          skill_name: string
+          updated_at: string
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proficiency_level?: string | null
+          skill_name: string
+          updated_at?: string
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proficiency_level?: string | null
+          skill_name?: string
+          updated_at?: string
+          user_id?: string
+          years_experience?: number | null
         }
         Relationships: []
       }

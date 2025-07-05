@@ -8,14 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Upload, FileText, Target, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-
-interface JobAnalysis {
-  matchScore: number;
-  matchedSkills: string[];
-  missingSkills: string[];
-  keyRequirements: string[];
-  recommendations: string[];
-}
+import { useJobAnalysis, type JobAnalysis } from "@/hooks/useJobAnalysis";
 
 const JobAnalyzer = () => {
   const [jobDescription, setJobDescription] = useState("");
@@ -23,6 +16,8 @@ const JobAnalyzer = () => {
   const [company, setCompany] = useState("");
   const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  const { getUserSkillNames, saveJobAnalysis, loading } = useJobAnalysis();
 
   // Enhanced keyword extraction and analysis
   const extractKeywords = (text: string) => {
@@ -71,15 +66,11 @@ const JobAnalyzer = () => {
   const analyzeJobMatch = (jobDescription: string) => {
     const { foundSkills, keyRequirements } = extractKeywords(jobDescription);
     
-    // Simulate user's existing skills (in real app, this would come from user profile)
-    const userSkills = [
-      'product management', 'agile', 'scrum', 'data analysis', 'leadership',
-      'stakeholder management', 'cross-functional', 'strategic planning',
-      'user experience', 'communication', 'teamwork', 'problem solving'
-    ];
+    // Get real user skills from database
+    const userSkillNames = getUserSkillNames();
 
     const matchedSkills = foundSkills.filter(skill => 
-      userSkills.some(userSkill => 
+      userSkillNames.some(userSkill => 
         userSkill.toLowerCase().includes(skill.toLowerCase()) ||
         skill.toLowerCase().includes(userSkill.toLowerCase())
       )
@@ -105,18 +96,21 @@ const JobAnalyzer = () => {
     ].filter(Boolean);
 
     return {
-      matchScore,
-      matchedSkills: matchedSkills.map(skill => 
+      job_title: jobTitle,
+      company: company,
+      job_description: jobDescription,
+      match_score: matchScore,
+      matched_skills: matchedSkills.map(skill => 
         skill.split(' ').map(word => 
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ')
       ).slice(0, 8),
-      missingSkills: missingSkills.map(skill => 
+      missing_skills: missingSkills.map(skill => 
         skill.split(' ').map(word => 
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ')
       ),
-      keyRequirements: keyRequirements.length > 0 ? keyRequirements : [
+      key_requirements: keyRequirements.length > 0 ? keyRequirements : [
         'Review the full job description for specific requirements',
         'Experience in relevant field',
         'Strong communication and collaboration skills'
@@ -133,13 +127,27 @@ const JobAnalyzer = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate processing time for better UX
-    setTimeout(() => {
-      const analysis = analyzeJobMatch(jobDescription);
-      setAnalysis(analysis);
+    try {
+      // Simulate processing time for better UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const analysisResult = analyzeJobMatch(jobDescription);
+      setAnalysis(analysisResult);
+      
+      // Save to database
+      const savedAnalysis = await saveJobAnalysis(analysisResult);
+      if (savedAnalysis) {
+        toast.success("Job analysis complete and saved!");
+      } else {
+        toast.success("Job analysis complete!");
+        toast.error("Failed to save analysis to database");
+      }
+    } catch (error) {
+      toast.error("Analysis failed. Please try again.");
+      console.error('Analysis error:', error);
+    } finally {
       setIsAnalyzing(false);
-      toast.success("Job analysis complete!");
-    }, 1500);
+    }
   };
 
   const handleGenerateResume = () => {
@@ -223,9 +231,9 @@ const JobAnalyzer = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-blue-600 mb-2">{analysis.matchScore}%</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">{analysis.match_score}%</div>
                 <div className="text-slate-600">Overall Match Score</div>
-                <Progress value={analysis.matchScore} className="mt-4 h-3" />
+                <Progress value={analysis.match_score} className="mt-4 h-3" />
               </div>
               
               <div className="flex justify-center gap-4">
@@ -257,7 +265,7 @@ const JobAnalyzer = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {analysis.matchedSkills.map((skill, index) => (
+                  {analysis.matched_skills.map((skill, index) => (
                     <Badge key={index} variant="outline" className="border-green-200 text-green-700 bg-green-50">
                       {skill}
                     </Badge>
@@ -276,7 +284,7 @@ const JobAnalyzer = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {analysis.missingSkills.map((skill, index) => (
+                  {analysis.missing_skills.map((skill, index) => (
                     <Badge key={index} variant="outline" className="border-orange-200 text-orange-700 bg-orange-50">
                       {skill}
                     </Badge>
@@ -294,7 +302,7 @@ const JobAnalyzer = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {analysis.keyRequirements.map((requirement, index) => (
+                {analysis.key_requirements.map((requirement, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
                     <span className="text-slate-700">{requirement}</span>
