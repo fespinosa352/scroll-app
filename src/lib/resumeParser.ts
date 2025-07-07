@@ -28,20 +28,45 @@ export interface ParsedResume {
 
 // Extract text from PDF using PDF.js
 async function extractTextFromPDF(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-  
-  let fullText = '';
-  
-  // Extract text from each page
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item: any) => item.str || '').join(' ');
-    fullText += pageText + '\n';
+  try {
+    console.log('Starting PDF text extraction...');
+    const arrayBuffer = await file.arrayBuffer();
+    console.log('ArrayBuffer created, size:', arrayBuffer.byteLength);
+    
+    const pdf = await pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
+      cMapPacked: true
+    }).promise;
+    
+    console.log('PDF loaded, pages:', pdf.numPages);
+    let fullText = '';
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      console.log(`Processing page ${pageNum}...`);
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => {
+          if (item && typeof item === 'object' && 'str' in item) {
+            return item.str;
+          }
+          return '';
+        })
+        .filter(text => text.length > 0)
+        .join(' ');
+      
+      fullText += pageText + '\n';
+      console.log(`Page ${pageNum} text length:`, pageText.length);
+    }
+    
+    console.log('PDF text extraction complete, total length:', fullText.length);
+    return fullText;
+  } catch (error) {
+    console.error('Error in PDF text extraction:', error);
+    throw new Error(`PDF parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-  
-  return fullText;
 }
 
 // Extract text from DOCX using mammoth
