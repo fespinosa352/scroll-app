@@ -1,0 +1,224 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Mail, Camera, Save } from "lucide-react";
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import chameleonLogo from "@/assets/chameleon-logo.png";
+
+const Settings = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile, loading, updating, updateProfile, createProfile } = useProfile();
+  
+  const [formData, setFormData] = useState({
+    display_name: '',
+    bio: '',
+    avatar_url: ''
+  });
+
+  // Initialize form with profile data
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        display_name: profile.display_name || '',
+        bio: profile.bio || '',
+        avatar_url: profile.avatar_url || ''
+      });
+    }
+  }, [profile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (profile) {
+      await updateProfile(formData);
+    } else {
+      await createProfile(formData);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/')}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Dashboard</span>
+            </Button>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center p-1">
+                <img src={chameleonLogo} alt="Chameleon" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">Settings</h1>
+                <p className="text-sm text-slate-600">Manage your profile and preferences</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="w-5 h-5" />
+              <span>Profile Information</span>
+            </CardTitle>
+            <CardDescription>
+              Update your personal information and profile details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Avatar Section */}
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={formData.avatar_url} alt="Profile" />
+                <AvatarFallback className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-lg">
+                  {formData.display_name ? getInitials(formData.display_name) : (
+                    user?.email ? getInitials(user.email) : 'U'
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <Label htmlFor="avatar_url">Profile Picture URL</Label>
+                <div className="flex space-x-2 mt-1">
+                  <Input
+                    id="avatar_url"
+                    name="avatar_url"
+                    type="url"
+                    placeholder="https://example.com/your-photo.jpg"
+                    value={formData.avatar_url}
+                    onChange={handleInputChange}
+                  />
+                  <Button variant="outline" size="sm" className="shrink-0">
+                    <Camera className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Enter a URL to your profile picture
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email (read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="pl-10 bg-slate-50"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  Your email address cannot be changed here
+                </p>
+              </div>
+
+              {/* Display Name */}
+              <div className="space-y-2">
+                <Label htmlFor="display_name">Full Name</Label>
+                <Input
+                  id="display_name"
+                  name="display_name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={formData.display_name}
+                  onChange={handleInputChange}
+                  required
+                />
+                <p className="text-xs text-slate-500">
+                  This will be used in your welcome message and profile
+                </p>
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  placeholder="Tell us about yourself..."
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                  rows={4}
+                />
+                <p className="text-xs text-slate-500">
+                  A brief description about yourself (optional)
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => navigate('/')}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updating}
+                  className="flex items-center space-x-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{updating ? 'Saving...' : 'Save Changes'}</span>
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Settings;

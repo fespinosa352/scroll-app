@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
+import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import AchievementLogger from "@/components/AchievementLogger";
@@ -25,6 +26,7 @@ import { ResumeDataProvider } from "@/contexts/ResumeDataContext";
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { user, session, loading, signOut } = useAuth();
+  const { getFirstName } = useProfile();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,23 +81,17 @@ const Index = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-slate-600">
-                  Welcome, {(() => {
-                    const displayName = user?.user_metadata?.display_name;
-                    if (displayName) {
-                      // Extract first name from display name
-                      const firstName = displayName.split(' ')[0];
-                      return firstName;
-                    }
-                    // Extract first name from email if no display name
-                    const email = user?.email;
-                    if (email) {
-                      const emailUsername = email.split('@')[0];
-                      // Capitalize first letter
-                      return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
-                    }
-                    return 'there';
-                  })()}
+                  Welcome, {getFirstName()}
                 </span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/settings')}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={handleSignOut}
