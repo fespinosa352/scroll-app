@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Activity } from "lucide-react";
+import chameleonLogo from "@/assets/chameleon-logo.png";
 import { Link } from 'react-router-dom';
 
 const Auth = () => {
@@ -73,11 +74,11 @@ const Auth = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center p-1">
+              <img src={chameleonLogo} alt="Chameleon" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Scroll</h1>
+              <h1 className="text-2xl font-bold text-slate-900">Chameleon</h1>
               <p className="text-sm text-slate-600">Your Living Resume Companion</p>
             </div>
           </Link>

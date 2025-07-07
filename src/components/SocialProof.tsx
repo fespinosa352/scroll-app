@@ -17,7 +17,7 @@ const SocialProof = () => {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div className="text-2xl md:text-3xl font-bold text-blue-600">15,000+</div>
-              <div className="text-sm text-slate-600">Professionals using Scroll</div>
+              <div className="text-sm text-slate-600">Professionals using Chameleon</div>
             </div>
             
             <div className="flex flex-col items-center space-y-2">

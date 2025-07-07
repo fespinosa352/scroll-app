@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Scroll, Briefcase, Calendar, Activity, LogOut } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut } from "lucide-react";
+import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import AchievementLogger from "@/components/AchievementLogger";
@@ -68,11 +69,11 @@ const Index = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center p-1">
+                  <img src={chameleonLogo} alt="Chameleon" className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Scroll</h1>
+                  <h1 className="text-2xl font-bold text-slate-900">Chameleon</h1>
                   <p className="text-sm text-slate-600">Your Living Resume Companion</p>
                 </div>
               </div>
