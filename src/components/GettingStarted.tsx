@@ -9,73 +9,17 @@ import { toast } from "sonner";
 import { useResumes } from "@/hooks/useResumes";
 import { useAuth } from "@/hooks/useAuth";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { parseResume, type ParsedResume } from "@/lib/resumeParser";
 
 interface UploadedResume {
   id: string;
   name: string;
   file: File;
   status: "uploading" | "parsing" | "completed" | "error";
-  parsedData?: {
-    personalInfo: {
-      name: string;
-      email: string;
-      phone: string;
-      location: string;
-    };
-    summary: string;
-    experience: Array<{
-      title: string;
-      company: string;
-      duration: string;
-      achievements: string[];
-    }>;
-    education: Array<{
-      degree: string;
-      institution: string;
-      year: string;
-    }>;
-    skills: string[];
-  };
+  parsedData?: ParsedResume;
   error?: string;
 }
 
-// Simple resume parsing simulation - in production use proper PDF/DOC parsing libraries
-const simulateResumeParsingFromFile = async (file: File) => {
-  // This is a placeholder for actual resume parsing
-  // In production, you'd use libraries like pdf-parse, mammoth.js, etc.
-  return {
-    personalInfo: {
-      name: "Your Name",
-      email: "your.email@example.com", 
-      phone: "(555) 123-4567",
-      location: "Your City, State"
-    },
-    summary: "Experienced professional with proven track record of delivering results through strategic leadership and innovation.",
-    experience: [
-      {
-        title: "Senior Product Manager",
-        company: "Your Previous Company",
-        duration: "2022 - Present",
-        achievements: [
-          "Led cross-functional team to deliver major product features",
-          "Increased user engagement through data-driven improvements",
-          "Managed product budget and delivered releases on schedule"
-        ]
-      }
-    ],
-    education: [
-      {
-        degree: "Bachelor's Degree",
-        institution: "Your University",
-        year: "2020"
-      }
-    ],
-    skills: [
-      "Leadership", "Project Management", "Data Analysis", 
-      "Strategic Planning", "Cross-functional Collaboration"
-    ]
-  };
-};
 
 const GettingStarted = () => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
@@ -97,31 +41,7 @@ const GettingStarted = () => {
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    const resumeFiles = files.filter(file => 
-      file.type === 'application/pdf' || 
-      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      file.type === 'application/msword'
-    );
-
-    if (resumeFiles.length === 0) {
-      toast.error("Please upload PDF or Word documents only");
-      return;
-    }
-
-    handleFileUpload(resumeFiles);
-  }, []);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    handleFileUpload(files);
-  };
-
-  const handleFileUpload = (files: File[]) => {
+  const handleFileUpload = useCallback((files: File[]) => {
     const newResumes: UploadedResume[] = files.map(file => ({
       id: Date.now().toString() + Math.random(),
       name: file.name,
@@ -141,17 +61,10 @@ const GettingStarted = () => {
         // Parse the actual uploaded file
         setTimeout(async () => {
           try {
-            let parsedData;
+            console.log('Starting to parse resume:', resume.file.name);
             
-            // Simple text extraction for demo - in production this would be more sophisticated
-            if (resume.file.type === 'application/pdf') {
-              // For PDF files, we'll simulate parsing for now
-              // In production, you'd use a PDF parsing library
-              parsedData = await simulateResumeParsingFromFile(resume.file);
-            } else {
-              // For DOC/DOCX files, simulate parsing 
-              parsedData = await simulateResumeParsingFromFile(resume.file);
-            }
+            // Use the actual resume parser
+            const parsedData = await parseResume(resume.file);
             
             console.log('Parsed resume data:', parsedData);
 
@@ -175,14 +88,38 @@ const GettingStarted = () => {
               prev.map(r => r.id === resume.id ? { 
                 ...r, 
                 status: "error",
-                error: "Failed to parse resume"
+                error: error instanceof Error ? error.message : "Failed to parse resume"
               } : r)
             );
-            toast.error("Failed to parse resume. Please try again.");
+            toast.error(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
-        }, 2000);
+        }, 1000);
       }, 500);
     });
+  }, [updateFromParsedResume]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const resumeFiles = files.filter(file => 
+      file.type === 'application/pdf' || 
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.type === 'application/msword'
+    );
+
+    if (resumeFiles.length === 0) {
+      toast.error("Please upload PDF or Word documents only");
+      return;
+    }
+
+    handleFileUpload(resumeFiles);
+  }, [handleFileUpload]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFileUpload(files);
   };
 
   const getStatusColor = (status: string) => {
@@ -324,6 +261,7 @@ const GettingStarted = () => {
                           {resume.status === "uploading" && "Uploading securely..."}
                           {resume.status === "parsing" && "AI extracting achievements..."}
                           {resume.status === "completed" && "Ready for preview"}
+                          {resume.status === "error" && `Error: ${resume.error}`}
                         </p>
                       </div>
                       {resume.status === "parsing" && (
