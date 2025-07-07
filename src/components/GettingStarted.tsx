@@ -106,13 +106,12 @@ const GettingStarted = () => {
     
     const files = Array.from(e.dataTransfer.files);
     const resumeFiles = files.filter(file => 
-      file.type === 'application/pdf' || 
       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       file.type === 'application/msword'
     );
 
     if (resumeFiles.length === 0) {
-      toast.error("Please upload PDF or Word documents only");
+      toast.error("Please upload Word documents only (DOC or DOCX files)");
       return;
     }
 
@@ -228,12 +227,12 @@ const GettingStarted = () => {
                   Drop your resume here
                 </h3>
                 <p className="text-slate-600 mb-8 text-lg">
-                  PDF, DOC, or DOCX files supported
+                  DOC or DOCX files supported
                 </p>
                 <input
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx"
+                  accept=".doc,.docx"
                   onChange={handleFileSelect}
                   className="hidden"
                   id="resume-upload"

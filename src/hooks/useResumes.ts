@@ -80,13 +80,12 @@ export const useResumes = () => {
       if (file) {
         // Validate file type
         const validTypes = [
-          'application/pdf',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'application/msword'
         ];
         
         if (!validTypes.includes(file.type)) {
-          throw new Error('Invalid file type. Please upload PDF, DOC, or DOCX files only.');
+          throw new Error('Invalid file type. Please upload DOC or DOCX files only.');
         }
 
         // Validate file size (10MB limit)
