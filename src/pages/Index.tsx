@@ -79,7 +79,22 @@ const Index = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-slate-600">
-                  Welcome, {user?.user_metadata?.display_name || user?.email}
+                  Welcome, {(() => {
+                    const displayName = user?.user_metadata?.display_name;
+                    if (displayName) {
+                      // Extract first name from display name
+                      const firstName = displayName.split(' ')[0];
+                      return firstName;
+                    }
+                    // Extract first name from email if no display name
+                    const email = user?.email;
+                    if (email) {
+                      const emailUsername = email.split('@')[0];
+                      // Capitalize first letter
+                      return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
+                    }
+                    return 'there';
+                  })()}
                 </span>
                 <Button 
                   variant="outline" 
