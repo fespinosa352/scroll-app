@@ -10,6 +10,7 @@ import { Upload, FileText, Target, AlertCircle, CheckCircle } from "lucide-react
 import { toast } from "sonner";
 import { useJobAnalysis, type JobAnalysis } from "@/hooks/useJobAnalysis";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
+import AnalysisResults from "./AnalysisResults";
 
 const JobAnalyzer = () => {
   const [jobDescription, setJobDescription] = useState("");
@@ -227,115 +228,10 @@ const JobAnalyzer = () => {
 
       {/* Analysis Results */}
       {analysis && (
-        <div className="space-y-6">
-          {/* Match Score */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Match Analysis Results</CardTitle>
-              <CardDescription>
-                Based on your logged achievements and the job requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-blue-600 mb-2">{analysis.match_score}%</div>
-                <div className="text-slate-600">Overall Match Score</div>
-                <Progress value={analysis.match_score} className="mt-4 h-3" />
-              </div>
-              
-              <div className="flex justify-center gap-4">
-                <Button onClick={handleGenerateResume} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate Tailored Resume
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => toast.success("Optimization suggestions will help improve your match score!")}
-                  className="border-blue-200 hover:bg-blue-50"
-                >
-                  <Target className="w-4 h-4 mr-2" />
-                  Improve Match Score
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skills Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="w-5 h-5" />
-                  Matched Skills
-                </CardTitle>
-                <CardDescription>Skills you have that match the job</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.matched_skills.map((skill, index) => (
-                    <Badge key={index} variant="outline" className="border-green-200 text-green-700 bg-green-50">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <AlertCircle className="w-5 h-5" />
-                  Skills to Develop
-                </CardTitle>
-                <CardDescription>Areas for improvement or learning</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.missing_skills.map((skill, index) => (
-                    <Badge key={index} variant="outline" className="border-orange-200 text-orange-700 bg-orange-50">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Key Requirements */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Job Requirements</CardTitle>
-              <CardDescription>Critical requirements extracted from the job description</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {analysis.key_requirements.map((requirement, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-slate-700">{requirement}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* AI Recommendations */}
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Recommendations</CardTitle>
-              <CardDescription>Personalized advice to improve your application</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {analysis.recommendations.map((recommendation, index) => (
-                  <div key={index} className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                    <p className="text-slate-700">{recommendation}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <AnalysisResults 
+          analysis={analysis} 
+          onGenerateResume={handleGenerateResume}
+        />
       )}
     </div>
   );
