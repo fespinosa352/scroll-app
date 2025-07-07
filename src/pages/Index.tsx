@@ -17,6 +17,7 @@ import ATSOptimizer from "@/components/ATSOptimizer";
 import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WeeklyDigest from "@/components/WeeklyDigest";
+import InlineAchievementLogger from "@/components/InlineAchievementLogger";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -183,13 +184,8 @@ const Index = () => {
                   <Badge variant="secondary">Process Improvement</Badge>
                 </div>
                 
-                {/* Quick Add Achievement */}
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 hover:border-slate-400 transition-colors">
-                  <Button variant="ghost" className="w-full justify-start text-slate-600 hover:text-slate-900">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Quick add: "I just achieved..."
-                  </Button>
-                </div>
+                {/* Inline Achievement Logger */}
+                <InlineAchievementLogger />
               </CardContent>
             </Card>
           </TabsContent>
