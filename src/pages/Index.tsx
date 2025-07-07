@@ -19,6 +19,7 @@ import WorkExperience from "@/components/WorkExperience";
 import WeeklyDigest from "@/components/WeeklyDigest";
 import InlineAchievementLogger from "@/components/InlineAchievementLogger";
 import SocialProof from "@/components/SocialProof";
+import { ResumeDataProvider } from "@/contexts/ResumeDataContext";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -60,38 +61,39 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Activity className="w-6 h-6 text-white" />
+    <ResumeDataProvider>
+      <div className="min-h-screen bg-slate-50">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900">Scroll</h1>
+                  <p className="text-sm text-slate-600">Your Living Resume Companion</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">Scroll</h1>
-                <p className="text-sm text-slate-600">Your Living Resume Companion</p>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-slate-600">
+                  Welcome, {user?.user_metadata?.display_name || user?.email}
+                </span>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </Button>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-slate-600">
-                Welcome, {user?.user_metadata?.display_name || user?.email}
-              </span>
-              <Button 
-                variant="outline" 
-                onClick={handleSignOut}
-                className="flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </Button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
@@ -228,8 +230,9 @@ const Index = () => {
             <WeeklyDigest />
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </div>
+    </ResumeDataProvider>
   );
 };
 

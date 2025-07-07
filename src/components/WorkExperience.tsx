@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Briefcase, Calendar, Building, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useResumeData } from "@/contexts/ResumeDataContext";
 
 interface WorkExperience {
   id: string;
@@ -19,7 +20,10 @@ interface WorkExperience {
 }
 
 const WorkExperience = () => {
-  const [experiences, setExperiences] = useState<WorkExperience[]>([
+  const { workExperience: resumeExperience, setWorkExperience } = useResumeData();
+  
+  // Default mock data that will be replaced when resume is uploaded
+  const defaultExperiences: WorkExperience[] = [
     {
       id: "1",
       company: "Microsoft",
@@ -40,7 +44,14 @@ const WorkExperience = () => {
       isCurrentRole: false,
       skills: ["Product Strategy", "MVP Development", "Agile Methodology", "Stakeholder Management"]
     }
-  ]);
+  ];
+
+  // Use resume data if available, otherwise fall back to default
+  const experiences = resumeExperience.length > 0 ? resumeExperience : defaultExperiences;
+  
+  const updateExperiences = (newExperiences: WorkExperience[]) => {
+    setWorkExperience(newExperiences);
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -76,10 +87,12 @@ const WorkExperience = () => {
     };
 
     if (editingId) {
-      setExperiences(prev => prev.map(exp => exp.id === editingId ? newExperience : exp));
+      const updatedExperiences = experiences.map(exp => exp.id === editingId ? newExperience : exp);
+      updateExperiences(updatedExperiences);
       toast.success("Work experience updated!");
     } else {
-      setExperiences(prev => [newExperience, ...prev]);
+      const updatedExperiences = [newExperience, ...experiences];
+      updateExperiences(updatedExperiences);
       toast.success("Work experience added!");
     }
 
@@ -115,7 +128,8 @@ const WorkExperience = () => {
   };
 
   const handleDelete = (id: string) => {
-    setExperiences(prev => prev.filter(exp => exp.id !== id));
+    const updatedExperiences = experiences.filter(exp => exp.id !== id);
+    updateExperiences(updatedExperiences);
     toast.success("Work experience deleted");
   };
 

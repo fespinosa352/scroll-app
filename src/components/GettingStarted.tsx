@@ -8,6 +8,7 @@ import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Shield, Eye, Arrow
 import { toast } from "sonner";
 import { useResumes } from "@/hooks/useResumes";
 import { useAuth } from "@/hooks/useAuth";
+import { useResumeData } from "@/contexts/ResumeDataContext";
 
 interface UploadedResume {
   id: string;
@@ -38,12 +39,51 @@ interface UploadedResume {
   error?: string;
 }
 
+// Simple resume parsing simulation - in production use proper PDF/DOC parsing libraries
+const simulateResumeParsingFromFile = async (file: File) => {
+  // This is a placeholder for actual resume parsing
+  // In production, you'd use libraries like pdf-parse, mammoth.js, etc.
+  return {
+    personalInfo: {
+      name: "Your Name",
+      email: "your.email@example.com", 
+      phone: "(555) 123-4567",
+      location: "Your City, State"
+    },
+    summary: "Experienced professional with proven track record of delivering results through strategic leadership and innovation.",
+    experience: [
+      {
+        title: "Senior Product Manager",
+        company: "Your Previous Company",
+        duration: "2022 - Present",
+        achievements: [
+          "Led cross-functional team to deliver major product features",
+          "Increased user engagement through data-driven improvements",
+          "Managed product budget and delivered releases on schedule"
+        ]
+      }
+    ],
+    education: [
+      {
+        degree: "Bachelor's Degree",
+        institution: "Your University",
+        year: "2020"
+      }
+    ],
+    skills: [
+      "Leadership", "Project Management", "Data Analysis", 
+      "Strategic Planning", "Cross-functional Collaboration"
+    ]
+  };
+};
+
 const GettingStarted = () => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "confirm">("upload");
   const { saveResume, uploading } = useResumes();
   const { user } = useAuth();
+  const { updateFromParsedResume } = useResumeData();
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -98,67 +138,48 @@ const GettingStarted = () => {
           prev.map(r => r.id === resume.id ? { ...r, status: "parsing" } : r)
         );
 
-        // Simulate AI parsing with realistic data
-        setTimeout(() => {
-          const mockParsedData = {
-            personalInfo: {
-              name: "Your Name",
-              email: "your.email@gmail.com", 
-              phone: "(555) 123-4567",
-              location: "Your City, State"
-            },
-            summary: "Experienced professional with proven track record of delivering results through strategic leadership and innovation.",
-            experience: [
-              {
-                title: "Senior Product Manager",
-                company: "Microsoft",
-                duration: "2022 - Present",
-                achievements: [
-                  "Led cross-functional team of 15+ engineers to deliver Azure feature used by 2M+ users",
-                  "Increased user engagement by 45% through data-driven product improvements",
-                  "Managed $50M product budget and delivered 3 major releases ahead of schedule"
-                ]
-              },
-              {
-                title: "Product Manager",
-                company: "Google",
-                duration: "2020 - 2022",
-                achievements: [
-                  "Launched Gmail feature that improved user retention by 30%",
-                  "Conducted 200+ user interviews to identify key product opportunities",
-                  "Collaborated with 5 engineering teams to ship 12 product updates quarterly"
-                ]
-              }
-            ],
-            education: [
-              {
-                degree: "MBA",
-                institution: "Stanford University",
-                year: "2020"
-              },
-              {
-                degree: "BS Computer Science",
-                institution: "UC Berkeley",
-                year: "2018"
-              }
-            ],
-            skills: [
-              "Product Strategy", "Team Leadership", "Data Analysis", 
-              "User Research", "Agile Development", "Cross-functional Collaboration"
-            ]
-          };
+        // Parse the actual uploaded file
+        setTimeout(async () => {
+          try {
+            let parsedData;
+            
+            // Simple text extraction for demo - in production this would be more sophisticated
+            if (resume.file.type === 'application/pdf') {
+              // For PDF files, we'll simulate parsing for now
+              // In production, you'd use a PDF parsing library
+              parsedData = await simulateResumeParsingFromFile(resume.file);
+            } else {
+              // For DOC/DOCX files, simulate parsing 
+              parsedData = await simulateResumeParsingFromFile(resume.file);
+            }
+            
+            console.log('Parsed resume data:', parsedData);
 
-          setUploadedResumes(prev => 
-            prev.map(r => r.id === resume.id ? { 
-              ...r, 
-              status: "completed", 
-              parsedData: mockParsedData 
-            } : r)
-          );
+            setUploadedResumes(prev => 
+              prev.map(r => r.id === resume.id ? { 
+                ...r, 
+                status: "completed", 
+                parsedData: parsedData 
+              } : r)
+            );
 
-          // Auto-advance to preview step when parsing is complete
-          setCurrentStep("preview");
-          toast.success("AI extraction complete! Review your achievements below.");
+            // Update the shared resume data context
+            updateFromParsedResume(parsedData);
+
+            // Auto-advance to preview step when parsing is complete
+            setCurrentStep("preview");
+            toast.success("AI extraction complete! Review your achievements below.");
+          } catch (error) {
+            console.error('Error parsing resume:', error);
+            setUploadedResumes(prev => 
+              prev.map(r => r.id === resume.id ? { 
+                ...r, 
+                status: "error",
+                error: "Failed to parse resume"
+              } : r)
+            );
+            toast.error("Failed to parse resume. Please try again.");
+          }
         }, 2000);
       }, 500);
     });
