@@ -188,7 +188,7 @@ const JobAnalyzer = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Company</label>
               <Input
-                placeholder="e.g., TechCorp Inc."
+                placeholder="e.g., Google, Microsoft, Airbnb"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
               />

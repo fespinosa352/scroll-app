@@ -99,7 +99,7 @@ const GettingStarted = () => {
           const mockParsedData = {
             personalInfo: {
               name: "Your Name",
-              email: "your.email@example.com",
+              email: "your.email@gmail.com", 
               phone: "(555) 123-4567",
               location: "Your City, State"
             },

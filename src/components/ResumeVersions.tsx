@@ -41,7 +41,7 @@ const ResumeVersions = () => {
           <h2 className="text-2xl font-bold text-slate-900">Resume Versions</h2>
           <p className="text-slate-600">Manage and optimize your tailored resumes</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
+        <Button variant="primary" size="touch">
           <Plus className="w-4 h-4 mr-2" />
           Create New Resume
         </Button>
@@ -91,19 +91,19 @@ const ResumeVersions = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => handleDuplicate(resume.id)}>
+              <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 pt-2">
+                <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
                   Duplicate
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDownload(resume.id, 'pdf')}>
+                <Button variant="outline" size="touch" onClick={() => handleDownload(resume.id, 'pdf')}>
                   <Download className="w-4 h-4 mr-1" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDownload(resume.id, 'docx')}>
+                <Button variant="outline" size="touch" onClick={() => handleDownload(resume.id, 'docx')}>
                   <Download className="w-4 h-4 mr-1" />
                   DOCX
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="primary" size="touch">
                   Edit
                 </Button>
               </div>

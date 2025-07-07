@@ -104,7 +104,8 @@ const InlineAchievementLogger = () => {
                 <Button
                   key={suggestion.id}
                   variant="outline"
-                  className="h-auto p-3 justify-start text-left bg-white/80 hover:bg-white border-blue-200"
+                  size="touch"
+                  className="h-auto p-4 justify-start text-left bg-white/80 hover:bg-white border-blue-200"
                   onClick={() => handleSuggestionClick(suggestion)}
                   disabled={isProcessing}
                 >
@@ -165,7 +166,9 @@ const InlineAchievementLogger = () => {
           <Button 
             onClick={() => handleQuickAdd()}
             disabled={!inputValue.trim() || isProcessing}
-            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+            variant="primary"
+            size="touch"
+            className="min-w-[48px]"
           >
             {isProcessing ? (
               <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />

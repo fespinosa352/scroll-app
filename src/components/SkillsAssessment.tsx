@@ -159,11 +159,11 @@ const SkillsAssessment = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button size="sm" variant="outline">
+                <Button size="touch" variant="outline" className="flex-1 md:flex-none">
                   Learn More
                   <ExternalLink className="w-3 h-3 ml-1" />
                 </Button>
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
+                <Button size="touch" variant="primary" className="flex-1 md:flex-none">
                   Start Learning
                 </Button>
               </div>

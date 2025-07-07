@@ -22,7 +22,7 @@ const WorkExperience = () => {
   const [experiences, setExperiences] = useState<WorkExperience[]>([
     {
       id: "1",
-      company: "TechCorp Inc.",
+      company: "Microsoft",
       position: "Senior Product Manager",
       startDate: "2022-03",
       endDate: "",
@@ -32,7 +32,7 @@ const WorkExperience = () => {
     },
     {
       id: "2",
-      company: "StartupXYZ",
+      company: "Google",
       position: "Product Manager",
       startDate: "2020-01",
       endDate: "2022-02",
@@ -141,7 +141,8 @@ const WorkExperience = () => {
         <CardContent>
           <Button 
             onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+            variant="primary"
+            size="touch"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Work Experience
@@ -161,7 +162,7 @@ const WorkExperience = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Company *</label>
                   <Input
-                    placeholder="e.g., TechCorp Inc."
+                    placeholder="e.g., Microsoft, Google, Airbnb"
                     value={formData.company}
                     onChange={(e) => setFormData({...formData, company: e.target.value})}
                     required
@@ -233,10 +234,10 @@ const WorkExperience = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
+                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none">
                   {editingId ? "Update" : "Add"} Experience
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none">
                   Cancel
                 </Button>
               </div>
@@ -279,21 +280,24 @@ const WorkExperience = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex gap-2 ml-4 md:ml-0 md:mt-4">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="touch"
                     onClick={() => handleEdit(experience)}
+                    className="flex-1 md:flex-none"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Edit</span>
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="touch"
                     onClick={() => handleDelete(experience.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 flex-1 md:flex-none"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Delete</span>
                   </Button>
                 </div>
               </div>
