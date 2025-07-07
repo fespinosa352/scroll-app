@@ -125,6 +125,57 @@ export type Database = {
         }
         Relationships: []
       }
+      resumes: {
+        Row: {
+          ats_issues: string[] | null
+          ats_score: number | null
+          ats_suggestions: string[] | null
+          content: Json | null
+          created_at: string
+          file_url: string | null
+          id: string
+          imported_from: string | null
+          is_active: boolean | null
+          name: string
+          source_file: string | null
+          updated_at: string
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          ats_issues?: string[] | null
+          ats_score?: number | null
+          ats_suggestions?: string[] | null
+          content?: Json | null
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          imported_from?: string | null
+          is_active?: boolean | null
+          name: string
+          source_file?: string | null
+          updated_at?: string
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          ats_issues?: string[] | null
+          ats_score?: number | null
+          ats_suggestions?: string[] | null
+          content?: Json | null
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          imported_from?: string | null
+          is_active?: boolean | null
+          name?: string
+          source_file?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       user_skills: {
         Row: {
           created_at: string

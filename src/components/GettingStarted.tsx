@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Shield, Eye, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { useResumes } from "@/hooks/useResumes";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UploadedResume {
   id: string;
@@ -40,6 +42,8 @@ const GettingStarted = () => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "confirm">("upload");
+  const { saveResume, uploading } = useResumes();
+  const { user } = useAuth();
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -183,9 +187,31 @@ const GettingStarted = () => {
   const completedResumes = uploadedResumes.filter(r => r.status === "completed");
   const canProceed = completedResumes.length > 0;
 
-  const handleCompleteSetup = () => {
-    toast.success("Your resumes have been imported successfully!");
-    // This would typically save the data to the backend
+  const handleCompleteSetup = async () => {
+    if (!user) {
+      toast.error("Please log in to save your resumes");
+      return;
+    }
+
+    // Save all completed resumes to the database
+    const savePromises = completedResumes.map(resume => {
+      if (resume.parsedData) {
+        return saveResume({
+          name: resume.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+          content: resume.parsedData,
+          source_file: resume.name,
+          imported_from: 'Getting Started'
+        }, resume.file);
+      }
+      return Promise.resolve(null);
+    });
+
+    try {
+      await Promise.all(savePromises);
+      toast.success("Your resumes have been imported successfully!");
+    } catch (error) {
+      toast.error("Some resumes failed to save. Please try again.");
+    }
   };
 
   return (

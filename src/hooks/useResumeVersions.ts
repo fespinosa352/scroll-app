@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useResumes } from './useResumes';
 import type { JobAnalysis } from './useJobAnalysis';
+import type { Database } from '@/integrations/supabase/types';
+
+type Resume = Database['public']['Tables']['resumes']['Row'];
 
 export interface ResumeVersion {
   id: string;
@@ -15,88 +19,80 @@ export interface ResumeVersion {
   analysis?: JobAnalysis;
 }
 
-export const useResumeVersions = () => {
-  const [resumes, setResumes] = useState<ResumeVersion[]>([
-    {
-      id: "1",
-      name: "Senior Product Manager - TechCorp",
-      targetRole: "Senior Product Manager",
-      company: "TechCorp",
-      createdDate: "2024-12-20",
-      atsScore: 92,
-      status: "active",
-      matchedAchievements: 12
-    },
-    {
-      id: "2",
-      name: "VP Product - StartupX",
-      targetRole: "VP of Product",
-      company: "StartupX",
-      createdDate: "2024-12-18",
-      atsScore: 87,
-      status: "draft",
-      matchedAchievements: 10
-    },
-    {
-      id: "3",
-      name: "Product Director - Enterprise Corp",
-      targetRole: "Product Director",
-      company: "Enterprise Corp",
-      createdDate: "2024-12-15",
-      atsScore: 89,
-      status: "archived",
-      matchedAchievements: 14
-    }
-  ]);
+// Convert database resume to ResumeVersion format
+const convertToResumeVersion = (resume: Resume): ResumeVersion => {
+  const content = resume.content as any; // Cast JSONB to any for flexibility
+  
+  return {
+    id: resume.id,
+    name: resume.name,
+    targetRole: content?.targetRole || 'Unknown Role',
+    company: content?.company || 'Unknown Company',
+    createdDate: resume.created_at.split('T')[0],
+    atsScore: resume.ats_score || 0,
+    status: resume.is_active ? "active" : "draft",
+    matchedAchievements: content?.matchedAchievements || 0,
+    jobAnalysisId: content?.jobAnalysisId,
+    analysis: content?.analysis
+  };
+};
 
-  const generateResumeFromAnalysis = (analysis: JobAnalysis) => {
-    const newResume: ResumeVersion = {
-      id: Date.now().toString(),
+export const useResumeVersions = () => {
+  const { 
+    resumes: dbResumes, 
+    duplicateResume: dbDuplicateResume, 
+    deleteResume: dbDeleteResume, 
+    updateResume,
+    setActiveResume 
+  } = useResumes();
+  const [resumes, setResumes] = useState<ResumeVersion[]>([]);
+
+  // Convert database resumes to ResumeVersion format
+  useEffect(() => {
+    const convertedResumes = dbResumes.map(convertToResumeVersion);
+    setResumes(convertedResumes);
+  }, [dbResumes]);
+
+  const generateResumeFromAnalysis = async (analysis: JobAnalysis) => {
+    const resumeData = {
       name: `${analysis.job_title}${analysis.company ? ` - ${analysis.company}` : ''}`,
-      targetRole: analysis.job_title,
-      company: analysis.company || 'Unknown Company',
-      createdDate: new Date().toISOString().split('T')[0],
-      atsScore: analysis.match_score,
-      status: "draft",
-      matchedAchievements: analysis.matched_skills.length,
-      jobAnalysisId: analysis.id,
-      analysis: analysis
+      content: {
+        targetRole: analysis.job_title,
+        company: analysis.company || 'Unknown Company',
+        matchedAchievements: analysis.matched_skills.length,
+        jobAnalysisId: analysis.id,
+        analysis: analysis
+      },
+      ats_score: analysis.match_score,
+      imported_from: 'Job Analysis'
     };
 
-    setResumes(prev => [newResume, ...prev]);
-    toast.success(`Resume version created: ${newResume.name}`, {
-      description: `ATS Score: ${newResume.atsScore}% • ${newResume.matchedAchievements} matched skills`
+    // This will be handled by the useResumes hook
+    toast.success(`Resume version created: ${resumeData.name}`, {
+      description: `ATS Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
     });
     
-    return newResume;
+    return resumeData;
   };
 
-  const duplicateResume = (resumeId: string) => {
-    const original = resumes.find(r => r.id === resumeId);
-    if (original) {
-      const duplicate: ResumeVersion = {
-        ...original,
-        id: Date.now().toString(),
-        name: `${original.name} (Copy)`,
-        status: "draft",
-        createdDate: new Date().toISOString().split('T')[0]
-      };
-      setResumes(prev => [duplicate, ...prev]);
-      toast.success("Resume duplicated successfully!");
-      return duplicate;
+  const duplicateResume = async (resumeId: string) => {
+    const success = await dbDuplicateResume(resumeId);
+    return success;
+  };
+
+  const deleteResume = async (resumeId: string) => {
+    const success = await dbDeleteResume(resumeId);
+    return success;
+  };
+
+  const updateResumeStatus = async (resumeId: string, status: ResumeVersion['status']) => {
+    if (status === "active") {
+      await setActiveResume(resumeId);
+    } else {
+      await updateResume(resumeId, { 
+        is_active: false 
+      });
     }
-    return null;
-  };
-
-  const deleteResume = (resumeId: string) => {
-    setResumes(prev => prev.filter(r => r.id !== resumeId));
-    toast.success("Resume deleted successfully!");
-  };
-
-  const updateResumeStatus = (resumeId: string, status: ResumeVersion['status']) => {
-    setResumes(prev => prev.map(r => 
-      r.id === resumeId ? { ...r, status } : r
-    ));
   };
 
   return {
