@@ -62,11 +62,13 @@ const GettingStarted = () => {
         setTimeout(async () => {
           try {
             console.log('Starting to parse resume:', resume.file.name);
+            console.log('File type:', resume.file.type);
+            console.log('File size:', resume.file.size);
             
             // Use the actual resume parser
             const parsedData = await parseResume(resume.file);
             
-            console.log('Parsed resume data:', parsedData);
+            console.log('Successfully parsed resume data:', parsedData);
 
             setUploadedResumes(prev => 
               prev.map(r => r.id === resume.id ? { 
