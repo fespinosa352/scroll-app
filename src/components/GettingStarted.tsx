@@ -488,7 +488,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                 size="lg"
                 className="text-lg px-12 py-4"
               >
-                Go to Job Match
+                Go to My Resume
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </CardContent>
