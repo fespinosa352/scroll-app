@@ -459,7 +459,13 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                     ) || 0, 0
                   )}
                 </div>
-                <div className="text-lg text-slate-600">achievements ready for optimization</div>
+                <div className="text-lg text-slate-600">
+                  {completedResumes.reduce((acc, resume) => 
+                    acc + resume.parsedData?.experience.reduce((expAcc, exp) => 
+                      expAcc + exp.achievements.length, 0
+                    ) || 0, 0
+                  ) > 0 ? "achievements ready for optimization" : "resume data processed successfully"}
+                </div>
               </div>
 
               <div className="space-y-4 mb-8">
