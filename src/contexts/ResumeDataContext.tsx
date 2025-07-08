@@ -106,8 +106,9 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     }
 
     // Convert parsed experience to WorkExperience format
+    let convertedExperience: WorkExperience[] = [];
     if (parsedData.experience) {
-      const convertedExperience: WorkExperience[] = parsedData.experience.map((exp: any, index: number) => ({
+      convertedExperience = parsedData.experience.map((exp: any, index: number) => ({
         id: `parsed-${index}-${Date.now()}`,
         company: exp.company || 'Unknown Company',
         position: exp.title || 'Unknown Position',
@@ -284,14 +285,13 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   const loadResumeForEditing = (resume: ResumeVersion) => {
     setCurrentEditingResume(resume);
     
-    // Load resume sections from the resume content
-    const content = resume.analysis?.content || {};
+    // Load resume sections - create empty sections for now as JobAnalysis doesn't have content blocks
     const sections: ResumeSection[] = [
       {
         id: 'section-experience',
         title: 'Work Experience',
         type: 'experience',
-        blocks: content.experienceBlocks || [],
+        blocks: [],
         order: 0,
         visible: true,
       },
@@ -299,7 +299,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         id: 'section-skills',
         title: 'Key Skills',
         type: 'skills',
-        blocks: content.skillsBlocks || [],
+        blocks: [],
         order: 1,
         visible: true,
       },
@@ -307,7 +307,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         id: 'section-education',
         title: 'Education',
         type: 'education',
-        blocks: content.educationBlocks || [],
+        blocks: [],
         order: 2,
         visible: true,
       },
@@ -315,7 +315,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         id: 'section-certifications',
         title: 'Certifications',
         type: 'certifications',
-        blocks: content.certificationBlocks || [],
+        blocks: [],
         order: 3,
         visible: true,
       }
@@ -382,26 +382,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     if (!currentEditingResume) return false;
     
     try {
-      // We need to access the useResumes hook, but we can't call it here
-      // Instead, we'll save the data to the current editing resume and let the component handle the actual save
-      const updatedContent = {
-        ...currentEditingResume.analysis?.content,
-        experienceBlocks: resumeSections.find(s => s.type === 'experience')?.blocks || [],
-        skillsBlocks: resumeSections.find(s => s.type === 'skills')?.blocks || [],
-        educationBlocks: resumeSections.find(s => s.type === 'education')?.blocks || [],
-        certificationBlocks: resumeSections.find(s => s.type === 'certifications')?.blocks || [],
-        sections: resumeSections
-      };
-      
-      // Update the current editing resume with new content
-      setCurrentEditingResume({
-        ...currentEditingResume,
-        analysis: {
-          ...currentEditingResume.analysis,
-          content: updatedContent
-        }
-      });
-      
+      // Save the current sections data to the resume (no content property needed for JobAnalysis)
       console.log('Resume data prepared for saving:', currentEditingResume.id);
       console.log('Resume sections:', resumeSections);
       toast.success('Resume changes saved!');

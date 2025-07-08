@@ -75,7 +75,7 @@ export interface DraggableBlock extends Block {
 export interface ResumeSection {
   id: string;
   title: string;
-  type: 'experience' | 'education' | 'skills' | 'custom';
+  type: 'experience' | 'education' | 'skills' | 'certifications' | 'custom';
   blocks: DraggableBlock[];
   order: number;
   visible: boolean;
