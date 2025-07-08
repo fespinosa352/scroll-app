@@ -109,18 +109,10 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <PlayCircle className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Get Started</span>
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Plus className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Log Wins</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
@@ -133,14 +125,6 @@ const Index = () => {
             <TabsTrigger value="experience" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Briefcase className="w-4 h-4" />
               <span className="text-xs md:text-sm">Experience</span>
-            </TabsTrigger>
-            <TabsTrigger value="education" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <GraduationCap className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Education</span>
-            </TabsTrigger>
-            <TabsTrigger value="certifications" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Award className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Certifications</span>
             </TabsTrigger>
             <TabsTrigger value="digest" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Calendar className="w-4 h-4" />
@@ -170,6 +154,50 @@ const Index = () => {
                       Analyze a Job Posting
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Access key features directly from your dashboard</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("getting-started")}
+                  >
+                    <PlayCircle className="w-6 h-6" />
+                    <span className="text-sm">Get Started</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("achievements")}
+                  >
+                    <Plus className="w-6 h-6" />
+                    <span className="text-sm">Log Wins</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("education")}
+                  >
+                    <GraduationCap className="w-6 h-6" />
+                    <span className="text-sm">Education</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("certifications")}
+                  >
+                    <Award className="w-6 h-6" />
+                    <span className="text-sm">Certifications</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
