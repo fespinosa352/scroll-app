@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { parseResume, type ParsedResume } from "@/lib/resumeParser";
 import { useProfessionalData, type ParsedResumeData } from "@/hooks/useProfessionalData";
+import ResumeReviewSplitScreen from "@/components/ResumeReviewSplitScreen";
 
 interface UploadedResume {
   id: string;
@@ -29,7 +30,7 @@ interface GettingStartedProps {
 const GettingStarted = ({ onComplete }: GettingStartedProps) => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "confirm">("upload");
+  const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "review" | "confirm">("upload");
   const { saveParsedResumeData, saving } = useProfessionalData();
   const { user } = useAuth();
   const { updateFromParsedResume } = useResumeData();
@@ -86,8 +87,8 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
             // Update the shared resume data context
             updateFromParsedResume(parsedData);
 
-            // Auto-advance to preview step when parsing is complete
-            setCurrentStep("preview");
+            // Auto-advance to review step when parsing is complete
+            setCurrentStep("review");
             toast.success("AI extraction complete! Review your achievements below.");
           } catch (error) {
             console.error('Error parsing resume:', error);
@@ -202,8 +203,13 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
           <span>AI Preview</span>
         </div>
         <ArrowRight className="w-4 h-4 text-slate-400" />
+        <div className={`flex items-center space-x-2 ${currentStep === "review" ? "text-blue-600 font-semibold" : "text-slate-400"}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentStep === "review" ? "bg-blue-600 text-white" : "bg-slate-200"}`}>3</div>
+          <span>Review & Organize</span>
+        </div>
+        <ArrowRight className="w-4 h-4 text-slate-400" />
         <div className={`flex items-center space-x-2 ${currentStep === "confirm" ? "text-blue-600 font-semibold" : "text-slate-400"}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentStep === "confirm" ? "bg-blue-600 text-white" : "bg-slate-200"}`}>3</div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentStep === "confirm" ? "bg-blue-600 text-white" : "bg-slate-200"}`}>4</div>
           <span>Confirm</span>
         </div>
       </div>
@@ -362,11 +368,11 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                     Upload Another Resume
                   </Button>
                   <Button 
-                    onClick={() => setCurrentStep("confirm")}
+                    onClick={() => setCurrentStep("review")}
                     size="lg"
                     className="px-8"
                   >
-                    Looks Good - Continue
+                    Review & Organize Data
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -376,7 +382,15 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
         </>
       )}
 
-      {/* Step 3: Confirm and Complete */}
+      {/* Step 3: Review & Organize */}
+      {currentStep === "review" && completedResumes.length > 0 && (
+        <ResumeReviewSplitScreen 
+          parsedData={completedResumes[0].parsedData!}
+          onComplete={() => setCurrentStep("confirm")}
+        />
+      )}
+
+      {/* Step 4: Confirm and Complete */}
       {currentStep === "confirm" && (
         <>
           <div className="text-center">
