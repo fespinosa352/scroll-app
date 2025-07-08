@@ -144,29 +144,6 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
         ))}
       </div>
 
-      {/* Resume Analytics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resume Performance Analytics</CardTitle>
-          <CardDescription>Track how your resumes are performing</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">89%</div>
-              <div className="text-sm text-slate-600">Average ATS Score</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">12</div>
-              <div className="text-sm text-slate-600">Avg. Achievements Used</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-2">3</div>
-              <div className="text-sm text-slate-600">Active Versions</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
