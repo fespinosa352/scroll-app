@@ -128,10 +128,6 @@ const Index = () => {
               <Search className="w-4 h-4" />
               <span className="text-xs md:text-sm">Job Match</span>
             </TabsTrigger>
-            <TabsTrigger value="skills" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <BookOpen className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Skills</span>
-            </TabsTrigger>
             <TabsTrigger value="experience" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Briefcase className="w-4 h-4" />
               <span className="text-xs md:text-sm">Experience</span>
@@ -167,9 +163,6 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Social Proof */}
-            <SocialProof />
 
             {/* Recently Logged Achievements */}
             <Card>
@@ -230,9 +223,6 @@ const Index = () => {
             <JobAnalyzer />
           </TabsContent>
 
-          <TabsContent value="skills">
-            <SkillsAssessment />
-          </TabsContent>
 
           <TabsContent value="experience">
             <WorkExperience />
