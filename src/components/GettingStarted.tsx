@@ -67,26 +67,8 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
         // Parse the actual uploaded file
         setTimeout(async () => {
           try {
-            console.log('Starting to parse resume:', resume.file.name);
-            console.log('File type:', resume.file.type);
-            console.log('File size:', resume.file.size);
-            
             // Use the actual resume parser
             const parsedData = await parseResume(resume.file);
-            
-            console.log('Successfully parsed resume data:', parsedData);
-            console.log('Work experience count:', parsedData.experience.length);
-            console.log('Skills count:', parsedData.skills.length);
-            console.log('Education count:', parsedData.education.length);
-            console.log('Certifications count:', parsedData.certifications.length);
-            
-            if (parsedData.experience.length === 0) {
-              console.log('⚠️  WARNING: No work experience found - this might indicate parsing issues');
-              console.log('Check the browser console for detailed parsing logs');
-              toast.error('No professional experience detected in resume. Check console for parsing details.');
-            } else {
-              console.log('✅ Successfully extracted', parsedData.experience.length, 'work experiences');
-            }
 
             setUploadedResumes(prev => 
               prev.map(r => r.id === resume.id ? { 

@@ -252,14 +252,13 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
     switch (targetSection) {
       case 'personal':
         if (block.metadata?.field && block.metadata?.value) {
-          setPersonalInfo(prev => ({
-            ...prev,
-            [block.metadata.field]: block.metadata.value,
-            name: prev?.name || '',
-            email: prev?.email || '',
-            phone: prev?.phone || '',
-            location: prev?.location || ''
-          }));
+          setPersonalInfo({
+            name: personalInfo?.name || '',
+            email: personalInfo?.email || '',
+            phone: personalInfo?.phone || '',
+            location: personalInfo?.location || '',
+            [block.metadata.field]: block.metadata.value
+          });
         }
         break;
       
@@ -276,7 +275,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
             isCurrentRole: exp.duration?.includes('Present') || false,
             skills: []
           };
-          setWorkExperience(prev => [...prev, newExp]);
+          setWorkExperience([...workExperience, newExp]);
         }
         break;
       
@@ -293,7 +292,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
             gpa: edu.gpa || '',
             isCurrentlyEnrolled: false
           };
-          setEducation(prev => [...prev, newEdu]);
+          setEducation([...education, newEdu]);
         }
         break;
       
@@ -310,13 +309,13 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
             credentialUrl: cert.credentialUrl || '',
             doesNotExpire: !cert.expiryDate
           };
-          setCertifications(prev => [...prev, newCert]);
+          setCertifications([...certifications, newCert]);
         }
         break;
       
       case 'skills':
         if (block.metadata?.skill) {
-          setSkills(prev => [...prev, block.metadata.skill]);
+          setSkills([...skills, block.metadata.skill]);
         }
         break;
     }
@@ -466,7 +465,8 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                 <p className="text-xs text-slate-500 mt-2">
                   💡 Ctrl+Click to toggle • Shift+Click for range • Drag to move selected items
                 </p>
-              )}\n            </CardHeader>"}
+              )}
+            </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <Droppable droppableId="parsed-data" isDropDisabled={true}>
                 {(provided) => (
