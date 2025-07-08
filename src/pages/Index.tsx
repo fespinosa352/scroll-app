@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -171,7 +171,7 @@ const Index = () => {
                     className="h-20 flex-col space-y-2"
                     onClick={() => setActiveTab("achievements")}
                   >
-                    <Plus className="w-6 h-6" />
+                    <Trophy className="w-6 h-6" />
                     <span className="text-sm">+ Log Wins</span>
                   </Button>
                   <Button
