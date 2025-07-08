@@ -123,7 +123,7 @@ const Index = () => {
                 <img 
                   src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png" 
                   alt="Chameleon Logo" 
-                  className="w-8 h-8"
+                  className="w-12 h-12"
                 />
                 <h1 className="text-xl font-semibold text-slate-900">Chameleon</h1>
                 <nav className="hidden md:flex items-center space-x-6">
