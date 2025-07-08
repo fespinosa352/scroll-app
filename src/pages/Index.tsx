@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown } from "lucide-react";
+import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +22,7 @@ import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceBlocks from "@/components/WorkExperienceBlocks";
 import WeeklyDigest from "@/components/WeeklyDigest";
-import InlineAchievementLogger from "@/components/InlineAchievementLogger";
+
 import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
 import Certifications from "@/components/Certifications";
@@ -188,35 +188,10 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4 md:space-y-6">
-            {/* Next Action Card - Primary Focus */}
-            <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Your Next Recommended Action</h2>
-                    <p className="text-base md:text-lg text-slate-700 mb-6">
-                      Upload a job description to get your personalized ATS optimization score and tailored resume suggestions.
-                    </p>
-                    <Button 
-                      variant="primary-lg" 
-                      className="w-full md:w-auto"
-                      onClick={() => setActiveTab("jobs")}
-                    >
-                      <Search className="w-5 h-5 mr-2" />
-                      Analyze a Job Posting
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
+            {/* Quick Launch */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>Quick Launch</CardTitle>
                 <CardDescription>Access key features directly from your dashboard</CardDescription>
               </CardHeader>
               <CardContent>
@@ -257,45 +232,28 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Recently Logged Achievements */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Plus className="w-5 h-5" />
-                  <span>Recently Logged Achievements</span>
-                </CardTitle>
-                <CardDescription>Your latest career wins</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 p-4 bg-slate-50 rounded-lg">
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900">Led cross-functional team for Q4 product launch</p>
-                      <p className="text-sm text-slate-600">2 hours ago • +3 ATS score impact</p>
-                    </div>
-                    <Badge variant="secondary" className="self-start md:self-center">Leadership</Badge>
+            {/* Next Action Card - Primary Focus */}
+            <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200">
+              <CardContent className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
                   </div>
-                  <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 p-4 bg-slate-50 rounded-lg">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900">Completed AWS Solutions Architect certification</p>
-                      <p className="text-sm text-slate-600">1 day ago • +5 ATS score impact</p>
-                    </div>
-                    <Badge variant="secondary" className="self-start md:self-center">Technical</Badge>
-                  </div>
-                  <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 p-4 bg-slate-50 rounded-lg">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900">Increased team productivity by implementing new workflow</p>
-                      <p className="text-sm text-slate-600">3 days ago • +4 ATS score impact</p>
-                    </div>
-                    <Badge variant="secondary" className="self-start md:self-center">Process Improvement</Badge>
+                  <div className="flex-1">
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Your Next Recommended Action</h2>
+                    <p className="text-base md:text-lg text-slate-700 mb-6">
+                      Upload a job description to get your personalized ATS optimization score and tailored resume suggestions.
+                    </p>
+                    <Button 
+                      variant="primary-lg" 
+                      className="w-full md:w-auto"
+                      onClick={() => setActiveTab("jobs")}
+                    >
+                      <Search className="w-5 h-5 mr-2" />
+                      Analyze a Job Posting
+                    </Button>
                   </div>
                 </div>
-                
-                {/* Inline Achievement Logger */}
-                <InlineAchievementLogger />
               </CardContent>
             </Card>
           </TabsContent>
