@@ -114,6 +114,10 @@ const Index = () => {
               <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
             </TabsTrigger>
+            <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <PlayCircle className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Get Started</span>
+            </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
               <span className="text-xs md:text-sm">Resumes</span>
@@ -121,10 +125,6 @@ const Index = () => {
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
               <span className="text-xs md:text-sm">Job Match</span>
-            </TabsTrigger>
-            <TabsTrigger value="experience" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Briefcase className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Experience</span>
             </TabsTrigger>
             <TabsTrigger value="digest" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Calendar className="w-4 h-4" />
@@ -169,18 +169,18 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("getting-started")}
+                    onClick={() => setActiveTab("achievements")}
                   >
-                    <PlayCircle className="w-6 h-6" />
-                    <span className="text-sm">Get Started</span>
+                    <Plus className="w-6 h-6" />
+                    <span className="text-sm">+ Log Wins</span>
                   </Button>
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("achievements")}
+                    onClick={() => setActiveTab("experience")}
                   >
-                    <Plus className="w-6 h-6" />
-                    <span className="text-sm">Log Wins</span>
+                    <Briefcase className="w-6 h-6" />
+                    <span className="text-sm">+ Experience</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -188,7 +188,7 @@ const Index = () => {
                     onClick={() => setActiveTab("education")}
                   >
                     <GraduationCap className="w-6 h-6" />
-                    <span className="text-sm">Education</span>
+                    <span className="text-sm">+ Education</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -196,7 +196,7 @@ const Index = () => {
                     onClick={() => setActiveTab("certifications")}
                   >
                     <Award className="w-6 h-6" />
-                    <span className="text-sm">Certifications</span>
+                    <span className="text-sm">+ Certifications</span>
                   </Button>
                 </div>
               </CardContent>
