@@ -144,32 +144,62 @@ function extractPersonalInfo(text: string): ParsedResume['personalInfo'] {
 function extractExperience(text: string): ParsedResume['experience'] {
   const experience: ParsedResume['experience'] = [];
   
-  // Common section headers for experience
+  console.log('=== EXPERIENCE EXTRACTION DEBUG ===');
+  console.log('Full text length:', text.length);
+  
+  // Enhanced section headers for experience
   const experienceHeaders = [
     'EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 
-    'EMPLOYMENT', 'CAREER', 'WORK HISTORY', 'EMPLOYMENT HISTORY'
+    'EMPLOYMENT', 'CAREER', 'WORK HISTORY', 'EMPLOYMENT HISTORY',
+    'WORK', 'JOBS', 'POSITIONS', 'ROLES', 'CAREER HISTORY'
   ];
   
   let experienceSection = '';
   const lines = text.split('\n');
   
-  // Find experience section
+  console.log('Total lines in text:', lines.length);
+  console.log('Looking for headers:', experienceHeaders);
+  
+  // Find experience section with better detection
   let inExperienceSection = false;
   let sectionStartIndex = -1;
   
+  // First, let's log what headers we actually find
+  lines.forEach((line, index) => {
+    const upperLine = line.trim().toUpperCase();
+    experienceHeaders.forEach(header => {
+      if (upperLine.includes(header)) {
+        console.log(`Found potential header "${header}" at line ${index}: "${line.trim()}"`); 
+      }
+    });
+  });
+  
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim().toUpperCase();
+    const line = lines[i].trim();
+    const upperLine = line.toUpperCase();
     
-    if (experienceHeaders.some(header => line.includes(header))) {
+    // Enhanced header detection
+    const headerFound = experienceHeaders.some(header => {
+      if (upperLine === header || upperLine.includes(header)) {
+        console.log(`Found experience header "${header}" in line ${i}: "${line}"`);
+        return true;
+      }
+      return false;
+    });
+    
+    if (headerFound && !inExperienceSection) {
       inExperienceSection = true;
       sectionStartIndex = i;
+      console.log(`Starting experience section at line ${i}`);
       continue;
     }
     
     // Stop if we hit another major section
     if (inExperienceSection && 
-        (line.includes('EDUCATION') || line.includes('SKILLS') || 
-         line.includes('PROJECTS') || line.includes('CERTIFICATIONS'))) {
+        (upperLine.includes('EDUCATION') || upperLine.includes('SKILLS') || 
+         upperLine.includes('PROJECTS') || upperLine.includes('CERTIFICATIONS') ||
+         upperLine.includes('SUMMARY') || upperLine.includes('OBJECTIVE'))) {
+      console.log(`Ending experience section at line ${i} due to header: "${line}"`);
       break;
     }
     
@@ -178,17 +208,92 @@ function extractExperience(text: string): ParsedResume['experience'] {
     }
   }
   
+  console.log('Experience section found:', !!experienceSection);
+  console.log('Experience section length:', experienceSection.length);
+  
   if (!experienceSection) {
-    // If no explicit experience section, try to extract from entire text
-    experienceSection = text;
+    console.log('No explicit experience section found, trying alternative methods...');
+    
+    // Try to find job-like patterns throughout the text
+    const jobPatterns = [
+      // Company name followed by job title and dates
+      /([A-Z][a-zA-Z\s&]+)\s*\n\s*([A-Z][a-zA-Z\s]+)\s*\n.*?(\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/gm,
+      // Job title at company format
+      /([A-Z][a-zA-Z\s]+)\s+at\s+([A-Z][a-zA-Z\s&]+)/gm,
+      // Lines that contain years and look like job titles
+      /^.*?(19|20)\d{2}.*?(19|20)\d{2}.*$/gm
+    ];
+    
+    let foundJobs = false;
+    for (const pattern of jobPatterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        console.log('Found job-like patterns:', matches.slice(0, 3));
+        experienceSection = matches.join('\n\n');
+        foundJobs = true;
+        break;
+      }
+    }
+    
+    if (!foundJobs) {
+      // Last resort - look for any lines with years that might be experience
+      const linesWithYears = lines.filter(line => {
+        const hasYear = /\b(19|20)\d{2}\b/.test(line);
+        const hasJobWords = /\b(manager|director|engineer|developer|analyst|specialist|coordinator|assistant|lead|senior|junior)\b/i.test(line);
+        return hasYear || hasJobWords;
+      });
+      
+      if (linesWithYears.length > 0) {
+        console.log('Found lines with job indicators:', linesWithYears.slice(0, 3));
+        experienceSection = linesWithYears.join('\n');
+      } else {
+        console.log('No experience patterns found anywhere in text');
+        return experience; // Return empty array
+      }
+    }
   }
   
-  // Parse job entries - split by double newlines or company/date patterns
-  const jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  console.log('Final experience section to parse:', experienceSection.substring(0, 300));
+  
+  // Parse job entries - multiple splitting strategies
+  let jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  
+  // If we don't get good entries, try other splitting methods
+  if (jobEntries.length < 2) {
+    // Try splitting by years
+    const yearPattern = /\b(19|20)\d{2}\b/;
+    const yearSplitEntries = [];
+    let currentEntry = '';
+    
+    for (const line of lines) {
+      if (yearPattern.test(line) && currentEntry.trim()) {
+        yearSplitEntries.push(currentEntry.trim());
+        currentEntry = line;
+      } else {
+        currentEntry += line + '\n';
+      }
+    }
+    if (currentEntry.trim()) {
+      yearSplitEntries.push(currentEntry.trim());
+    }
+    
+    if (yearSplitEntries.length > jobEntries.length) {
+      jobEntries = yearSplitEntries;
+      console.log('Used year-based splitting, found', jobEntries.length, 'entries');
+    }
+  }
+  
+  console.log('Job entries found:', jobEntries.length);
+  jobEntries.forEach((entry, i) => {
+    console.log(`Entry ${i}:`, entry.substring(0, 100));
+  });
   
   for (const entry of jobEntries) {
     const lines = entry.split('\n').filter(line => line.trim().length > 0);
-    if (lines.length < 2) continue;
+    if (lines.length < 2) {
+      console.log('Skipping entry - too few lines:', entry.substring(0, 50));
+      continue;
+    }
     
     // Try to identify job title and company
     let title = '';
@@ -222,6 +327,8 @@ function extractExperience(text: string): ParsedResume['experience'] {
         company = lines[1].trim();
       }
     }
+    
+    console.log(`Processing entry: title="${title}", company="${company}"`);
     
     // Enhanced date extraction
     const datePatterns = [
@@ -294,15 +401,21 @@ function extractExperience(text: string): ParsedResume['experience'] {
     
     // Only add if we have meaningful data
     if (title && title.length > 2 && company && company.length > 2) {
-      experience.push({
+      const jobEntry = {
         title,
         company,
         duration: duration || 'Duration not specified',
         achievements: achievements.length > 0 ? achievements : ['Responsibilities not specified']
-      });
+      };
+      console.log('Adding job entry:', jobEntry);
+      experience.push(jobEntry);
+    } else {
+      console.log('Skipping entry - insufficient data:', { title, company, achievements: achievements.length });
     }
   }
   
+  console.log('Final experience array:', experience.length, 'entries');
+  console.log('=== END EXPERIENCE EXTRACTION ===');
   return experience;
 }
 

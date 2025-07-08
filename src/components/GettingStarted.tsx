@@ -77,8 +77,15 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
             console.log('Successfully parsed resume data:', parsedData);
             console.log('Work experience count:', parsedData.experience.length);
             console.log('Skills count:', parsedData.skills.length);
+            console.log('Education count:', parsedData.education.length);
+            console.log('Certifications count:', parsedData.certifications.length);
+            
             if (parsedData.experience.length === 0) {
-              console.log('No work experience found - this might indicate parsing issues');
+              console.log('⚠️  WARNING: No work experience found - this might indicate parsing issues');
+              console.log('Check the browser console for detailed parsing logs');
+              toast.error('No professional experience detected in resume. Check console for parsing details.');
+            } else {
+              console.log('✅ Successfully extracted', parsedData.experience.length, 'work experiences');
             }
 
             setUploadedResumes(prev => 
@@ -326,43 +333,100 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Key Stats */}
-                <div className="grid grid-cols-3 gap-6 p-6 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg">
+                <div className="grid grid-cols-4 gap-4 p-6 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600">
-                      {resume.parsedData?.experience.reduce((acc, exp) => acc + exp.achievements.length, 0)}
-                    </div>
-                    <div className="text-sm text-slate-600">Achievements Found</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-emerald-600">
-                      {resume.parsedData?.skills.length}
-                    </div>
-                    <div className="text-sm text-slate-600">Skills Identified</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-600">
-                      {resume.parsedData?.experience.length}
+                    <div className={`text-3xl font-bold ${resume.parsedData?.experience.length > 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                      {resume.parsedData?.experience.length || 0}
                     </div>
                     <div className="text-sm text-slate-600">Work Experiences</div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-emerald-600">
+                      {resume.parsedData?.experience.reduce((acc, exp) => acc + exp.achievements.length, 0) || 0}
+                    </div>
+                    <div className="text-sm text-slate-600">Achievements</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600">
+                      {resume.parsedData?.skills.length || 0}
+                    </div>
+                    <div className="text-sm text-slate-600">Skills</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600">
+                      {(resume.parsedData?.education.length || 0) + (resume.parsedData?.certifications.length || 0)}
+                    </div>
+                    <div className="text-sm text-slate-600">Edu & Certs</div>
+                  </div>
                 </div>
+
+                {/* Debug Info for Missing Data */}
+                {(!resume.parsedData?.experience.length || resume.parsedData.experience.length === 0) && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-medium text-yellow-800 mb-2">⚠️ No Professional Experience Detected</h4>
+                    <p className="text-sm text-yellow-700 mb-3">
+                      The AI couldn't identify work experience sections. This might happen if:
+                    </p>
+                    <ul className="text-sm text-yellow-700 space-y-1 ml-4">
+                      <li>• The resume doesn't have a clear "Experience" or "Professional Experience" header</li>
+                      <li>• The formatting is unusual or the text isn't clearly structured</li>
+                      <li>• The resume is primarily graphics/tables rather than text</li>
+                    </ul>
+                    <p className="text-sm text-yellow-700 mt-3">
+                      <strong>Solution:</strong> You can manually add your experience in the next step or try uploading a text-heavy resume format.
+                    </p>
+                  </div>
+                )}
 
                 {/* Sample Achievements Preview */}
                 <div>
-                  <h4 className="font-semibold text-slate-900 mb-4">Top Achievements Extracted:</h4>
-                  <div className="space-y-3">
-                    {resume.parsedData?.experience.slice(0, 2).map((exp, expIndex) => (
-                      <div key={expIndex}>
-                        <div className="font-medium text-slate-700 mb-2">{exp.title} at {exp.company}</div>
-                        {exp.achievements.slice(0, 2).map((achievement, achIndex) => (
-                          <div key={achIndex} className="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg mb-2">
-                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-slate-700">{achievement}</span>
+                  <h4 className="font-semibold text-slate-900 mb-4">Content Extracted:</h4>
+                  {resume.parsedData?.experience && resume.parsedData.experience.length > 0 ? (
+                    <div className="space-y-3">
+                      {resume.parsedData.experience.slice(0, 2).map((exp, expIndex) => (
+                        <div key={expIndex}>
+                          <div className="font-medium text-slate-700 mb-2">{exp.title} at {exp.company}</div>
+                          {exp.achievements.slice(0, 2).map((achievement, achIndex) => (
+                            <div key={achIndex} className="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg mb-2">
+                              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-slate-700">{achievement}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Show other sections if experience is missing */}
+                      {resume.parsedData?.skills && resume.parsedData.skills.length > 0 && (
+                        <div className="p-3 bg-slate-50 rounded-lg">
+                          <div className="font-medium text-slate-700 mb-2">Skills Found:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {resume.parsedData.skills.slice(0, 8).map((skill, index) => (
+                              <Badge key={index} variant="secondary">{skill}</Badge>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      )}
+                      {resume.parsedData?.education && resume.parsedData.education.length > 0 && (
+                        <div className="p-3 bg-slate-50 rounded-lg">
+                          <div className="font-medium text-slate-700 mb-2">Education Found:</div>
+                          {resume.parsedData.education.slice(0, 2).map((edu, index) => (
+                            <div key={index} className="text-slate-600">
+                              {edu.degree} from {edu.institution} ({edu.year})
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(!resume.parsedData?.skills?.length && !resume.parsedData?.education?.length) && (
+                        <div className="text-center py-6 text-slate-500">
+                          <FileText className="w-12 h-12 mx-auto mb-3" />
+                          <p>Limited content extracted from resume.</p>
+                          <p className="text-sm">You can manually add information in the next steps.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-center space-x-4 pt-6">

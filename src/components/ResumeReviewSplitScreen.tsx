@@ -57,6 +57,10 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
     setPersonalInfo
   } = useResumeData();
 
+  // Selection state for multi-select
+  const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  
   // Convert parsed data to draggable blocks
   const [availableBlocks, setAvailableBlocks] = useState<DraggableResumeBlock[]>(() => {
     const blocks: DraggableResumeBlock[] = [];
@@ -202,17 +206,46 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
 
     const targetSection = destination.droppableId.replace('my-resume-', '') as keyof typeof acceptedBlocks;
 
-    // Remove block from available blocks
-    setAvailableBlocks(prev => prev.filter((_, index) => index !== sourceBlockIndex));
+    // Determine which blocks to move
+    let blocksToMove: DraggableResumeBlock[] = [];
+    let indicesToRemove: number[] = [];
 
-    // Add block to accepted blocks
+    if (selectedBlocks.has(draggedBlock.id)) {
+      // If dragged block is selected, move all selected blocks
+      blocksToMove = availableBlocks.filter(block => selectedBlocks.has(block.id));
+      indicesToRemove = availableBlocks
+        .map((block, index) => selectedBlocks.has(block.id) ? index : -1)
+        .filter(index => index !== -1)
+        .sort((a, b) => b - a); // Sort descending to remove from end first
+    } else {
+      // If dragged block is not selected, move only the dragged block
+      blocksToMove = [draggedBlock];
+      indicesToRemove = [sourceBlockIndex];
+    }
+
+    // Remove blocks from available blocks (in reverse order to maintain indices)
+    setAvailableBlocks(prev => {
+      const newBlocks = [...prev];
+      indicesToRemove.forEach(index => {
+        newBlocks.splice(index, 1);
+      });
+      return newBlocks;
+    });
+
+    // Add blocks to accepted blocks
     setAcceptedBlocks(prev => ({
       ...prev,
-      [targetSection]: [...prev[targetSection], draggedBlock]
+      [targetSection]: [...prev[targetSection], ...blocksToMove]
     }));
 
-    // Update the actual resume data context
-    updateResumeData(draggedBlock, targetSection);
+    // Update the actual resume data context for all moved blocks
+    blocksToMove.forEach(block => {
+      updateResumeData(block, targetSection);
+    });
+
+    // Clear selection after successful drag
+    setSelectedBlocks(new Set());
+    setLastSelectedIndex(null);
   };
 
   const updateResumeData = (block: DraggableResumeBlock, targetSection: string) => {
@@ -312,6 +345,41 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
     return dateStr;
   };
 
+  const handleBlockSelection = (blockId: string, index: number, event: React.MouseEvent) => {
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd + Click: Toggle selection
+      setSelectedBlocks(prev => {
+        const newSelection = new Set(prev);
+        if (newSelection.has(blockId)) {
+          newSelection.delete(blockId);
+        } else {
+          newSelection.add(blockId);
+        }
+        return newSelection;
+      });
+      setLastSelectedIndex(index);
+    } else if (event.shiftKey && lastSelectedIndex !== null) {
+      // Shift + Click: Range selection
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      const rangeIds = availableBlocks.slice(start, end + 1).map(block => block.id);
+      setSelectedBlocks(prev => new Set([...prev, ...rangeIds]));
+    } else {
+      // Regular click: Single selection
+      setSelectedBlocks(new Set([blockId]));
+      setLastSelectedIndex(index);
+    }
+  };
+
+  const selectAllBlocks = () => {
+    setSelectedBlocks(new Set(availableBlocks.map(block => block.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedBlocks(new Set());
+    setLastSelectedIndex(null);
+  };
+
   const getBlockIcon = (type: string) => {
     switch (type) {
       case 'personal': return <User className="w-4 h-4" />;
@@ -364,25 +432,48 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
         </div>
 
         {/* Split Screen */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
           {/* Left Side - Parsed Resume Data */}
-          <Card className="h-fit">
-            <CardHeader>
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 Parsed Resume Data
               </CardTitle>
-              <p className="text-sm text-slate-600">
-                Drag these items to organize them in your profile
-              </p>
-            </CardHeader>
-            <CardContent>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">
+                  Drag these items to organize them in your profile
+                </p>
+                {availableBlocks.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    {selectedBlocks.size > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedBlocks.size} selected
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={selectedBlocks.size === availableBlocks.length ? clearSelection : selectAllBlocks}
+                      className="text-xs"
+                    >
+                      {selectedBlocks.size === availableBlocks.length ? 'Clear' : 'Select All'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {selectedBlocks.size > 0 && (
+                <p className="text-xs text-slate-500 mt-2">
+                  💡 Ctrl+Click to toggle • Shift+Click for range • Drag to move selected items
+                </p>
+              )}\n            </CardHeader>"}
+            <CardContent className="flex-1 flex flex-col">
               <Droppable droppableId="parsed-data" isDropDisabled={true}>
                 {(provided) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="space-y-2 max-h-96 overflow-y-auto"
+                    className="space-y-2 flex-1 overflow-y-auto"
                   >
                     {availableBlocks.map((block, index) => (
                       <Draggable key={block.id} draggableId={block.id} index={index}>
@@ -391,10 +482,14 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
+                            onClick={(e) => handleBlockSelection(block.id, index, e)}
                             className={`
-                              p-3 bg-white border rounded-lg cursor-grab active:cursor-grabbing
+                              p-3 border rounded-lg cursor-grab active:cursor-grabbing
                               transition-all duration-200
-                              ${snapshot.isDragging ? 'shadow-lg bg-blue-50 scale-105' : 'hover:bg-slate-50'}
+                              ${snapshot.isDragging ? 'shadow-lg bg-blue-50 scale-105' : ''}
+                              ${selectedBlocks.has(block.id) 
+                                ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-200' 
+                                : 'bg-white hover:bg-slate-50'}
                             `}
                           >
                             <div className="flex items-start space-x-3">
@@ -407,6 +502,11 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                                     {block.section}
                                   </Badge>
                                   <GripVertical className="w-3 h-3 text-slate-400" />
+                                  {selectedBlocks.has(block.id) && (
+                                    <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                                      <div className="w-2 h-2 bg-white rounded-full" />
+                                    </div>
+                                  )}
                                 </div>
                                 <h4 className="font-medium text-slate-900 mb-1">{block.title}</h4>
                                 <p className="text-sm text-slate-600 truncate">{block.content}</p>
@@ -431,8 +531,8 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
           </Card>
 
           {/* Right Side - My Resume Sections */}
-          <Card className="h-fit">
-            <CardHeader>
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <Building className="w-5 h-5" />
                 My Resume
@@ -441,7 +541,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                 Drop items here to build your organized resume
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="flex-1 flex flex-col space-y-4 overflow-y-auto">
               {/* Personal Information */}
               <div>
                 <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
