@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
+import ResumeBuilder from "@/components/ResumeBuilder";
 import JobAnalyzer from "@/components/JobAnalyzer";
 import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
@@ -25,10 +26,54 @@ import InlineAchievementLogger from "@/components/InlineAchievementLogger";
 import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
 import Certifications from "@/components/Certifications";
-import { ResumeDataProvider } from "@/contexts/ResumeDataContext";
+import { ResumeDataProvider, useResumeData } from "@/contexts/ResumeDataContext";
+
+// Component to handle resume editing state within the context
+const ResumeContent: React.FC<{ isEditingResume: boolean; setIsEditingResume: (editing: boolean) => void }> = ({ 
+  isEditingResume, 
+  setIsEditingResume 
+}) => {
+  const { createNewResume, currentEditingResume } = useResumeData();
+
+  const handleCreateNew = () => {
+    createNewResume();
+    setIsEditingResume(true);
+  };
+
+  const handleBackToList = () => {
+    setIsEditingResume(false);
+  };
+
+  return (
+    <>
+      {isEditingResume ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-slate-900">
+              {currentEditingResume?.id?.startsWith('new-') ? 'Create New Resume' : 'Edit Resume'}
+            </h2>
+            <Button 
+              variant="outline" 
+              onClick={handleBackToList}
+            >
+              ← Back to Resume List
+            </Button>
+          </div>
+          <ResumeBuilder />
+        </div>
+      ) : (
+        <ResumeVersions 
+          onEditResume={() => setIsEditingResume(true)} 
+          onCreateNew={handleCreateNew}
+        />
+      )}
+    </>
+  );
+};
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isEditingResume, setIsEditingResume] = useState(false);
   const { user, session, loading, signOut } = useAuth();
   const { getFirstName } = useProfile();
   const navigate = useNavigate();
@@ -268,7 +313,10 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="resumes">
-            <ResumeVersions />
+            <ResumeContent 
+              isEditingResume={isEditingResume}
+              setIsEditingResume={setIsEditingResume}
+            />
           </TabsContent>
 
           <TabsContent value="jobs">

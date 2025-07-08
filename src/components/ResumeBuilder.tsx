@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +22,26 @@ import { DraggableBlock, ResumeSection, Block } from "@/types/blocks";
 import { Block as BlockComponent } from "@/components/blocks/Block";
 
 const ResumeBuilder = () => {
-  const { workExperienceBlocks, personalInfo } = useResumeData();
-  const [resumeName, setResumeName] = useState("My Resume");
-  const [resumeSections, setResumeSections] = useState<ResumeSection[]>([
+  const { 
+    workExperienceBlocks, 
+    personalInfo, 
+    currentEditingResume, 
+    resumeSections, 
+    setResumeSections,
+    saveCurrentResume 
+  } = useResumeData();
+  const [resumeName, setResumeName] = useState(currentEditingResume?.name || "My Resume");
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Update resume name when editing resume changes
+  useEffect(() => {
+    if (currentEditingResume) {
+      setResumeName(currentEditingResume.name);
+    }
+  }, [currentEditingResume]);
+
+  // Use context resume sections if available, otherwise fall back to default
+  const activeResumeSections = resumeSections.length > 0 ? resumeSections : [
     {
       id: 'section-experience',
       title: 'Work Experience',
@@ -41,7 +58,7 @@ const ResumeBuilder = () => {
       order: 1,
       visible: true,
     }
-  ]);
+  ];
 
   // Convert work experience blocks to draggable blocks
   const availableBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
@@ -74,7 +91,7 @@ const ResumeBuilder = () => {
       if (!block) return;
 
       const targetSectionId = destination.droppableId.replace('resume-section-', '');
-      const targetSection = resumeSections.find(s => s.id === targetSectionId);
+      const targetSection = activeResumeSections.find(s => s.id === targetSectionId);
       
       if (!targetSection) return;
 
@@ -84,7 +101,7 @@ const ResumeBuilder = () => {
         id: `resume-${block.id}-${Date.now()}`, // New ID for the resume copy
       };
 
-      const updatedSections = resumeSections.map(section => {
+      const updatedSections = activeResumeSections.map(section => {
         if (section.id === targetSectionId) {
           const newBlocks = [...section.blocks];
           newBlocks.splice(destination.index, 0, resumeBlock);
@@ -101,22 +118,22 @@ const ResumeBuilder = () => {
 
       if (sourceSectionId === destSectionId) {
         // Same section reorder
-        const section = resumeSections.find(s => s.id === sourceSectionId);
+        const section = activeResumeSections.find(s => s.id === sourceSectionId);
         if (!section) return;
 
         const newBlocks = [...section.blocks];
         const [removed] = newBlocks.splice(source.index, 1);
         newBlocks.splice(destination.index, 0, removed);
 
-        const updatedSections = resumeSections.map(s =>
+        const updatedSections = activeResumeSections.map(s =>
           s.id === sourceSectionId ? { ...s, blocks: newBlocks } : s
         );
 
         setResumeSections(updatedSections);
       } else {
         // Move between sections
-        const sourceSection = resumeSections.find(s => s.id === sourceSectionId);
-        const destSection = resumeSections.find(s => s.id === destSectionId);
+        const sourceSection = activeResumeSections.find(s => s.id === sourceSectionId);
+        const destSection = activeResumeSections.find(s => s.id === destSectionId);
 
         if (!sourceSection || !destSection) return;
 
@@ -125,7 +142,7 @@ const ResumeBuilder = () => {
         const [removed] = sourceBlocks.splice(source.index, 1);
         destBlocks.splice(destination.index, 0, removed);
 
-        const updatedSections = resumeSections.map(section => {
+        const updatedSections = activeResumeSections.map(section => {
           if (section.id === sourceSectionId) {
             return { ...section, blocks: sourceBlocks };
           }
@@ -141,7 +158,7 @@ const ResumeBuilder = () => {
   };
 
   const removeBlockFromResume = (sectionId: string, blockId: string) => {
-    const updatedSections = resumeSections.map(section => {
+    const updatedSections = activeResumeSections.map(section => {
       if (section.id === sectionId) {
         return {
           ...section,
@@ -151,6 +168,20 @@ const ResumeBuilder = () => {
       return section;
     });
     setResumeSections(updatedSections);
+  };
+
+  const handleSaveResume = async () => {
+    setIsSaving(true);
+    try {
+      const success = await saveCurrentResume();
+      if (success) {
+        // Could show success message or navigate back to resume list
+      }
+    } catch (error) {
+      console.error('Error saving resume:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const blockTypeIcons = {
@@ -244,6 +275,14 @@ const ResumeBuilder = () => {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={handleSaveResume}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
                   <Button variant="outline" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
@@ -276,7 +315,7 @@ const ResumeBuilder = () => {
 
                 {/* Resume Sections */}
                 <div className="space-y-6">
-                  {resumeSections.map((section) => (
+                  {activeResumeSections.map((section) => (
                     <div key={section.id} className="space-y-3">
                       <h3 className="text-lg font-semibold border-b pb-1">
                         {section.title}

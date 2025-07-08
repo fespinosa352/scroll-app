@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { WorkExperienceWithBlocks, BlockSection, Block } from '@/types/blocks';
+import { WorkExperienceWithBlocks, BlockSection, Block, ResumeSection, DraggableBlock } from '@/types/blocks';
+import type { ResumeVersion } from '@/hooks/useResumeVersions';
+import { useResumes } from '@/hooks/useResumes';
+import { toast } from 'sonner';
 
 interface WorkExperience {
   id: string;
@@ -48,14 +51,21 @@ interface ResumeDataContextType {
   education: Education[];
   certifications: Certification[];
   skills: string[];
+  currentEditingResume: ResumeVersion | null;
+  resumeSections: ResumeSection[];
   setWorkExperience: (experience: WorkExperience[]) => void;
   setWorkExperienceBlocks: (experience: WorkExperienceWithBlocks[]) => void;
   setPersonalInfo: (info: PersonalInfo) => void;
   setEducation: (education: Education[]) => void;
   setCertifications: (certifications: Certification[]) => void;
   setSkills: (skills: string[]) => void;
+  setCurrentEditingResume: (resume: ResumeVersion | null) => void;
+  setResumeSections: (sections: ResumeSection[]) => void;
   updateFromParsedResume: (parsedData: any) => void;
   convertToBlockFormat: (experiences: WorkExperience[]) => WorkExperienceWithBlocks[];
+  loadResumeForEditing: (resume: ResumeVersion) => void;
+  createNewResume: () => void;
+  saveCurrentResume: () => Promise<boolean>;
 }
 
 const ResumeDataContext = createContext<ResumeDataContextType | undefined>(undefined);
@@ -79,6 +89,8 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   const [education, setEducation] = useState<Education[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
+  const [currentEditingResume, setCurrentEditingResume] = useState<ResumeVersion | null>(null);
+  const [resumeSections, setResumeSections] = useState<ResumeSection[]>([]);
 
   const updateFromParsedResume = (parsedData: any) => {
     console.log('Updating resume data from parsed resume:', parsedData);
@@ -269,6 +281,138 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     return dateStr;
   };
 
+  const loadResumeForEditing = (resume: ResumeVersion) => {
+    setCurrentEditingResume(resume);
+    
+    // Load resume sections from the resume content
+    const content = resume.analysis?.content || {};
+    const sections: ResumeSection[] = [
+      {
+        id: 'section-experience',
+        title: 'Work Experience',
+        type: 'experience',
+        blocks: content.experienceBlocks || [],
+        order: 0,
+        visible: true,
+      },
+      {
+        id: 'section-skills',
+        title: 'Key Skills',
+        type: 'skills',
+        blocks: content.skillsBlocks || [],
+        order: 1,
+        visible: true,
+      },
+      {
+        id: 'section-education',
+        title: 'Education',
+        type: 'education',
+        blocks: content.educationBlocks || [],
+        order: 2,
+        visible: true,
+      },
+      {
+        id: 'section-certifications',
+        title: 'Certifications',
+        type: 'certifications',
+        blocks: content.certificationBlocks || [],
+        order: 3,
+        visible: true,
+      }
+    ];
+    
+    setResumeSections(sections);
+  };
+
+  const createNewResume = () => {
+    // Create a new empty resume for editing
+    const newResume: ResumeVersion = {
+      id: `new-${Date.now()}`,
+      name: 'New Resume',
+      targetRole: 'Your Target Role',
+      company: 'Target Company',
+      createdDate: new Date().toISOString().split('T')[0],
+      atsScore: 0,
+      status: 'draft',
+      matchedAchievements: 0,
+    };
+    
+    setCurrentEditingResume(newResume);
+    
+    // Set up default empty sections
+    const defaultSections: ResumeSection[] = [
+      {
+        id: 'section-experience',
+        title: 'Work Experience',
+        type: 'experience',
+        blocks: [],
+        order: 0,
+        visible: true,
+      },
+      {
+        id: 'section-skills',
+        title: 'Key Skills',
+        type: 'skills',
+        blocks: [],
+        order: 1,
+        visible: true,
+      },
+      {
+        id: 'section-education',
+        title: 'Education',
+        type: 'education',
+        blocks: [],
+        order: 2,
+        visible: true,
+      },
+      {
+        id: 'section-certifications',
+        title: 'Certifications',
+        type: 'certifications',
+        blocks: [],
+        order: 3,
+        visible: true,
+      }
+    ];
+    
+    setResumeSections(defaultSections);
+  };
+
+  const saveCurrentResume = async (): Promise<boolean> => {
+    if (!currentEditingResume) return false;
+    
+    try {
+      // We need to access the useResumes hook, but we can't call it here
+      // Instead, we'll save the data to the current editing resume and let the component handle the actual save
+      const updatedContent = {
+        ...currentEditingResume.analysis?.content,
+        experienceBlocks: resumeSections.find(s => s.type === 'experience')?.blocks || [],
+        skillsBlocks: resumeSections.find(s => s.type === 'skills')?.blocks || [],
+        educationBlocks: resumeSections.find(s => s.type === 'education')?.blocks || [],
+        certificationBlocks: resumeSections.find(s => s.type === 'certifications')?.blocks || [],
+        sections: resumeSections
+      };
+      
+      // Update the current editing resume with new content
+      setCurrentEditingResume({
+        ...currentEditingResume,
+        analysis: {
+          ...currentEditingResume.analysis,
+          content: updatedContent
+        }
+      });
+      
+      console.log('Resume data prepared for saving:', currentEditingResume.id);
+      console.log('Resume sections:', resumeSections);
+      toast.success('Resume changes saved!');
+      return true;
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      toast.error('Failed to save resume changes');
+      return false;
+    }
+  };
+
   const value = {
     workExperience,
     workExperienceBlocks,
@@ -276,14 +420,21 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     education,
     certifications,
     skills,
+    currentEditingResume,
+    resumeSections,
     setWorkExperience,
     setWorkExperienceBlocks,
     setPersonalInfo,
     setEducation,
     setCertifications,
     setSkills,
+    setCurrentEditingResume,
+    setResumeSections,
     updateFromParsedResume,
-    convertToBlockFormat
+    convertToBlockFormat,
+    loadResumeForEditing,
+    createNewResume,
+    saveCurrentResume
   };
 
   return (

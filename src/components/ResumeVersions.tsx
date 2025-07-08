@@ -3,12 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Plus, Calendar, User, Download } from "lucide-react";
+import { FileText, Plus, Calendar, User, Download, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
+import { useResumeData } from "@/contexts/ResumeDataContext";
 
-const ResumeVersions = () => {
+interface ResumeVersionsProps {
+  onEditResume?: (resumeId: string) => void;
+  onCreateNew?: () => void;
+}
+
+const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateNew }) => {
   const { resumes, duplicateResume } = useResumeVersions();
+  const { loadResumeForEditing } = useResumeData();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -33,6 +40,16 @@ const ResumeVersions = () => {
     duplicateResume(resumeId);
   };
 
+  const handleEdit = (resume: any) => {
+    // Load the resume data into the context for editing
+    loadResumeForEditing(resume);
+    
+    // Call the parent callback to switch to edit mode
+    if (onEditResume) {
+      onEditResume(resume.id);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Create New Button */}
@@ -41,7 +58,11 @@ const ResumeVersions = () => {
           <h2 className="text-2xl font-bold text-slate-900">Resume Versions</h2>
           <p className="text-slate-600">Manage and optimize your tailored resumes</p>
         </div>
-        <Button variant="primary" size="touch">
+        <Button 
+          variant="primary" 
+          size="touch"
+          onClick={onCreateNew}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Create New Resume
         </Button>
@@ -103,7 +124,12 @@ const ResumeVersions = () => {
                   <Download className="w-4 h-4 mr-1" />
                   DOCX
                 </Button>
-                <Button variant="primary" size="touch">
+                <Button 
+                  variant="primary" 
+                  size="touch"
+                  onClick={() => handleEdit(resume)}
+                >
+                  <Edit3 className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
               </div>
