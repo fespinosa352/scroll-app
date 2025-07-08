@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,23 +87,35 @@ const Index = () => {
                 <span className="text-sm text-slate-600">
                   Welcome, {getFirstName()}
                 </span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/settings')}
-                  className="flex items-center space-x-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Settings</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleSignOut}
-                  className="flex items-center space-x-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center space-x-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={() => navigate('/settings')}
+                      className="flex items-center space-x-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={handleSignOut}
+                      className="flex items-center space-x-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -110,7 +123,7 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
@@ -119,10 +132,6 @@ const Index = () => {
               <PlayCircle className="w-4 h-4" />
               <span className="text-xs md:text-sm">Get Started</span>
             </TabsTrigger>
-            <TabsTrigger value="achievements" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Plus className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Log Wins</span>
-            </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
               <span className="text-xs md:text-sm">Resumes</span>
@@ -130,18 +139,6 @@ const Index = () => {
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
               <span className="text-xs md:text-sm">Job Match</span>
-            </TabsTrigger>
-            <TabsTrigger value="experience" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Briefcase className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Experience</span>
-            </TabsTrigger>
-            <TabsTrigger value="education" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <GraduationCap className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Education</span>
-            </TabsTrigger>
-            <TabsTrigger value="certifications" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Award className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Certifications</span>
             </TabsTrigger>
             <TabsTrigger value="digest" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Calendar className="w-4 h-4" />
@@ -171,6 +168,50 @@ const Index = () => {
                       Analyze a Job Posting
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Access key features directly from your dashboard</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("achievements")}
+                  >
+                    <Trophy className="w-6 h-6" />
+                    <span className="text-sm">+ Log Wins</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("experience")}
+                  >
+                    <Briefcase className="w-6 h-6" />
+                    <span className="text-sm">+ Experience</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("education")}
+                  >
+                    <GraduationCap className="w-6 h-6" />
+                    <span className="text-sm">+ Education</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => setActiveTab("certifications")}
+                  >
+                    <Award className="w-6 h-6" />
+                    <span className="text-sm">+ Certifications</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
