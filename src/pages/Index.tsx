@@ -183,7 +183,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Resumes</span>
+              <span className="text-xs md:text-sm">Resume Vault</span>
             </TabsTrigger>
           </TabsList>
 
