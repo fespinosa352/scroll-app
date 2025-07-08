@@ -34,6 +34,10 @@ export interface ParsedResume {
     credentialId?: string;
   }>;
   skills: string[];
+  unknownSections?: Array<{
+    title: string;
+    content: string[];
+  }>;
 }
 
 // Extract text from PDF using PDF.js
@@ -627,6 +631,69 @@ function extractSkills(text: string): string[] {
   return skills.slice(0, 20); // Limit to 20 skills to avoid noise
 }
 
+// Extract sections that don't match standard categories
+function extractUnknownSections(text: string): Array<{ title: string; content: string[] }> {
+  const knownSectionHeaders = [
+    'EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'EMPLOYMENT',
+    'EDUCATION', 'ACADEMIC BACKGROUND', 'QUALIFICATIONS',
+    'SKILLS', 'TECHNICAL SKILLS', 'CORE COMPETENCIES', 'TECHNOLOGIES',
+    'CERTIFICATIONS', 'CERTIFICATES', 'LICENSES',
+    'SUMMARY', 'OBJECTIVE', 'PROFILE', 'ABOUT',
+    'CONTACT', 'PERSONAL INFORMATION'
+  ];
+  
+  const unknownSections: Array<{ title: string; content: string[] }> = [];
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  
+  let currentSection: { title: string; content: string[] } | null = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const upperLine = line.toUpperCase();
+    
+    // Check if this line looks like a section header (all caps, short, etc.)
+    const isHeader = (
+      line.length < 50 && 
+      (upperLine === line || line.match(/^[A-Z][A-Z\s&]+$/)) &&
+      !line.includes('@') && // Not an email
+      !line.match(/\d{4}/) && // Not containing years
+      !line.includes(',') // Not a list item
+    );
+    
+    if (isHeader) {
+      // Save previous unknown section if it exists
+      if (currentSection && !knownSectionHeaders.some(known => currentSection!.title.includes(known))) {
+        if (currentSection.content.length > 0) {
+          unknownSections.push(currentSection);
+        }
+      }
+      
+      // Start new section
+      currentSection = {
+        title: line,
+        content: []
+      };
+    } else if (currentSection) {
+      // Add content to current section
+      currentSection.content.push(line);
+    }
+  }
+  
+  // Don't forget the last section
+  if (currentSection && !knownSectionHeaders.some(known => currentSection!.title.includes(known))) {
+    if (currentSection.content.length > 0) {
+      unknownSections.push(currentSection);
+    }
+  }
+  
+  // Filter out sections that are too small or likely noise
+  return unknownSections.filter(section => 
+    section.content.length >= 2 && 
+    section.title.length >= 3 &&
+    section.title.length <= 50
+  );
+}
+
 // Extract professional summary
 function extractSummary(text: string): string {
   const summaryHeaders = ['SUMMARY', 'PROFESSIONAL SUMMARY', 'PROFILE', 'OBJECTIVE', 'ABOUT'];
@@ -695,6 +762,7 @@ export async function parseResume(file: File): Promise<ParsedResume> {
     const certifications = extractCertifications(text);
     const skills = extractSkills(text);
     const summary = extractSummary(text);
+    const unknownSections = extractUnknownSections(text);
     
     return {
       personalInfo,
@@ -702,7 +770,8 @@ export async function parseResume(file: File): Promise<ParsedResume> {
       experience,
       education,
       certifications,
-      skills
+      skills,
+      unknownSections
     };
     
   } catch (error) {

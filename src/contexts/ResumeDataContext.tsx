@@ -66,6 +66,7 @@ interface ResumeDataContextType {
   loadResumeForEditing: (resume: ResumeVersion) => void;
   createNewResume: () => void;
   saveCurrentResume: () => Promise<boolean>;
+  handleUnknownSections: (sections: any[]) => void;
 }
 
 const ResumeDataContext = createContext<ResumeDataContextType | undefined>(undefined);
@@ -161,6 +162,12 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     if (parsedData.experience) {
       const blockExperiences = convertToBlockFormat(convertedExperience);
       setWorkExperienceBlocks(blockExperiences);
+      console.log('Converted to block format:', blockExperiences);
+    }
+    
+    // Handle unknown sections if they exist
+    if (parsedData.unknownSections && parsedData.unknownSections.length > 0) {
+      handleUnknownSections(parsedData.unknownSections);
     }
   };
 
@@ -378,6 +385,17 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     setResumeSections(defaultSections);
   };
 
+  const handleUnknownSections = (unknownSections: any[]) => {
+    // For now, we'll just log them and potentially show a toast
+    // In a full implementation, you'd show a modal dialog asking the user where to place these
+    console.log('Found unknown sections in resume:', unknownSections);
+    
+    if (unknownSections.length > 0) {
+      const sectionNames = unknownSections.map(s => s.title || 'Unnamed Section').join(', ');
+      toast.info(`Found additional sections: ${sectionNames}. These can be manually added to your profile.`);
+    }
+  };
+
   const saveCurrentResume = async (): Promise<boolean> => {
     if (!currentEditingResume) return false;
     
@@ -415,7 +433,8 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     convertToBlockFormat,
     loadResumeForEditing,
     createNewResume,
-    saveCurrentResume
+    saveCurrentResume,
+    handleUnknownSections
   };
 
   return (

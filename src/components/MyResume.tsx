@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useResumeData } from "@/contexts/ResumeDataContext";
-import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit } from "lucide-react";
+import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 const MyResume = () => {
@@ -33,15 +33,41 @@ const MyResume = () => {
     return `${start} - ${end}`;
   };
 
+  const hasAnyData = personalInfo || workExperience.length > 0 || education.length > 0 || certifications.length > 0 || skills.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header Section */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-slate-900">My Resume</h1>
         <p className="text-lg text-slate-600">
-          A comprehensive view of your professional profile and experience
+          {hasAnyData 
+            ? "A comprehensive view of your professional profile and experience"
+            : "Upload your resume in the Get Started section to see your parsed data here"
+          }
         </p>
       </div>
+
+      {/* Data Status */}
+      {!hasAnyData && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <FileText className="w-12 h-12 mx-auto text-blue-600 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Resume Data Found</h3>
+              <p className="text-slate-600 mb-4">
+                Upload your resume in the "Get Started" section to automatically populate this page with your professional information.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.hash = '#getting-started'}
+              >
+                Go to Get Started
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Personal Information */}
       {personalInfo && (
