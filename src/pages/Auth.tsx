@@ -8,12 +8,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Activity } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,6 +37,7 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
+      navigate('/');
     }
 
     setIsLoading(false);
@@ -63,6 +65,7 @@ const Auth = () => {
         title: "Account created!",
         description: "Please check your email to verify your account.",
       });
+      navigate('/');
     }
 
     setIsLoading(false);
