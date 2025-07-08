@@ -431,7 +431,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
         </div>
 
         {/* Split Screen */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px]">
           {/* Left Side - Parsed Resume Data */}
           <Card className="flex flex-col h-full">
             <CardHeader className="flex-shrink-0">
@@ -473,7 +473,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="space-y-2 flex-1 overflow-y-auto"
+                    className="space-y-2 flex-1 overflow-y-auto min-h-0 relative z-0"
                   >
                     {availableBlocks.map((block, index) => (
                       <Draggable key={block.id} draggableId={block.id} index={index}>
@@ -741,7 +741,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center space-x-4 pt-6">
+        <div className="flex justify-center space-x-4 pt-6 relative z-10 bg-white">
           <Button 
             variant="outline"
             onClick={() => {
