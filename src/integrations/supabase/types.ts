@@ -50,6 +50,159 @@ export type Database = {
         }
         Relationships: []
       }
+      certifications: {
+        Row: {
+          created_at: string
+          credential_id: string | null
+          credential_url: string | null
+          expiration_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_organization: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_organization: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_organization?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          industry: string | null
+          name: string
+          size_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          size_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          size_category?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      education: {
+        Row: {
+          created_at: string
+          degree: string
+          description: string | null
+          end_date: string | null
+          field_of_study: string | null
+          gpa: number | null
+          id: string
+          institution: string
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          gpa?: number | null
+          id?: string
+          institution: string
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          gpa?: number | null
+          id?: string
+          institution?: string
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      generated_resumes: {
+        Row: {
+          ats_optimization_notes: string[] | null
+          ats_score: number | null
+          company_target: string | null
+          content: Json
+          created_at: string
+          id: string
+          job_description: string | null
+          job_title: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ats_optimization_notes?: string[] | null
+          ats_score?: number | null
+          company_target?: string | null
+          content: Json
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_title?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ats_optimization_notes?: string[] | null
+          ats_score?: number | null
+          company_target?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_title?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_analyses: {
         Row: {
           company: string | null
@@ -125,6 +278,56 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string
+          end_date: string | null
+          id: string
+          impact_metrics: string | null
+          start_date: string | null
+          technologies_used: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          work_experience_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          end_date?: string | null
+          id?: string
+          impact_metrics?: string | null
+          start_date?: string | null
+          technologies_used?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          work_experience_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          impact_metrics?: string | null
+          start_date?: string | null
+          technologies_used?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          work_experience_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_work_experience_id_fkey"
+            columns: ["work_experience_id"]
+            isOneToOne: false
+            referencedRelation: "work_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resumes: {
         Row: {
           ats_issues: string[] | null
@@ -176,6 +379,87 @@ export type Database = {
         }
         Relationships: []
       }
+      skills_experience: {
+        Row: {
+          created_at: string
+          id: string
+          proficiency_level: string | null
+          project_id: string | null
+          skill_name: string
+          updated_at: string
+          user_id: string
+          work_experience_id: string | null
+          years_used: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proficiency_level?: string | null
+          project_id?: string | null
+          skill_name: string
+          updated_at?: string
+          user_id: string
+          work_experience_id?: string | null
+          years_used?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proficiency_level?: string | null
+          project_id?: string | null
+          skill_name?: string
+          updated_at?: string
+          user_id?: string
+          work_experience_id?: string | null
+          years_used?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_experience_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skills_experience_work_experience_id_fkey"
+            columns: ["work_experience_id"]
+            isOneToOne: false
+            referencedRelation: "work_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_resumes: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          id: string
+          name: string
+          parsed_at: string
+          raw_content: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          name: string
+          parsed_at?: string
+          raw_content?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          name?: string
+          parsed_at?: string
+          raw_content?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_skills: {
         Row: {
           created_at: string
@@ -205,6 +489,59 @@ export type Database = {
           years_experience?: number | null
         }
         Relationships: []
+      }
+      work_experiences: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          description: string | null
+          employment_type: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          location: string | null
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_experiences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

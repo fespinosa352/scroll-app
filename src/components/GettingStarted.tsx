@@ -198,8 +198,8 @@ const GettingStarted = () => {
         <>
           {/* Header */}
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">Transform Your Resume in 2 Minutes</h1>
-            <p className="text-xl text-slate-600 mb-8">Upload your resume and watch our AI extract your achievements for better job matches</p>
+            <h1 className="text-4xl font-bold text-slate-900 mb-4">Build Your Professional Database</h1>
+            <p className="text-xl text-slate-600 mb-8">Upload your resumes and let AI create your comprehensive career profile for infinite ATS-optimized variations</p>
           </div>
 
           {/* Security Message */}

@@ -79,7 +79,7 @@ const Auth = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Chameleon</h1>
-              <p className="text-sm text-slate-600">Your Living Resume Companion</p>
+              <p className="text-sm text-slate-600">An intelligent career optimization platform</p>
             </div>
           </Link>
         </div>
