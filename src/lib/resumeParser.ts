@@ -22,6 +22,16 @@ export interface ParsedResume {
     degree: string;
     institution: string;
     year: string;
+    fieldOfStudy?: string;
+    gpa?: string;
+  }>;
+  certifications: Array<{
+    name: string;
+    issuer: string;
+    year?: string;
+    issueDate?: string;
+    expiryDate?: string;
+    credentialId?: string;
   }>;
   skills: string[];
 }
@@ -133,7 +143,7 @@ function extractExperience(text: string): ParsedResume['experience'] {
   // Common section headers for experience
   const experienceHeaders = [
     'EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 
-    'EMPLOYMENT', 'CAREER', 'WORK HISTORY'
+    'EMPLOYMENT', 'CAREER', 'WORK HISTORY', 'EMPLOYMENT HISTORY'
   ];
   
   let experienceSection = '';
@@ -169,7 +179,7 @@ function extractExperience(text: string): ParsedResume['experience'] {
     experienceSection = text;
   }
   
-  // Parse job entries
+  // Parse job entries - split by double newlines or company/date patterns
   const jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
   
   for (const entry of jobEntries) {
@@ -182,40 +192,104 @@ function extractExperience(text: string): ParsedResume['experience'] {
     let duration = '';
     const achievements: string[] = [];
     
-    // Look for patterns like "Job Title at Company Name"
-    const titleCompanyRegex = /(.+?)\s+at\s+(.+)/i;
-    const match = lines[0].match(titleCompanyRegex);
+    // Enhanced patterns for different resume formats
+    const titleCompanyPatterns = [
+      /(.+?)\s+at\s+(.+)/i,  // "Senior Developer at Google"
+      /(.+?)\s*-\s*(.+)/i,   // "Senior Developer - Google"
+      /(.+?)\s*\|\s*(.+)/i,  // "Senior Developer | Google"
+      /(.+?)\s*,\s*(.+)/i    // "Senior Developer, Google"
+    ];
     
-    if (match) {
-      title = match[1].trim();
-      company = match[2].trim();
-    } else {
-      // Try other patterns
+    let foundMatch = false;
+    for (const pattern of titleCompanyPatterns) {
+      const match = lines[0].match(pattern);
+      if (match && !match[2].match(/\d{4}/)) { // Don't match if second group contains years
+        title = match[1].trim();
+        company = match[2].trim();
+        foundMatch = true;
+        break;
+      }
+    }
+    
+    if (!foundMatch) {
+      // Assume first line is title, second line is company
       title = lines[0].trim();
-      if (lines.length > 1) {
+      if (lines.length > 1 && !lines[1].match(/\d{4}/)) {
         company = lines[1].trim();
       }
     }
     
-    // Look for dates
-    const dateRegex = /\b(19|20)\d{2}\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(19|20)\d{2}\b/g;
-    const dates = entry.match(dateRegex) || [];
-    if (dates.length > 0) {
-      duration = dates.length > 1 ? `${dates[0]} - ${dates[dates.length - 1]}` : dates[0];
+    // Enhanced date extraction
+    const datePatterns = [
+      // Month Year format: "January 2020", "Jan 2020"
+      /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(19|20)\d{2}\b/gi,
+      // Year only: "2020"
+      /\b(19|20)\d{2}\b/g,
+      // Full dates: "01/2020", "2020-01"
+      /\b(0[1-9]|1[0-2])\/(19|20)\d{2}\b/g,
+      /\b(19|20)\d{2}-(0[1-9]|1[0-2])\b/g
+    ];
+    
+    let allDates: string[] = [];
+    for (const pattern of datePatterns) {
+      const matches = entry.match(pattern) || [];
+      allDates = allDates.concat(matches);
     }
     
-    // Extract achievements (bullet points or lines that start with action words)
-    const actionWords = ['Led', 'Managed', 'Developed', 'Implemented', 'Increased', 'Decreased', 'Improved', 'Created', 'Built', 'Designed', 'Achieved', 'Delivered'];
+    // Remove duplicates and sort dates
+    allDates = [...new Set(allDates)].sort();
+    
+    // Look for "Present" or "Current"
+    const hasPresent = /\b(present|current)\b/i.test(entry);
+    
+    if (allDates.length > 0) {
+      if (allDates.length === 1) {
+        duration = hasPresent ? `${allDates[0]} - Present` : allDates[0];
+      } else {
+        const startDate = allDates[0];
+        const endDate = hasPresent ? 'Present' : allDates[allDates.length - 1];
+        duration = `${startDate} - ${endDate}`;
+      }
+    } else if (hasPresent) {
+      duration = 'Present';
+    }
+    
+    // Enhanced achievement extraction
+    const actionWords = [
+      'Led', 'Managed', 'Developed', 'Implemented', 'Increased', 'Decreased', 
+      'Improved', 'Created', 'Built', 'Designed', 'Achieved', 'Delivered',
+      'Established', 'Coordinated', 'Supervised', 'Maintained', 'Optimized',
+      'Streamlined', 'Enhanced', 'Reduced', 'Generated', 'Executed',
+      'Collaborated', 'Facilitated', 'Oversaw', 'Spearheaded', 'Launched'
+    ];
     
     for (const line of lines) {
       const trimmed = line.trim();
+      
+      // Skip lines that are likely titles, companies, or dates
+      if (trimmed === title || trimmed === company || 
+          /\b(19|20)\d{2}\b/.test(trimmed) ||
+          trimmed.length < 10) {
+        continue;
+      }
+      
+      // Check for bullet points or action words
       if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') ||
+          trimmed.startsWith('→') || trimmed.startsWith('▪') ||
           actionWords.some(word => trimmed.startsWith(word))) {
-        achievements.push(trimmed.replace(/^[•\-*]\s*/, ''));
+        const cleanedAchievement = trimmed.replace(/^[•\-*→▪]\s*/, '');
+        if (cleanedAchievement.length > 10) {
+          achievements.push(cleanedAchievement);
+        }
+      }
+      // Also include lines that look like achievements (contain numbers, percentages, etc.)
+      else if (/\d+%|\$\d+|\d+\+|increased|improved|reduced|generated/i.test(trimmed) && trimmed.length > 15) {
+        achievements.push(trimmed);
       }
     }
     
-    if (title && company) {
+    // Only add if we have meaningful data
+    if (title && title.length > 2 && company && company.length > 2) {
       experience.push({
         title,
         company,
@@ -232,28 +306,269 @@ function extractExperience(text: string): ParsedResume['experience'] {
 function extractEducation(text: string): ParsedResume['education'] {
   const education: ParsedResume['education'] = [];
   
-  // Common degree types
-  const degreeTypes = ['Bachelor', 'Master', 'PhD', 'Associate', 'Certificate', 'Diploma', 'B.S.', 'B.A.', 'M.S.', 'M.A.'];
+  // Common section headers for education
+  const educationHeaders = [
+    'EDUCATION', 'ACADEMIC BACKGROUND', 'ACADEMIC QUALIFICATIONS',
+    'EDUCATIONAL BACKGROUND', 'DEGREES', 'ACADEMIC HISTORY'
+  ];
   
+  let educationSection = '';
   const lines = text.split('\n');
   
-  for (const line of lines) {
-    const trimmed = line.trim();
+  // Find education section
+  let inEducationSection = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim().toUpperCase();
     
-    // Look for degree patterns
-    if (degreeTypes.some(degree => trimmed.includes(degree))) {
-      const yearRegex = /\b(19|20)\d{2}\b/g;
-      const years = trimmed.match(yearRegex) || [];
-      
+    if (educationHeaders.some(header => line.includes(header))) {
+      inEducationSection = true;
+      continue;
+    }
+    
+    // Stop if we hit another major section
+    if (inEducationSection && 
+        (line.includes('EXPERIENCE') || line.includes('SKILLS') || 
+         line.includes('PROJECTS') || line.includes('CERTIFICATIONS'))) {
+      break;
+    }
+    
+    if (inEducationSection) {
+      educationSection += lines[i] + '\n';
+    }
+  }
+  
+  if (!educationSection) {
+    // If no explicit education section, search entire text for degree patterns
+    educationSection = text;
+  }
+  
+  // Common degree types and patterns
+  const degreePatterns = [
+    /\b(Bachelor|Master|PhD|Ph\.?D\.?|Associate|Certificate|Diploma|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|MBA|M\.?B\.?A\.?)\b/gi,
+    /\b(Doctor of|Bachelor of|Master of)\s+\w+/gi
+  ];
+  
+  // Parse education entries
+  const educationEntries = educationSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  
+  for (const entry of educationEntries) {
+    const lines = entry.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length === 0) continue;
+    
+    let degree = '';
+    let institution = '';
+    let fieldOfStudy = '';
+    let year = '';
+    let gpa = '';
+    
+    // Look for degree patterns in the entry
+    for (const pattern of degreePatterns) {
+      for (const line of lines) {
+        const matches = line.match(pattern);
+        if (matches && !degree) {
+          degree = matches[0];
+          
+          // Try to extract field of study from the same line
+          const fieldPatterns = [
+            /\bin\s+([A-Z][a-z\s]+)/i,  // "in Computer Science"
+            /\bof\s+([A-Z][a-z\s]+)/i,  // "of Engineering" 
+            /Bachelor\s+of\s+([A-Z][a-z\s]+)/i,  // "Bachelor of Science"
+            /Master\s+of\s+([A-Z][a-z\s]+)/i     // "Master of Arts"
+          ];
+          
+          for (const fieldPattern of fieldPatterns) {
+            const fieldMatch = line.match(fieldPattern);
+            if (fieldMatch && fieldMatch[1]) {
+              fieldOfStudy = fieldMatch[1].trim();
+              break;
+            }
+          }
+          break;
+        }
+      }
+      if (degree) break;
+    }
+    
+    // Look for institution name
+    const institutionKeywords = ['University', 'College', 'Institute', 'School', 'Academy'];
+    for (const line of lines) {
+      if (!institution && institutionKeywords.some(keyword => line.includes(keyword))) {
+        // Clean up the line to get institution name
+        const cleanLine = line.replace(/^\W+|\W+$/g, '').trim();
+        if (cleanLine.length > 0 && !degreePatterns.some(pattern => pattern.test(cleanLine))) {
+          institution = cleanLine;
+          break;
+        }
+      }
+    }
+    
+    // Look for year
+    const yearRegex = /\b(19|20)\d{2}\b/g;
+    const years = entry.match(yearRegex) || [];
+    if (years.length > 0) {
+      year = years[years.length - 1]; // Use the most recent year
+    }
+    
+    // Look for GPA
+    const gpaRegex = /GPA:?\s*(\d+\.?\d*)/i;
+    const gpaMatch = entry.match(gpaRegex);
+    if (gpaMatch) {
+      gpa = gpaMatch[1];
+    }
+    
+    // Only add if we have meaningful data
+    if (degree || (institution && institutionKeywords.some(keyword => institution.includes(keyword)))) {
       education.push({
-        degree: trimmed,
-        institution: 'Institution not specified',
-        year: years[years.length - 1] || 'Year not specified'
+        degree: degree || 'Degree not specified',
+        institution: institution || 'Institution not specified',
+        year: year || 'Year not specified',
+        fieldOfStudy: fieldOfStudy || undefined,
+        gpa: gpa || undefined
       });
     }
   }
   
   return education;
+}
+
+// Extract certifications
+function extractCertifications(text: string): ParsedResume['certifications'] {
+  const certifications: ParsedResume['certifications'] = [];
+  
+  // Common section headers for certifications
+  const certificationHeaders = [
+    'CERTIFICATIONS', 'CERTIFICATES', 'PROFESSIONAL CERTIFICATIONS',
+    'LICENSES', 'CREDENTIALS', 'PROFESSIONAL CREDENTIALS'
+  ];
+  
+  let certificationSection = '';
+  const lines = text.split('\n');
+  
+  // Find certification section
+  let inCertificationSection = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim().toUpperCase();
+    
+    if (certificationHeaders.some(header => line.includes(header))) {
+      inCertificationSection = true;
+      continue;
+    }
+    
+    // Stop if we hit another major section
+    if (inCertificationSection && 
+        (line.includes('EXPERIENCE') || line.includes('EDUCATION') || 
+         line.includes('SKILLS') || line.includes('PROJECTS'))) {
+      break;
+    }
+    
+    if (inCertificationSection) {
+      certificationSection += lines[i] + '\n';
+    }
+  }
+  
+  if (!certificationSection) {
+    // Look for common certification patterns in entire text
+    const certificationKeywords = [
+      'AWS', 'Microsoft', 'Google', 'Cisco', 'Oracle', 'PMP', 'CISSP',
+      'CompTIA', 'Salesforce', 'Adobe', 'Certified', 'Certificate'
+    ];
+    
+    const relevantLines = lines.filter(line => 
+      certificationKeywords.some(keyword => 
+        line.toUpperCase().includes(keyword.toUpperCase())
+      )
+    );
+    
+    certificationSection = relevantLines.join('\n');
+  }
+  
+  if (!certificationSection) return certifications;
+  
+  // Parse certification entries
+  const certificationEntries = certificationSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  
+  for (const entry of certificationEntries) {
+    const lines = entry.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length === 0) continue;
+    
+    let name = '';
+    let issuer = '';
+    let year = '';
+    let credentialId = '';
+    
+    // Try to identify certification name and issuer
+    const firstLine = lines[0].trim();
+    
+    // Common patterns for certifications
+    const certPatterns = [
+      /(.+?)\s*-\s*(.+)/,  // "AWS Certified Solutions Architect - Amazon"
+      /(.+?)\s*\|\s*(.+)/,  // "PMP | Project Management Institute"
+      /(.+?)\s*by\s*(.+)/i, // "Certified Developer by Microsoft"
+      /(.+?)\s*from\s*(.+)/i // "Certificate from Google"
+    ];
+    
+    let foundMatch = false;
+    for (const pattern of certPatterns) {
+      const match = firstLine.match(pattern);
+      if (match && !match[2].match(/\d{4}/)) { // Don't match if second group contains years
+        name = match[1].trim();
+        issuer = match[2].trim();
+        foundMatch = true;
+        break;
+      }
+    }
+    
+    if (!foundMatch) {
+      // Try to extract from context
+      name = firstLine;
+      
+      // Look for issuer in subsequent lines or same line
+      const issuerKeywords = ['Microsoft', 'Google', 'Amazon', 'AWS', 'Oracle', 'Cisco', 'Adobe', 'Salesforce'];
+      for (const keyword of issuerKeywords) {
+        if (entry.toUpperCase().includes(keyword.toUpperCase())) {
+          issuer = keyword;
+          break;
+        }
+      }
+    }
+    
+    // Look for year/date
+    const yearRegex = /\b(19|20)\d{2}\b/g;
+    const years = entry.match(yearRegex) || [];
+    if (years.length > 0) {
+      year = years[years.length - 1];
+    }
+    
+    // Look for credential ID
+    const credentialPatterns = [
+      /ID:?\s*([A-Z0-9\-]+)/i,
+      /Credential:?\s*([A-Z0-9\-]+)/i,
+      /Certificate:?\s*([A-Z0-9\-]+)/i
+    ];
+    
+    for (const pattern of credentialPatterns) {
+      const match = entry.match(pattern);
+      if (match) {
+        credentialId = match[1];
+        break;
+      }
+    }
+    
+    // Only add if we have meaningful data
+    if (name && name.length > 3) {
+      certifications.push({
+        name: name,
+        issuer: issuer || 'Issuer not specified',
+        year: year || undefined,
+        issueDate: year || undefined,
+        credentialId: credentialId || undefined
+      });
+    }
+  }
+  
+  return certifications;
 }
 
 // Extract skills
@@ -377,6 +692,7 @@ export async function parseResume(file: File): Promise<ParsedResume> {
     const personalInfo = extractPersonalInfo(text);
     const experience = extractExperience(text);
     const education = extractEducation(text);
+    const certifications = extractCertifications(text);
     const skills = extractSkills(text);
     const summary = extractSummary(text);
     
@@ -385,6 +701,7 @@ export async function parseResume(file: File): Promise<ParsedResume> {
       summary,
       experience,
       education,
+      certifications,
       skills
     };
     

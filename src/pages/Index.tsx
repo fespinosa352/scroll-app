@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings } from "lucide-react";
+import { Plus, FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,8 @@ import WorkExperience from "@/components/WorkExperience";
 import WeeklyDigest from "@/components/WeeklyDigest";
 import InlineAchievementLogger from "@/components/InlineAchievementLogger";
 import SocialProof from "@/components/SocialProof";
+import Education from "@/components/Education";
+import Certifications from "@/components/Certifications";
 import { ResumeDataProvider } from "@/contexts/ResumeDataContext";
 
 const Index = () => {
@@ -132,6 +134,14 @@ const Index = () => {
               <Briefcase className="w-4 h-4" />
               <span className="text-xs md:text-sm">Experience</span>
             </TabsTrigger>
+            <TabsTrigger value="education" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <GraduationCap className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Education</span>
+            </TabsTrigger>
+            <TabsTrigger value="certifications" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <Award className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Certifications</span>
+            </TabsTrigger>
             <TabsTrigger value="digest" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Calendar className="w-4 h-4" />
               <span className="text-xs md:text-sm">Digest</span>
@@ -226,6 +236,14 @@ const Index = () => {
 
           <TabsContent value="experience">
             <WorkExperience />
+          </TabsContent>
+
+          <TabsContent value="education">
+            <Education />
+          </TabsContent>
+
+          <TabsContent value="certifications">
+            <Certifications />
           </TabsContent>
 
           <TabsContent value="digest">

@@ -22,32 +22,8 @@ interface WorkExperience {
 const WorkExperience = () => {
   const { workExperience: resumeExperience, setWorkExperience } = useResumeData();
   
-  // Default mock data that will be replaced when resume is uploaded
-  const defaultExperiences: WorkExperience[] = [
-    {
-      id: "1",
-      company: "Microsoft",
-      position: "Senior Product Manager",
-      startDate: "2022-03",
-      endDate: "",
-      description: "Led cross-functional teams to deliver B2B SaaS products. Increased user engagement by 40% through data-driven product decisions and user research initiatives.",
-      isCurrentRole: true,
-      skills: ["Product Management", "Cross-functional Leadership", "Data Analysis", "User Research"]
-    },
-    {
-      id: "2",
-      company: "Google",
-      position: "Product Manager",
-      startDate: "2020-01",
-      endDate: "2022-02",
-      description: "Managed product roadmap for early-stage fintech startup. Collaborated with engineering and design teams to launch MVP that acquired 10,000+ users in first year.",
-      isCurrentRole: false,
-      skills: ["Product Strategy", "MVP Development", "Agile Methodology", "Stakeholder Management"]
-    }
-  ];
-
-  // Use resume data if available, otherwise fall back to default
-  const experiences = resumeExperience.length > 0 ? resumeExperience : defaultExperiences;
+  // Use resume data if available, otherwise show empty state
+  const experiences = resumeExperience;
   
   const updateExperiences = (newExperiences: WorkExperience[]) => {
     setWorkExperience(newExperiences);
@@ -262,7 +238,28 @@ const WorkExperience = () => {
 
       {/* Experience List */}
       <div className="space-y-4">
-        {experiences.map((experience) => (
+        {experiences.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <Briefcase className="w-12 h-12 mx-auto text-slate-400 mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No work experience added yet</h3>
+                <p className="text-slate-600 mb-4">
+                  Upload a resume in Getting Started or manually add your work experience here.
+                </p>
+                <Button 
+                  onClick={() => setShowForm(true)}
+                  variant="primary"
+                  size="touch"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Experience
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          experiences.map((experience) => (
           <Card key={experience.id}>
             <CardContent className="pt-6">
               <div className="flex justify-between items-start mb-4">
@@ -317,7 +314,8 @@ const WorkExperience = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
