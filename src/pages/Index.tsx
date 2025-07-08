@@ -116,31 +116,27 @@ const Index = () => {
     <ResumeDataProvider>
       <div className="min-h-screen bg-slate-50">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+          <div className="container mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center p-1">
-                  <img src={chameleonLogo} alt="Chameleon" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Chameleon</h1>
-                  <p className="text-sm text-slate-600">An intelligent career optimization platform</p>
-                </div>
+              <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-semibold text-slate-900">Chameleon</h1>
+                <nav className="hidden md:flex items-center space-x-6">
+                  <span className="text-sm text-slate-600">Dashboard</span>
+                </nav>
               </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-slate-600">
-                  Welcome, {getFirstName()}
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-slate-600 hidden sm:block">
+                  {getFirstName()}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
-                      variant="outline" 
+                      variant="ghost" 
                       size="sm"
-                      className="flex items-center space-x-2"
+                      className="flex items-center space-x-1 text-slate-600 hover:text-slate-900"
                     >
-                      <Settings className="w-4 h-4" />
-                      <span>Settings</span>
+                      <User className="w-4 h-4" />
                       <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
