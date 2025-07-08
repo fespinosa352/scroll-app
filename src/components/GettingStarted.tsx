@@ -74,6 +74,11 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
             const parsedData = await parseResume(resume.file);
             
             console.log('Successfully parsed resume data:', parsedData);
+            console.log('Work experience count:', parsedData.experience.length);
+            console.log('Skills count:', parsedData.skills.length);
+            if (parsedData.experience.length === 0) {
+              console.log('No work experience found - this might indicate parsing issues');
+            }
 
             setUploadedResumes(prev => 
               prev.map(r => r.id === resume.id ? { 
