@@ -208,7 +208,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="getting-started">
-            <GettingStarted />
+            <GettingStarted onComplete={() => setActiveTab("jobs")} />
           </TabsContent>
 
           <TabsContent value="achievements">

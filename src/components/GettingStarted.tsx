@@ -22,7 +22,11 @@ interface UploadedResume {
 }
 
 
-const GettingStarted = () => {
+interface GettingStartedProps {
+  onComplete?: () => void;
+}
+
+const GettingStarted = ({ onComplete }: GettingStartedProps) => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "confirm">("upload");
@@ -171,8 +175,11 @@ const GettingStarted = () => {
       
       if (successCount === completedResumes.length) {
         toast.success("Your professional data has been imported successfully!");
+        // Navigate to Job Match module
+        onComplete?.();
       } else if (successCount > 0) {
         toast.success(`${successCount} of ${completedResumes.length} resumes imported successfully!`);
+        onComplete?.();
       } else {
         toast.error("Failed to import resume data. Please try again.");
       }
@@ -410,7 +417,7 @@ const GettingStarted = () => {
                 size="lg"
                 className="text-lg px-12 py-4"
               >
-                Go to Dashboard
+                Go to Job Match
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </CardContent>
