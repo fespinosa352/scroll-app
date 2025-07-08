@@ -120,6 +120,11 @@ const Index = () => {
           <div className="container mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
+                <img 
+                  src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png" 
+                  alt="Chameleon Logo" 
+                  className="w-8 h-8"
+                />
                 <h1 className="text-xl font-semibold text-slate-900">Chameleon</h1>
                 <nav className="hidden md:flex items-center space-x-6">
                   <span className="text-sm text-slate-600">Dashboard</span>

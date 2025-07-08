@@ -77,8 +77,13 @@ const Auth = () => {
       <header className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            <Link to="/" className="text-xl font-semibold text-slate-900 hover:text-slate-700">
-              Chameleon
+            <Link to="/" className="flex items-center space-x-2 text-xl font-semibold text-slate-900 hover:text-slate-700">
+              <img 
+                src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png" 
+                alt="Chameleon Logo" 
+                className="w-8 h-8"
+              />
+              <span>Chameleon</span>
             </Link>
           </div>
         </div>
