@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { WorkExperienceWithBlocks, BlockSection, Block } from '@/types/blocks';
 
 interface WorkExperience {
   id: string;
@@ -42,16 +43,19 @@ interface Certification {
 
 interface ResumeDataContextType {
   workExperience: WorkExperience[];
+  workExperienceBlocks: WorkExperienceWithBlocks[];
   personalInfo: PersonalInfo | null;
   education: Education[];
   certifications: Certification[];
   skills: string[];
   setWorkExperience: (experience: WorkExperience[]) => void;
+  setWorkExperienceBlocks: (experience: WorkExperienceWithBlocks[]) => void;
   setPersonalInfo: (info: PersonalInfo) => void;
   setEducation: (education: Education[]) => void;
   setCertifications: (certifications: Certification[]) => void;
   setSkills: (skills: string[]) => void;
   updateFromParsedResume: (parsedData: any) => void;
+  convertToBlockFormat: (experiences: WorkExperience[]) => WorkExperienceWithBlocks[];
 }
 
 const ResumeDataContext = createContext<ResumeDataContextType | undefined>(undefined);
@@ -70,6 +74,7 @@ interface ResumeDataProviderProps {
 
 export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children }) => {
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
+  const [workExperienceBlocks, setWorkExperienceBlocks] = useState<WorkExperienceWithBlocks[]>([]);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [education, setEducation] = useState<Education[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
@@ -138,6 +143,98 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
       setCertifications(convertedCertifications);
       console.log('Converted certifications:', convertedCertifications);
     }
+
+    // Convert to block format for the new experience editor
+    if (parsedData.experience) {
+      const blockExperiences = convertToBlockFormat(convertedExperience);
+      setWorkExperienceBlocks(blockExperiences);
+    }
+  };
+
+  // Convert traditional experience format to block format
+  const convertToBlockFormat = (experiences: WorkExperience[]): WorkExperienceWithBlocks[] => {
+    return experiences.map(exp => {
+      const sections: BlockSection[] = [];
+      
+      // Create sections from the experience description
+      if (exp.description) {
+        const responsibilitiesSection: BlockSection = {
+          id: `section-responsibilities-${exp.id}`,
+          title: 'Key Responsibilities',
+          blocks: [{
+            id: `block-desc-${exp.id}`,
+            type: 'text',
+            content: exp.description,
+            order: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }],
+          order: 0,
+          collapsible: true,
+          collapsed: false,
+        };
+        sections.push(responsibilitiesSection);
+      }
+
+      // Create achievements section if the description contains bullet points
+      const achievementLines = exp.description
+        ?.split(/[•\-*\n]/)
+        .map(line => line.trim())
+        .filter(line => line.length > 10) || [];
+
+      if (achievementLines.length > 1) {
+        const achievementsSection: BlockSection = {
+          id: `section-achievements-${exp.id}`,
+          title: 'Key Achievements',
+          blocks: achievementLines.map((line, index) => ({
+            id: `block-achievement-${exp.id}-${index}`,
+            type: 'achievement' as const,
+            content: line,
+            order: index,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })),
+          order: 1,
+          collapsible: true,
+          collapsed: false,
+        };
+        sections.push(achievementsSection);
+      }
+
+      // Create skills section
+      if (exp.skills && exp.skills.length > 0) {
+        const skillsSection: BlockSection = {
+          id: `section-skills-${exp.id}`,
+          title: 'Technologies & Skills',
+          blocks: exp.skills.map((skill, index) => ({
+            id: `block-skill-${exp.id}-${index}`,
+            type: 'skill_tag' as const,
+            content: skill,
+            order: index,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })),
+          order: 2,
+          collapsible: true,
+          collapsed: false,
+        };
+        sections.push(skillsSection);
+      }
+
+      return {
+        id: exp.id,
+        company: exp.company,
+        position: exp.position,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        isCurrentRole: exp.isCurrentRole,
+        location: '', // TODO: Add location to original interface
+        sections,
+        skills: exp.skills,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
   };
 
   // Helper function to convert date formats
@@ -174,16 +271,19 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
 
   const value = {
     workExperience,
+    workExperienceBlocks,
     personalInfo,
     education,
     certifications,
     skills,
     setWorkExperience,
+    setWorkExperienceBlocks,
     setPersonalInfo,
     setEducation,
     setCertifications,
     setSkills,
-    updateFromParsedResume
+    updateFromParsedResume,
+    convertToBlockFormat
   };
 
   return (
