@@ -10,6 +10,7 @@ import { useResumes } from "@/hooks/useResumes";
 import { useAuth } from "@/hooks/useAuth";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { parseResume, type ParsedResume } from "@/lib/resumeParser";
+import { useProfessionalData, type ParsedResumeData } from "@/hooks/useProfessionalData";
 
 interface UploadedResume {
   id: string;
@@ -25,7 +26,7 @@ const GettingStarted = () => {
   const [uploadedResumes, setUploadedResumes] = useState<UploadedResume[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [currentStep, setCurrentStep] = useState<"upload" | "preview" | "confirm">("upload");
-  const { saveResume, uploading } = useResumes();
+  const { saveParsedResumeData, saving } = useProfessionalData();
   const { user } = useAuth();
   const { updateFromParsedResume } = useResumeData();
 
@@ -152,22 +153,29 @@ const GettingStarted = () => {
       return;
     }
 
-    // Save all completed resumes to the database
+    // Save all completed resumes to the database using new normalized structure
     const savePromises = completedResumes.map(resume => {
       if (resume.parsedData) {
-        return saveResume({
-          name: resume.name.replace(/\.[^/.]+$/, ""), // Remove file extension
-          content: resume.parsedData,
-          source_file: resume.name,
-          imported_from: 'Getting Started'
-        }, resume.file);
+        return saveParsedResumeData(
+          resume.parsedData as ParsedResumeData,
+          resume.file,
+          resume.name.replace(/\.[^/.]+$/, "") // Remove file extension
+        );
       }
-      return Promise.resolve(null);
+      return Promise.resolve(false);
     });
 
     try {
-      await Promise.all(savePromises);
-      toast.success("Your resumes have been imported successfully!");
+      const results = await Promise.all(savePromises);
+      const successCount = results.filter(Boolean).length;
+      
+      if (successCount === completedResumes.length) {
+        toast.success("Your professional data has been imported successfully!");
+      } else if (successCount > 0) {
+        toast.success(`${successCount} of ${completedResumes.length} resumes imported successfully!`);
+      } else {
+        toast.error("Failed to import resume data. Please try again.");
+      }
     } catch (error) {
       toast.error("Some resumes failed to save. Please try again.");
     }
