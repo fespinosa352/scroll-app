@@ -410,41 +410,78 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   console.log('Final experience section to parse:', experienceSection.substring(0, 300));
   
-  // Parse job entries - improved splitting strategies
-  let jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  // Parse job entries - improved splitting strategies for resume format
+  console.log('Raw experience section for splitting:', experienceSection.substring(0, 500));
   
-  // If we don't get good entries, try other splitting methods
-  if (jobEntries.length < 2) {
-    // Try splitting by job title patterns (company names followed by positions)
-    const jobTitleSplitPattern = /(?=\b[A-Z][a-zA-Z\s&.,]+(Inc|Corp|Corporation|Company|Ltd|LLC|Group|Systems|Technologies|Solutions)\b)/i;
-    const titleSplitEntries = experienceSection.split(jobTitleSplitPattern).filter(entry => entry.trim().length > 0);
+  // First try: Split by company names (look for standalone company lines)
+  const sectionLines = experienceSection.split('\n');
+  const companyPattern = /^[A-Z][a-zA-Z\s&'.,]+(Inc\.|Corp\.|Corporation|Company|Ltd\.|LLC|Group|Systems|Technologies|Solutions)?$/;
+  
+  let jobEntries: string[] = [];
+  let currentEntry = '';
+  let foundCompanyStart = false;
+  
+  for (let i = 0; i < sectionLines.length; i++) {
+    const line = sectionLines[i].trim();
     
-    if (titleSplitEntries.length > jobEntries.length) {
-      jobEntries = titleSplitEntries;
-      console.log('Used job title splitting, found', jobEntries.length, 'entries');
+    // Check if this looks like a company name (standalone line, title case)
+    const isCompanyLine = (
+      line.length > 3 && line.length < 60 && // Reasonable company name length
+      !line.includes(':') && // Not a bullet point or description
+      !line.includes('•') && // Not a bullet
+      !line.includes('-') && // Not a date range in middle
+      (companyPattern.test(line) || // Matches company pattern
+       (line.match(/^[A-Z][a-zA-Z\s&'.,]+$/) && !line.includes('Director') && !line.includes('Manager'))) // Title case, not job title
+    );
+    
+    if (isCompanyLine && foundCompanyStart && currentEntry.trim()) {
+      // We hit a new company, save the previous entry
+      jobEntries.push(currentEntry.trim());
+      currentEntry = line + '\n';
+    } else if (isCompanyLine && !foundCompanyStart) {
+      // First company found
+      foundCompanyStart = true;
+      currentEntry = line + '\n';
     } else {
-      // Try splitting by years
-      const yearPattern = /\b(19|20)\d{2}\b/;
-      const yearSplitEntries = [];
-      let currentEntry = '';
-      
-      const sectionLines = experienceSection.split('\n');
-      for (const line of sectionLines) {
-        if (yearPattern.test(line) && currentEntry.trim()) {
-          yearSplitEntries.push(currentEntry.trim());
-          currentEntry = line;
-        } else {
-          currentEntry += line + '\n';
-        }
+      // Add line to current entry
+      currentEntry += line + '\n';
+    }
+  }
+  
+  // Don't forget the last entry
+  if (currentEntry.trim()) {
+    jobEntries.push(currentEntry.trim());
+  }
+  
+  console.log('After company-based splitting, found', jobEntries.length, 'entries');
+  
+  // If that didn't work well, try splitting by empty lines (traditional resume format)
+  if (jobEntries.length < 2) {
+    jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 50); // Minimum length for job entry
+    console.log('Used empty line splitting, found', jobEntries.length, 'entries');
+  }
+  
+  // If still not working, try splitting by date patterns (job title lines)
+  if (jobEntries.length < 2) {
+    const dateSplitEntries = [];
+    let currentEntry = '';
+    
+    for (const line of sectionLines) {
+      // Look for lines that contain job titles with dates
+      if (/\b(19|20)\d{2}\b.*(?:present|current|\d{4})/i.test(line) && currentEntry.trim()) {
+        dateSplitEntries.push(currentEntry.trim());
+        currentEntry = line + '\n';
+      } else {
+        currentEntry += line + '\n';
       }
-      if (currentEntry.trim()) {
-        yearSplitEntries.push(currentEntry.trim());
-      }
-      
-      if (yearSplitEntries.length > jobEntries.length) {
-        jobEntries = yearSplitEntries;
-        console.log('Used year-based splitting, found', jobEntries.length, 'entries');
-      }
+    }
+    if (currentEntry.trim()) {
+      dateSplitEntries.push(currentEntry.trim());
+    }
+    
+    if (dateSplitEntries.length > jobEntries.length) {
+      jobEntries = dateSplitEntries;
+      console.log('Used date-based splitting, found', jobEntries.length, 'entries');
     }
   }
   
@@ -455,8 +492,8 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   for (const entry of jobEntries) {
     const lines = entry.split('\n').filter(line => line.trim().length > 0);
-    if (lines.length < 2) {
-      console.log('Skipping entry - too few lines:', entry.substring(0, 50));
+    if (lines.length < 1 || entry.trim().length < 30) {
+      console.log('Skipping entry - too short or no content:', entry.substring(0, 50));
       continue;
     }
     
@@ -478,30 +515,70 @@ function extractExperience(text: string): ParsedResume['experience'] {
     let duration = '';
     const achievements: string[] = [];
     
-    // Enhanced patterns for different resume formats
-    const titleCompanyPatterns = [
-      /(.+?)\s+at\s+(.+)/i,  // "Senior Developer at Google"
-      /(.+?)\s*-\s*(.+)/i,   // "Senior Developer - Google"
-      /(.+?)\s*\|\s*(.+)/i,  // "Senior Developer | Google"
-      /(.+?)\s*,\s*(.+)/i    // "Senior Developer, Google"
-    ];
-    
-    let foundMatch = false;
-    for (const pattern of titleCompanyPatterns) {
-      const match = lines[0].match(pattern);
-      if (match && !match[2].match(/\d{4}/)) { // Don't match if second group contains years
-        title = match[1].trim();
-        company = match[2].trim();
-        foundMatch = true;
+    // Try to find company name first (usually appears early in the entry)
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      const line = lines[i].trim();
+      // Look for lines that look like company names
+      if (line.length > 3 && line.length < 60 && 
+          !line.includes(':') && !line.includes('•') &&
+          !line.match(/\b(19|20)\d{2}\b/) && // No years
+          (line.match(/^[A-Z][a-zA-Z\s&'.,]+(Inc\.|Corp\.|Corporation|Company|Ltd\.|LLC|Group|Systems|Technologies|Solutions)?$/) ||
+           line.match(/^[A-Z][a-zA-Z\s&'.,]+$/))) {
+        company = line;
         break;
       }
     }
     
-    if (!foundMatch) {
-      // Assume first line is title, second line is company
-      title = lines[0].trim();
-      if (lines.length > 1 && !lines[1].match(/\d{4}/)) {
-        company = lines[1].trim();
+    // Try to find job title (usually has words like Director, Manager, etc.)
+    for (let i = 0; i < Math.min(4, lines.length); i++) {
+      const line = lines[i].trim();
+      if (line !== company && 
+          (line.toLowerCase().includes('director') || 
+           line.toLowerCase().includes('manager') || 
+           line.toLowerCase().includes('lead') ||
+           line.toLowerCase().includes('senior') ||
+           line.toLowerCase().includes('engineer') ||
+           line.toLowerCase().includes('consultant') ||
+           line.toLowerCase().includes('analyst') ||
+           line.toLowerCase().includes('specialist') ||
+           line.toLowerCase().includes('coordinator') ||
+           line.toLowerCase().includes('coach'))) {
+        // Extract just the title part (before any dates)
+        const titleMatch = line.match(/^([^-]+?)(?:\s*-\s*\d{4}|$)/);
+        if (titleMatch) {
+          title = titleMatch[1].trim();
+        } else {
+          title = line.trim();
+        }
+        break;
+      }
+    }
+    
+    // Fallback: if we didn't find title/company using patterns above
+    if (!title && !company) {
+      // Enhanced patterns for different resume formats
+      const titleCompanyPatterns = [
+        /(.+?)\s+at\s+(.+)/i,  // "Senior Developer at Google"
+        /(.+?)\s*-\s*(.+)/i,   // "Senior Developer - Google"
+        /(.+?)\s*\|\s*(.+)/i,  // "Senior Developer | Google"
+        /(.+?)\s*,\s*(.+)/i    // "Senior Developer, Google"
+      ];
+      
+      for (const pattern of titleCompanyPatterns) {
+        const match = lines[0].match(pattern);
+        if (match && !match[2].match(/\d{4}/)) { // Don't match if second group contains years
+          title = match[1].trim();
+          company = match[2].trim();
+          break;
+        }
+      }
+      
+      // Last resort: first line as title, second as company
+      if (!title) {
+        title = lines[0].trim();
+        if (lines.length > 1 && !lines[1].match(/\d{4}/)) {
+          company = lines[1].trim();
+        }
       }
     }
     
