@@ -1,7 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { WorkExperienceWithBlocks, BlockSection, Block, ResumeSection, DraggableBlock } from '@/types/blocks';
 import type { ResumeVersion } from '@/hooks/useResumeVersions';
 import { useResumes } from '@/hooks/useResumes';
+import { useWorkExperience } from '@/hooks/useWorkExperience';
+import { useEducation } from '@/hooks/useEducation';
+import { useCertifications } from '@/hooks/useCertifications';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface WorkExperience {
@@ -84,14 +88,78 @@ interface ResumeDataProviderProps {
 }
 
 export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children }) => {
+  const { user } = useAuth();
+  const { workExperiences, loading: workExpLoading } = useWorkExperience();
+  const { education, loading: educationLoading } = useEducation();
+  const { certifications, loading: certificationsLoading } = useCertifications();
+  
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
   const [workExperienceBlocks, setWorkExperienceBlocks] = useState<WorkExperienceWithBlocks[]>([]);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
-  const [education, setEducation] = useState<Education[]>([]);
-  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [localEducation, setLocalEducation] = useState<Education[]>([]);
+  const [localCertifications, setLocalCertifications] = useState<Certification[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [currentEditingResume, setCurrentEditingResume] = useState<ResumeVersion | null>(null);
   const [resumeSections, setResumeSections] = useState<ResumeSection[]>([]);
+
+  // Convert database education to legacy format
+  useEffect(() => {
+    if (education && education.length > 0) {
+      const convertedEducation: Education[] = education.map(edu => ({
+        id: edu.id,
+        institution: edu.institution,
+        degree: edu.degree,
+        fieldOfStudy: edu.field_of_study || '',
+        startDate: edu.start_date || '',
+        endDate: edu.end_date || '',
+        gpa: edu.gpa?.toString() || '',
+        isCurrentlyEnrolled: false // Database doesn't track this currently
+      }));
+      setLocalEducation(convertedEducation);
+    }
+  }, [education]);
+
+  // Convert database certifications to legacy format
+  useEffect(() => {
+    if (certifications && certifications.length > 0) {
+      const convertedCertifications: Certification[] = certifications.map(cert => ({
+        id: cert.id,
+        name: cert.name,
+        issuer: cert.issuing_organization,
+        issueDate: cert.issue_date || '',
+        expiryDate: cert.expiration_date || '',
+        credentialId: cert.credential_id || '',
+        credentialUrl: cert.credential_url || '',
+        doesNotExpire: !cert.expiration_date
+      }));
+      setLocalCertifications(convertedCertifications);
+    }
+  }, [certifications]);
+
+  // Convert database work experiences to legacy format for backward compatibility
+  useEffect(() => {
+    if (workExperiences && workExperiences.length > 0) {
+      const convertedExperiences: WorkExperience[] = workExperiences.map(exp => ({
+        id: exp.id,
+        company: exp.company_id ? 'Unknown Company' : exp.title, // Will need company lookup
+        position: exp.title,
+        startDate: exp.start_date || '',
+        endDate: exp.end_date || '',
+        description: exp.description || '',
+        isCurrentRole: exp.is_current || false,
+        skills: [] // Will need to fetch from skills_experience table
+      }));
+      setWorkExperience(convertedExperiences);
+    }
+  }, [workExperiences]);
+
+  // Convert to block format when work experiences change
+  useEffect(() => {
+    if (workExperiences && workExperiences.length > 0) {
+      const blockExperiences = convertToBlockFormat(workExperience);
+      setWorkExperienceBlocks(blockExperiences);
+    }
+  }, [workExperience]);
 
   const updateFromParsedResume = (parsedData: any) => {
     console.log('Updating resume data from parsed resume:', parsedData);
@@ -137,7 +205,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         isCurrentlyEnrolled: false
       }));
       
-      setEducation(convertedEducation);
+      setLocalEducation(convertedEducation);
       console.log('Converted education:', convertedEducation);
     }
 
@@ -154,7 +222,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         doesNotExpire: !cert.expiryDate
       }));
       
-      setCertifications(convertedCertifications);
+      setLocalCertifications(convertedCertifications);
       console.log('Converted certifications:', convertedCertifications);
     }
 
@@ -416,16 +484,16 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     workExperience,
     workExperienceBlocks,
     personalInfo,
-    education,
-    certifications,
+    education: localEducation,
+    certifications: localCertifications,
     skills,
     currentEditingResume,
     resumeSections,
     setWorkExperience,
     setWorkExperienceBlocks,
     setPersonalInfo,
-    setEducation,
-    setCertifications,
+    setEducation: setLocalEducation,
+    setCertifications: setLocalCertifications,
     setSkills,
     setCurrentEditingResume,
     setResumeSections,
