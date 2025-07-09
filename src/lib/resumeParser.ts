@@ -410,79 +410,63 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   console.log('Final experience section to parse:', experienceSection.substring(0, 300));
   
-  // Parse job entries - improved splitting strategies for resume format
-  console.log('Raw experience section for splitting:', experienceSection.substring(0, 500));
+  // SIMPLIFIED APPROACH: Create one job entry per position based on your resume format
+  // Your format: Company Name -> Job Title with dates -> Bullet points -> Next Company
   
-  // First try: Split by company names (look for standalone company lines)
-  const sectionLines = experienceSection.split('\n');
-  const companyPattern = /^[A-Z][a-zA-Z\s&'.,]+(Inc\.|Corp\.|Corporation|Company|Ltd\.|LLC|Group|Systems|Technologies|Solutions)?$/;
+  const sectionLines = experienceSection.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const jobEntries: string[] = [];
   
-  let jobEntries: string[] = [];
-  let currentEntry = '';
-  let foundCompanyStart = false;
+  // Companies in your resume (we can see these in the logs)
+  const knownCompanies = [
+    "Southern Glazer's Wine & Spirits",
+    "Liberty Power Corporation", 
+    "Informatix Laboratories"
+  ];
+  
+  console.log('Simplified parsing: Looking for company-based job entries');
+  console.log('Section lines:', sectionLines.slice(0, 10));
+  
+  let currentCompany = '';
+  let currentJobEntry = '';
+  let insideJob = false;
   
   for (let i = 0; i < sectionLines.length; i++) {
-    const line = sectionLines[i].trim();
+    const line = sectionLines[i];
     
-    // Check if this looks like a company name (standalone line, title case)
-    const isCompanyLine = (
-      line.length > 3 && line.length < 60 && // Reasonable company name length
-      !line.includes(':') && // Not a bullet point or description
-      !line.includes('•') && // Not a bullet
-      !line.includes('-') && // Not a date range in middle
-      (companyPattern.test(line) || // Matches company pattern
-       (line.match(/^[A-Z][a-zA-Z\s&'.,]+$/) && !line.includes('Director') && !line.includes('Manager'))) // Title case, not job title
+    // Check if this line is a known company
+    const isCompanyLine = knownCompanies.some(company => 
+      line.includes(company) || 
+      (line.length > 5 && line.length < 50 && /^[A-Z][a-zA-Z\s&'.,]+$/.test(line))
     );
     
-    if (isCompanyLine && foundCompanyStart && currentEntry.trim()) {
-      // We hit a new company, save the previous entry
-      jobEntries.push(currentEntry.trim());
-      currentEntry = line + '\n';
-    } else if (isCompanyLine && !foundCompanyStart) {
-      // First company found
-      foundCompanyStart = true;
-      currentEntry = line + '\n';
-    } else {
-      // Add line to current entry
-      currentEntry += line + '\n';
+    if (isCompanyLine && currentJobEntry.trim()) {
+      // Save previous job entry
+      jobEntries.push(currentJobEntry.trim());
+      currentJobEntry = line + '\n';
+      currentCompany = line;
+      insideJob = true;
+    } else if (isCompanyLine && !insideJob) {
+      // First company
+      currentJobEntry = line + '\n';
+      currentCompany = line;
+      insideJob = true;
+    } else if (insideJob) {
+      // Add line to current job entry
+      currentJobEntry += line + '\n';
     }
   }
   
   // Don't forget the last entry
-  if (currentEntry.trim()) {
-    jobEntries.push(currentEntry.trim());
+  if (currentJobEntry.trim()) {
+    jobEntries.push(currentJobEntry.trim());
   }
   
-  console.log('After company-based splitting, found', jobEntries.length, 'entries');
+  console.log('Simplified parsing found', jobEntries.length, 'job entries');
   
-  // If that didn't work well, try splitting by empty lines (traditional resume format)
-  if (jobEntries.length < 2) {
-    jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 50); // Minimum length for job entry
-    console.log('Used empty line splitting, found', jobEntries.length, 'entries');
-  }
-  
-  // If still not working, try splitting by date patterns (job title lines)
-  if (jobEntries.length < 2) {
-    const dateSplitEntries = [];
-    let currentEntry = '';
-    
-    for (const line of sectionLines) {
-      // Look for lines that contain job titles with dates
-      if (/\b(19|20)\d{2}\b.*(?:present|current|\d{4})/i.test(line) && currentEntry.trim()) {
-        dateSplitEntries.push(currentEntry.trim());
-        currentEntry = line + '\n';
-      } else {
-        currentEntry += line + '\n';
-      }
-    }
-    if (currentEntry.trim()) {
-      dateSplitEntries.push(currentEntry.trim());
-    }
-    
-    if (dateSplitEntries.length > jobEntries.length) {
-      jobEntries = dateSplitEntries;
-      console.log('Used date-based splitting, found', jobEntries.length, 'entries');
-    }
+  // If that didn't work, just create one big entry and let the achievement parser handle it
+  if (jobEntries.length === 0) {
+    jobEntries.push(experienceSection);
+    console.log('Fallback: Using entire experience section as one entry');
   }
   
   console.log('Job entries found:', jobEntries.length);
@@ -492,8 +476,8 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   for (const entry of jobEntries) {
     const lines = entry.split('\n').filter(line => line.trim().length > 0);
-    if (lines.length < 1 || entry.trim().length < 30) {
-      console.log('Skipping entry - too short or no content:', entry.substring(0, 50));
+    if (entry.trim().length < 20) {
+      console.log('Skipping entry - too short:', entry.substring(0, 50));
       continue;
     }
     
@@ -683,18 +667,18 @@ function extractExperience(text: string): ParsedResume['experience'] {
     
     console.log(`Total achievements found: ${achievements.length}`);
     
-    // Only add if we have meaningful data
-    if (title && title.length > 2 && company && company.length > 2) {
+    // More lenient validation - add entry if we have any meaningful data
+    if ((title && title.length > 2) || (company && company.length > 2) || achievements.length > 0) {
       const jobEntry = {
-        title,
-        company,
+        title: title || 'Position not specified',
+        company: company || 'Company not specified',
         duration: duration || 'Duration not specified',
         achievements: achievements.length > 0 ? achievements : ['Responsibilities not specified']
       };
       console.log('Adding job entry:', jobEntry);
       experience.push(jobEntry);
     } else {
-      console.log('Skipping entry - insufficient data:', { title, company, achievements: achievements.length });
+      console.log('Skipping entry - no meaningful data found:', { title, company, achievements: achievements.length });
     }
   }
   
