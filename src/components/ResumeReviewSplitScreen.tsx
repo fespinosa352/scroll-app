@@ -72,21 +72,62 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
     
     const blocks: DraggableResumeBlock[] = [];
 
-    // Experience blocks
-    parsedData.experience?.forEach((exp, index) => {
-      console.log(`Adding experience block ${index}:`, exp);
-      blocks.push({
-        id: `exp-${index}-${Date.now()}`,
-        type: 'experience',
-        title: `${exp.title} at ${exp.company}`,
-        content: `${exp.duration} • ${exp.achievements.slice(0, 2).join(' • ')}`,
-        section: 'experience',
-        metadata: { 
-          originalData: exp,
-          company: exp.company,
-          title: exp.title,
-          duration: exp.duration,
-          achievements: exp.achievements
+    // Experience blocks - Create separate blocks for each achievement
+    parsedData.experience?.forEach((exp, expIndex) => {
+      console.log(`Adding experience blocks for ${exp.company}:`, exp);
+      
+      // Create individual blocks for each achievement
+      exp.achievements.forEach((achievement, achIndex) => {
+        // Clean up the achievement text and split if it was consolidated
+        const cleanAchievement = achievement.trim();
+        
+        // Check if this achievement was consolidated (contains multiple sentences)
+        // Handle the ".." pattern and proper sentence splitting
+        let sentences = cleanAchievement
+          .split(/\.\.\s*/) // Split on ".." first
+          .flatMap(part => part.split(/\.\s+(?=[A-Z])/)) // Then split on ". " followed by capital letter
+          .map(sentence => sentence.trim())
+          .filter(sentence => sentence.length > 15);
+        
+        if (sentences.length > 1) {
+          // This achievement contains multiple consolidated achievements, split them
+          sentences.forEach((sentence, sentIndex) => {
+            const finalSentence = sentence.trim();
+            if (finalSentence.length > 15) {
+              blocks.push({
+                id: `exp-${expIndex}-${achIndex}-${sentIndex}-${Date.now()}`,
+                type: 'experience',
+                title: `${exp.title} at ${exp.company}`,
+                content: finalSentence + (finalSentence.endsWith('.') ? '' : '.'),
+                section: 'experience',
+                metadata: { 
+                  originalData: exp,
+                  company: exp.company,
+                  title: exp.title,
+                  duration: exp.duration,
+                  achievement: finalSentence,
+                  isIndividualAchievement: true
+                }
+              });
+            }
+          });
+        } else {
+          // Single achievement, create one block
+          blocks.push({
+            id: `exp-${expIndex}-${achIndex}-${Date.now()}`,
+            type: 'experience',
+            title: `${exp.title} at ${exp.company}`,
+            content: cleanAchievement,
+            section: 'experience',
+            metadata: { 
+              originalData: exp,
+              company: exp.company,
+              title: exp.title,
+              duration: exp.duration,
+              achievement: cleanAchievement,
+              isIndividualAchievement: true
+            }
+          });
         }
       });
     });
@@ -250,7 +291,42 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
         break;
       
       case 'experience':
-        if (block.metadata?.originalData) {
+        if (block.metadata?.isIndividualAchievement) {
+          // Handle individual achievement blocks
+          const achievement = block.metadata.achievement;
+          const company = block.metadata.company;
+          const title = block.metadata.title;
+          const duration = block.metadata.duration;
+          
+          // Check if we already have an entry for this company/title combination
+          const existingIndex = workExperience.findIndex(exp => 
+            exp.company === company && exp.position === title
+          );
+          
+          if (existingIndex >= 0) {
+            // Add to existing entry
+            const updatedExperience = [...workExperience];
+            const currentDesc = updatedExperience[existingIndex].description;
+            updatedExperience[existingIndex].description = currentDesc 
+              ? `${currentDesc}\n• ${achievement}`
+              : `• ${achievement}`;
+            setWorkExperience(updatedExperience);
+          } else {
+            // Create new entry
+            const newExp = {
+              id: `parsed-${Date.now()}`,
+              company,
+              position: title,
+              startDate: convertDateFormat(duration?.split(' - ')[0] || ''),
+              endDate: convertDateFormat(duration?.split(' - ')[1] || ''),
+              description: `• ${achievement}`,
+              isCurrentRole: duration?.includes('Present') || false,
+              skills: []
+            };
+            setWorkExperience([...workExperience, newExp]);
+          }
+        } else if (block.metadata?.originalData) {
+          // Handle legacy format
           const exp = block.metadata.originalData;
           const newExp = {
             id: `parsed-${Date.now()}`,
