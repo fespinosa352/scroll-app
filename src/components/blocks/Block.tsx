@@ -136,8 +136,8 @@ export const Block: React.FC<BlockProps> = ({
             onKeyDown={handleKeyDown}
             onBlur={onEndEdit}
             placeholder={getPlaceholder()}
-            className="border-none p-0 resize-none focus:ring-0 min-h-[1.5rem]"
-            rows={1}
+            className="border-none p-0 resize-none focus:ring-0 min-h-[3rem] w-full"
+            rows={Math.max(3, Math.ceil(localContent.length / 80))}
           />
         );
       }
@@ -219,6 +219,7 @@ export const Block: React.FC<BlockProps> = ({
         "group relative",
         isDraggable && "cursor-move",
         isHovered && "bg-slate-50",
+        isEditing && "bg-blue-50 border border-blue-200 shadow-sm",
         "rounded p-2 transition-colors"
       )}
       onMouseEnter={() => setIsHovered(true)}
