@@ -856,12 +856,14 @@ export async function parseResume(file: File): Promise<ParsedResume> {
   
   try {
     // Extract text based on file type
-    if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    if (file.type === 'application/pdf') {
+      text = await extractTextFromPDF(file);
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       text = await extractTextFromDOCX(file);
     } else if (file.type === 'application/msword') {
       text = await extractTextFromDOC(file);
     } else {
-      throw new Error(`Unsupported file type: ${file.type}. Please upload DOC or DOCX files only.`);
+      throw new Error(`Unsupported file type: ${file.type}. Please upload PDF, DOC, or DOCX files.`);
     }
     
     if (!text || text.trim().length === 0) {
