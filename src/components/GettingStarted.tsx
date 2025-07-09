@@ -81,9 +81,18 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
             // Update the shared resume data context
             updateFromParsedResume(parsedData);
 
-            // Auto-advance to review step when parsing is complete
-            setCurrentStep("review");
-            toast.success("AI extraction complete! Review your achievements below.");
+            // Save parsed data to database
+            const saveSuccess = await saveParsedResumeData(parsedData, resume.file, resume.name);
+            
+            if (saveSuccess) {
+              // Auto-advance to review step when parsing is complete
+              setCurrentStep("review");
+              toast.success("AI extraction complete! Data saved to your profile. Review below.");
+            } else {
+              // Still allow review even if save failed
+              setCurrentStep("review");
+              toast.warning("AI extraction complete but failed to save to database. Please review and save manually.");
+            }
           } catch (error) {
             console.error('Error parsing resume:', error);
             setUploadedResumes(prev => 
@@ -98,7 +107,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
         }, 1000);
       }, 500);
     });
-  }, [updateFromParsedResume]);
+  }, [updateFromParsedResume, saveParsedResumeData]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
