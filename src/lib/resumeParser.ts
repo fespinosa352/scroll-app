@@ -342,7 +342,7 @@ function extractExperience(text: string): ParsedResume['experience'] {
       }
     }
     
-    // Method 2: Look for lines with years and potential job words
+    // Method 2: Look for lines with years and potential job words (but exclude header info)
     if (!foundJobPatterns) {
       const jobWords = [
         'manager', 'director', 'engineer', 'developer', 'analyst', 'specialist', 
@@ -358,7 +358,19 @@ function extractExperience(text: string): ParsedResume['experience'] {
         );
         const hasCompanyIndicators = /\b(inc|corp|corporation|company|ltd|llc|group|systems|technologies|solutions)\b/i.test(line);
         
-        return hasYear || hasJobWords || hasCompanyIndicators;
+        // Exclude header information and LinkedIn/contact info
+        const isHeaderInfo = (
+          line.toLowerCase().includes('linkedin') ||
+          line.toLowerCase().includes('email') ||
+          line.toLowerCase().includes('phone') ||
+          line.toLowerCase().includes('address') ||
+          line.includes('@') ||
+          line.includes('http') ||
+          line.includes('www.') ||
+          /^\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s*$/.test(line.trim()) // Likely a name
+        );
+        
+        return (hasYear || hasJobWords || hasCompanyIndicators) && !isHeaderInfo;
       });
       
       if (potentialJobLines.length > 0) {
@@ -388,31 +400,41 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   console.log('Final experience section to parse:', experienceSection.substring(0, 300));
   
-  // Parse job entries - multiple splitting strategies
+  // Parse job entries - improved splitting strategies
   let jobEntries = experienceSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
   
   // If we don't get good entries, try other splitting methods
   if (jobEntries.length < 2) {
-    // Try splitting by years
-    const yearPattern = /\b(19|20)\d{2}\b/;
-    const yearSplitEntries = [];
-    let currentEntry = '';
+    // Try splitting by job title patterns (company names followed by positions)
+    const jobTitleSplitPattern = /(?=\b[A-Z][a-zA-Z\s&.,]+(Inc|Corp|Corporation|Company|Ltd|LLC|Group|Systems|Technologies|Solutions)\b)/i;
+    const titleSplitEntries = experienceSection.split(jobTitleSplitPattern).filter(entry => entry.trim().length > 0);
     
-    for (const line of lines) {
-      if (yearPattern.test(line) && currentEntry.trim()) {
-        yearSplitEntries.push(currentEntry.trim());
-        currentEntry = line;
-      } else {
-        currentEntry += line + '\n';
+    if (titleSplitEntries.length > jobEntries.length) {
+      jobEntries = titleSplitEntries;
+      console.log('Used job title splitting, found', jobEntries.length, 'entries');
+    } else {
+      // Try splitting by years
+      const yearPattern = /\b(19|20)\d{2}\b/;
+      const yearSplitEntries = [];
+      let currentEntry = '';
+      
+      const sectionLines = experienceSection.split('\n');
+      for (const line of sectionLines) {
+        if (yearPattern.test(line) && currentEntry.trim()) {
+          yearSplitEntries.push(currentEntry.trim());
+          currentEntry = line;
+        } else {
+          currentEntry += line + '\n';
+        }
       }
-    }
-    if (currentEntry.trim()) {
-      yearSplitEntries.push(currentEntry.trim());
-    }
-    
-    if (yearSplitEntries.length > jobEntries.length) {
-      jobEntries = yearSplitEntries;
-      console.log('Used year-based splitting, found', jobEntries.length, 'entries');
+      if (currentEntry.trim()) {
+        yearSplitEntries.push(currentEntry.trim());
+      }
+      
+      if (yearSplitEntries.length > jobEntries.length) {
+        jobEntries = yearSplitEntries;
+        console.log('Used year-based splitting, found', jobEntries.length, 'entries');
+      }
     }
   }
   
@@ -425,6 +447,18 @@ function extractExperience(text: string): ParsedResume['experience'] {
     const lines = entry.split('\n').filter(line => line.trim().length > 0);
     if (lines.length < 2) {
       console.log('Skipping entry - too few lines:', entry.substring(0, 50));
+      continue;
+    }
+    
+    // Skip entries that are clearly header/contact information
+    const firstLine = lines[0].trim();
+    if (firstLine.toLowerCase().includes('linkedin') ||
+        firstLine.toLowerCase().includes('email') ||
+        firstLine.includes('@') ||
+        firstLine.includes('http') ||
+        firstLine.includes('www.') ||
+        /^\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s*$/.test(firstLine)) { // Just a name
+      console.log('Skipping entry - appears to be header/contact info:', firstLine);
       continue;
     }
     
@@ -498,39 +532,69 @@ function extractExperience(text: string): ParsedResume['experience'] {
       duration = 'Present';
     }
     
-    // Enhanced achievement extraction
+    // Enhanced achievement extraction with better bullet point handling
     const actionWords = [
       'Led', 'Managed', 'Developed', 'Implemented', 'Increased', 'Decreased', 
       'Improved', 'Created', 'Built', 'Designed', 'Achieved', 'Delivered',
       'Established', 'Coordinated', 'Supervised', 'Maintained', 'Optimized',
       'Streamlined', 'Enhanced', 'Reduced', 'Generated', 'Executed',
-      'Collaborated', 'Facilitated', 'Oversaw', 'Spearheaded', 'Launched'
+      'Collaborated', 'Facilitated', 'Oversaw', 'Spearheaded', 'Launched',
+      'Developed', 'Established', 'Performed', 'Conducted', 'Analyzed',
+      'Researched', 'Trained', 'Mentored', 'Supported', 'Assisted'
     ];
+    
+    console.log(`Processing ${lines.length} lines for achievements in entry: "${title}" at "${company}"`);
     
     for (const line of lines) {
       const trimmed = line.trim();
       
-      // Skip lines that are likely titles, companies, or dates
+      // Skip lines that are likely titles, companies, dates, or too short
       if (trimmed === title || trimmed === company || 
           /\b(19|20)\d{2}\b/.test(trimmed) ||
-          trimmed.length < 10) {
+          trimmed.length < 10 ||
+          // Skip header-like information
+          trimmed.toLowerCase().includes('linkedin') ||
+          trimmed.toLowerCase().includes('email') ||
+          trimmed.includes('@') ||
+          trimmed.includes('http')) {
+        console.log(`Skipping line (header/meta): "${trimmed}"`);
         continue;
       }
       
-      // Check for bullet points or action words
+      // Check for explicit bullet points first
       if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') ||
-          trimmed.startsWith('→') || trimmed.startsWith('▪') ||
-          actionWords.some(word => trimmed.startsWith(word))) {
-        const cleanedAchievement = trimmed.replace(/^[•\-*→▪]\s*/, '');
+          trimmed.startsWith('→') || trimmed.startsWith('▪') || trimmed.startsWith('◦') ||
+          trimmed.startsWith('‣') || trimmed.startsWith('○')) {
+        const cleanedAchievement = trimmed.replace(/^[•\-*→▪◦‣○]\s*/, '');
         if (cleanedAchievement.length > 10) {
           achievements.push(cleanedAchievement);
+          console.log(`Added bullet achievement: "${cleanedAchievement}"`);
         }
       }
-      // Also include lines that look like achievements (contain numbers, percentages, etc.)
-      else if (/\d+%|\$\d+|\d+\+|increased|improved|reduced|generated/i.test(trimmed) && trimmed.length > 15) {
+      // Check for lines that start with action words
+      else if (actionWords.some(word => trimmed.startsWith(word))) {
         achievements.push(trimmed);
+        console.log(`Added action word achievement: "${trimmed}"`);
+      }
+      // Check for lines that look like achievements (contain metrics, impact words, etc.)
+      else if (/\d+%|\$\d+|\d+\+|increased|improved|reduced|generated|achieved|delivered|completed|successful/i.test(trimmed) && 
+               trimmed.length > 15 && 
+               !trimmed.match(/^[A-Z\s]+$/)) { // Not all caps (likely not a section header)
+        achievements.push(trimmed);
+        console.log(`Added metric achievement: "${trimmed}"`);
+      }
+      // For remaining lines, check if they look like achievement content
+      else if (trimmed.length > 20 && 
+               !trimmed.match(/^[A-Z\s]+$/) && // Not all caps
+               !trimmed.includes('•') && // Not already a bullet
+               trimmed.includes(' ') && // Contains spaces (sentence-like)
+               trimmed.split(' ').length > 3) { // More than 3 words
+        achievements.push(trimmed);
+        console.log(`Added general achievement: "${trimmed}"`);
       }
     }
+    
+    console.log(`Total achievements found: ${achievements.length}`);
     
     // Only add if we have meaningful data
     if (title && title.length > 2 && company && company.length > 2) {
