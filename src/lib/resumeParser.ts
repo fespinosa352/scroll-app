@@ -249,24 +249,34 @@ function extractExperience(text: string): ParsedResume['experience'] {
     const line = lines[i].trim();
     const upperLine = line.toUpperCase();
     
-    // Enhanced header detection with more flexible matching
+    // Enhanced header detection - must be a short, standalone header line
     const headerFound = experienceHeaders.some(header => {
       // Exact match
       if (upperLine === header) {
         console.log(`Found exact experience header "${header}" in line ${i}: "${line}"`);
         return true;
       }
-      // Contains match (but ensure it's not within a sentence)
-      if (upperLine.includes(header) && 
-          (upperLine.startsWith(header) || upperLine.endsWith(header) || 
-           upperLine === header || upperLine.match(new RegExp(`\\b${header}\\b`)))) {
-        console.log(`Found experience header "${header}" in line ${i}: "${line}"`);
-        return true;
-      }
-      // Partial match for multi-word headers
+      // For multi-word headers like "PROFESSIONAL EXPERIENCE", check if line contains all words and is header-like
       if (header.includes(' ') && header.split(' ').every(word => upperLine.includes(word))) {
-        console.log(`Found multi-word experience header "${header}" in line ${i}: "${line}"`);
-        return true;
+        // Must be a short line (likely a header, not a paragraph)
+        if (line.length < 80 && 
+            !line.includes('.') && // Headers don't end with periods
+            !line.includes(',') && // Headers don't have commas typically
+            upperLine === upperLine.trim()) { // No extra whitespace issues
+          console.log(`Found multi-word experience header "${header}" in line ${i}: "${line}"`);
+          return true;
+        }
+      }
+      // Single word headers - must be standalone and header-like
+      if (!header.includes(' ') && upperLine.includes(header)) {
+        // Make sure it's not embedded in a sentence (like summary text)
+        if (line.length < 50 && // Short line
+            !line.includes('.') && // No periods
+            !line.includes(',') && // No commas
+            upperLine.split(' ').length <= 3) { // Max 3 words for a header
+          console.log(`Found single-word experience header "${header}" in line ${i}: "${line}"`);
+          return true;
+        }
       }
       return false;
     });
