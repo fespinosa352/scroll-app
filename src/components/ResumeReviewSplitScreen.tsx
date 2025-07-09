@@ -65,51 +65,6 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
   const [availableBlocks, setAvailableBlocks] = useState<DraggableResumeBlock[]>(() => {
     const blocks: DraggableResumeBlock[] = [];
 
-    // Personal Information blocks
-    if (parsedData.personalInfo) {
-      const personalInfo = parsedData.personalInfo;
-      if (personalInfo.name) {
-        blocks.push({
-          id: `personal-name-${Date.now()}`,
-          type: 'personal',
-          title: 'Name',
-          content: personalInfo.name,
-          section: 'personal',
-          metadata: { field: 'name', value: personalInfo.name }
-        });
-      }
-      if (personalInfo.email) {
-        blocks.push({
-          id: `personal-email-${Date.now()}`,
-          type: 'personal',
-          title: 'Email',
-          content: personalInfo.email,
-          section: 'personal',
-          metadata: { field: 'email', value: personalInfo.email }
-        });
-      }
-      if (personalInfo.phone) {
-        blocks.push({
-          id: `personal-phone-${Date.now()}`,
-          type: 'personal',
-          title: 'Phone',
-          content: personalInfo.phone,
-          section: 'personal',
-          metadata: { field: 'phone', value: personalInfo.phone }
-        });
-      }
-      if (personalInfo.location) {
-        blocks.push({
-          id: `personal-location-${Date.now()}`,
-          type: 'personal',
-          title: 'Location',
-          content: personalInfo.location,
-          section: 'personal',
-          metadata: { field: 'location', value: personalInfo.location }
-        });
-      }
-    }
-
     // Experience blocks
     parsedData.experience?.forEach((exp, index) => {
       blocks.push({
@@ -161,6 +116,18 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
         content: skill,
         section: 'skills',
         metadata: { skill }
+      });
+    });
+
+    // Affiliations blocks (new)
+    parsedData.affiliations?.forEach((affiliation, index) => {
+      blocks.push({
+        id: `affiliation-${index}-${Date.now()}`,
+        type: 'certification', // Treat as certification type for now
+        title: affiliation.organization,
+        content: `${affiliation.role || 'Member'}${affiliation.year ? ' • ' + affiliation.year : ''}`,
+        section: 'certifications',
+        metadata: { originalData: affiliation }
       });
     });
 

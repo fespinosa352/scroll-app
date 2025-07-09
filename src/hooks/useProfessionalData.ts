@@ -20,25 +20,38 @@ type SourceResume = Database['public']['Tables']['source_resumes']['Row'];
 type SourceResumeInsert = Database['public']['Tables']['source_resumes']['Insert'];
 
 export interface ParsedResumeData {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-  };
-  summary: string;
+  // Removed personalInfo - will be managed by Settings/Profile
+  summary?: string;
   experience: Array<{
     title: string;
     company: string;
     duration: string;
     achievements: string[];
+    location?: string;
   }>;
   education: Array<{
     degree: string;
     institution: string;
     year: string;
+    fieldOfStudy?: string;
+    gpa?: string;
+    location?: string;
+  }>;
+  certifications: Array<{
+    name: string;
+    issuer: string;
+    year?: string;
+    issueDate?: string;
+    expiryDate?: string;
+    credentialId?: string;
   }>;
   skills: string[];
+  affiliations?: Array<{
+    organization: string;
+    role?: string;
+    year?: string;
+    description?: string;
+  }>;
 }
 
 export const useProfessionalData = () => {
@@ -177,13 +190,41 @@ export const useProfessionalData = () => {
           user_id: user.id,
           institution: edu.institution,
           degree: edu.degree,
+          field_of_study: edu.fieldOfStudy || null,
+          gpa: edu.gpa ? parseFloat(edu.gpa) : null,
           end_date: parseDateString(edu.year)
         };
 
         await supabase.from('education').insert(eduData);
       }
 
-      // 4. Process skills
+      // 4. Process certifications
+      for (const cert of resumeData.certifications || []) {
+        const certData: CertificationInsert = {
+          user_id: user.id,
+          name: cert.name,
+          issuing_organization: cert.issuer,
+          issue_date: cert.issueDate ? parseDateString(cert.issueDate) : null,
+          expiration_date: cert.expiryDate ? parseDateString(cert.expiryDate) : null,
+          credential_id: cert.credentialId || null
+        };
+
+        await supabase.from('certifications').insert(certData);
+      }
+
+      // 5. Process affiliations (save as additional certifications for now)
+      for (const affiliation of resumeData.affiliations || []) {
+        const affiliationData: CertificationInsert = {
+          user_id: user.id,
+          name: `${affiliation.role || 'Member'} - ${affiliation.organization}`,
+          issuing_organization: affiliation.organization,
+          issue_date: affiliation.year ? parseDateString(affiliation.year) : null
+        };
+
+        await supabase.from('certifications').insert(affiliationData);
+      }
+
+      // 6. Process skills
       for (const skill of resumeData.skills) {
         const skillData: SkillsExperienceInsert = {
           user_id: user.id,

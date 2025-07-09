@@ -5,18 +5,14 @@ import * as mammoth from 'mammoth';
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
 
 export interface ParsedResume {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-  };
-  summary: string;
+  // Removed personalInfo - will be managed by Settings
+  summary?: string;
   experience: Array<{
     title: string;
     company: string;
     duration: string;
     achievements: string[];
+    location?: string;
   }>;
   education: Array<{
     degree: string;
@@ -24,6 +20,7 @@ export interface ParsedResume {
     year: string;
     fieldOfStudy?: string;
     gpa?: string;
+    location?: string;
   }>;
   certifications: Array<{
     name: string;
@@ -34,9 +31,11 @@ export interface ParsedResume {
     credentialId?: string;
   }>;
   skills: string[];
-  unknownSections?: Array<{
-    title: string;
-    content: string[];
+  affiliations?: Array<{
+    organization: string;
+    role?: string;
+    year?: string;
+    description?: string;
   }>;
 }
 
@@ -99,45 +98,98 @@ async function extractTextFromDOC(file: File): Promise<string> {
   return result.value;
 }
 
-// Extract personal information using regex patterns
-function extractPersonalInfo(text: string): ParsedResume['personalInfo'] {
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-  const phoneRegex = /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g;
+// Extract affiliations (professional organizations, memberships)
+function extractAffiliations(text: string): ParsedResume['affiliations'] {
+  const affiliations: ParsedResume['affiliations'] = [];
   
-  const emails = text.match(emailRegex) || [];
-  const phones = text.match(phoneRegex) || [];
+  // Common section headers for affiliations
+  const affiliationHeaders = [
+    'AFFILIATIONS', 'MEMBERSHIPS', 'PROFESSIONAL MEMBERSHIPS',
+    'PROFESSIONAL AFFILIATIONS', 'ORGANIZATIONS', 'ASSOCIATIONS',
+    'PROFESSIONAL ORGANIZATIONS', 'PROFESSIONAL ASSOCIATIONS'
+  ];
   
-  // Extract name (usually at the top of the resume)
-  const lines = text.split('\n').filter(line => line.trim().length > 0);
-  let name = '';
+  let affiliationSection = '';
+  const lines = text.split('\n');
   
-  // Look for name in first few lines
-  for (let i = 0; i < Math.min(3, lines.length); i++) {
-    const line = lines[i].trim();
-    // Skip lines that are likely not names
-    if (line.includes('@') || line.includes('http') || line.includes('www') || 
-        line.includes('Phone') || line.includes('Email') || line.includes('Address')) {
+  // Find affiliations section
+  let inAffiliationSection = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim().toUpperCase();
+    
+    if (affiliationHeaders.some(header => line.includes(header))) {
+      inAffiliationSection = true;
       continue;
     }
-    // Check if line looks like a name (2-4 words, each starting with capital)
-    const words = line.split(/\s+/);
-    if (words.length >= 2 && words.length <= 4 && 
-        words.every(word => /^[A-Z][a-z]+$/.test(word))) {
-      name = line;
+    
+    // Stop if we hit another major section
+    if (inAffiliationSection && 
+        (line.includes('EXPERIENCE') || line.includes('EDUCATION') || 
+         line.includes('SKILLS') || line.includes('CERTIFICATIONS'))) {
       break;
+    }
+    
+    if (inAffiliationSection) {
+      affiliationSection += lines[i] + '\n';
     }
   }
   
-  // Extract location (look for city, state patterns)
-  const locationRegex = /([A-Za-z\s]+),\s*([A-Z]{2})\s*(\d{5})?/g;
-  const locations = text.match(locationRegex) || [];
+  if (!affiliationSection) return affiliations;
   
-  return {
-    name: name || 'Name not found',
-    email: emails[0] || 'Email not found',
-    phone: phones[0] || 'Phone not found',
-    location: locations[0] || 'Location not found'
-  };
+  // Parse affiliation entries
+  const affiliationEntries = affiliationSection.split(/\n\s*\n/).filter(entry => entry.trim().length > 0);
+  
+  for (const entry of affiliationEntries) {
+    const lines = entry.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length === 0) continue;
+    
+    let organization = '';
+    let role = '';
+    let year = '';
+    let description = '';
+    
+    // First line is usually the organization or role
+    organization = lines[0].trim();
+    
+    // Look for role indicators
+    for (const line of lines) {
+      if (line.toLowerCase().includes('member') || 
+          line.toLowerCase().includes('chair') ||
+          line.toLowerCase().includes('president') ||
+          line.toLowerCase().includes('secretary')) {
+        role = line.trim();
+        break;
+      }
+    }
+    
+    // Look for year
+    const yearRegex = /\b(19|20)\d{2}\b/g;
+    const years = entry.match(yearRegex) || [];
+    if (years.length > 0) {
+      year = years[years.length - 1];
+    }
+    
+    // Rest of the content as description
+    const remainingLines = lines.slice(1).filter(line => 
+      !line.match(/\b(19|20)\d{2}\b/) && line !== role
+    );
+    if (remainingLines.length > 0) {
+      description = remainingLines.join('. ');
+    }
+    
+    // Only add if we have meaningful data
+    if (organization && organization.length > 3) {
+      affiliations.push({
+        organization,
+        role: role || undefined,
+        year: year || undefined,
+        description: description || undefined
+      });
+    }
+  }
+  
+  return affiliations;
 }
 
 // Extract work experience
@@ -867,38 +919,34 @@ export async function parseResume(file: File): Promise<ParsedResume> {
   let text = '';
   
   try {
-    // Extract text based on file type
-    if (file.type === 'application/pdf') {
-      text = await extractTextFromPDF(file);
-    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    // Extract text based on file type - Focus on DOCX support as requested
+    if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       text = await extractTextFromDOCX(file);
     } else if (file.type === 'application/msword') {
       text = await extractTextFromDOC(file);
     } else {
-      throw new Error(`Unsupported file type: ${file.type}. Please upload PDF, DOC, or DOCX files.`);
+      throw new Error(`Unsupported file type: ${file.type}. Please upload DOC or DOCX files.`);
     }
     
     if (!text || text.trim().length === 0) {
       throw new Error('No text could be extracted from the file');
     }
     
-    // Parse the extracted text
-    const personalInfo = extractPersonalInfo(text);
+    // Parse focused sections (no personal info - handled by Settings)
     const experience = extractExperience(text);
     const education = extractEducation(text);
     const certifications = extractCertifications(text);
     const skills = extractSkills(text);
+    const affiliations = extractAffiliations(text);
     const summary = extractSummary(text);
-    const unknownSections = extractUnknownSections(text);
     
     return {
-      personalInfo,
       summary,
       experience,
       education,
       certifications,
       skills,
-      unknownSections
+      affiliations
     };
     
   } catch (error) {
