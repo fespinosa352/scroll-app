@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { useResumeData } from '@/contexts/ResumeDataContext';
 
 type WorkExperience = Tables<'work_experiences'>;
 type WorkExperienceInsert = Omit<WorkExperience, 'id' | 'created_at' | 'updated_at'>;
@@ -13,6 +14,7 @@ export const useWorkExperience = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
+  const { updateWorkExperienceCache, addWorkExperienceCache, removeWorkExperienceCache } = useResumeData();
 
   const fetchWorkExperiences = async () => {
     if (!user) {
@@ -66,6 +68,8 @@ export const useWorkExperience = () => {
       if (error) throw error;
 
       setWorkExperiences(prev => [data, ...prev]);
+      // Update cache immediately
+      addWorkExperienceCache(data);
       toast.success('Work experience saved successfully');
       return data;
     } catch (error) {
@@ -98,6 +102,8 @@ export const useWorkExperience = () => {
       setWorkExperiences(prev => 
         prev.map(exp => exp.id === id ? data : exp)
       );
+      // Update cache immediately
+      updateWorkExperienceCache(data);
       toast.success('Work experience updated successfully');
       return data;
     } catch (error) {
@@ -126,6 +132,8 @@ export const useWorkExperience = () => {
       if (error) throw error;
 
       setWorkExperiences(prev => prev.filter(exp => exp.id !== id));
+      // Update cache immediately
+      removeWorkExperienceCache(id);
       toast.success('Work experience deleted successfully');
       return true;
     } catch (error) {
