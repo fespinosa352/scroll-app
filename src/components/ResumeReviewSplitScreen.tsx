@@ -63,10 +63,18 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
   
   // Convert parsed data to draggable blocks
   const [availableBlocks, setAvailableBlocks] = useState<DraggableResumeBlock[]>(() => {
+    console.log('=== RESUME REVIEW SPLIT SCREEN DEBUG ===');
+    console.log('Parsed data received:', parsedData);
+    console.log('Experience count:', parsedData.experience?.length || 0);
+    console.log('Skills count:', parsedData.skills?.length || 0);
+    console.log('Education count:', parsedData.education?.length || 0);
+    console.log('Certifications count:', parsedData.certifications?.length || 0);
+    
     const blocks: DraggableResumeBlock[] = [];
 
     // Experience blocks
     parsedData.experience?.forEach((exp, index) => {
+      console.log(`Adding experience block ${index}:`, exp);
       blocks.push({
         id: `exp-${index}-${Date.now()}`,
         type: 'experience',
@@ -139,6 +147,10 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
       return aIndex - bIndex;
     });
 
+    console.log('Final sorted blocks:', sortedBlocks);
+    console.log('Total blocks created:', sortedBlocks.length);
+    console.log('=== END RESUME REVIEW SPLIT SCREEN DEBUG ===');
+    
     return sortedBlocks;
   });
 

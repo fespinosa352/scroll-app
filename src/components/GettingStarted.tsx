@@ -437,10 +437,13 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
 
       {/* Step 3: Review & Organize */}
       {currentStep === "review" && completedResumes.length > 0 && (
-        <ResumeReviewSplitScreen 
-          parsedData={completedResumes[0].parsedData!}
-          onComplete={() => setCurrentStep("confirm")}
-        />
+        <>
+          {console.log('=== GETTING STARTED DEBUG - PASSING TO SPLIT SCREEN ===', completedResumes[0].parsedData)}
+          <ResumeReviewSplitScreen 
+            parsedData={completedResumes[0].parsedData!}
+            onComplete={() => setCurrentStep("confirm")}
+          />
+        </>
       )}
 
       {/* Step 4: Confirm and Complete */}
