@@ -252,11 +252,13 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                   className="hidden"
                   id="resume-upload"
                 />
-                <label htmlFor="resume-upload">
-                  <Button size="lg" className="text-lg px-8 py-4">
-                    Choose Files
-                  </Button>
-                </label>
+                <Button 
+                  size="lg" 
+                  className="text-lg px-8 py-4"
+                  onClick={() => document.getElementById('resume-upload')?.click()}
+                >
+                  Choose Files
+                </Button>
               </div>
             </CardContent>
           </Card>
