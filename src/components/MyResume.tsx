@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText } from "lucide-react";
 import { format } from "date-fns";
+import WorkExperienceBlocks from "./WorkExperienceBlocks";
+import Education from "./Education";
+import Certifications from "./Certifications";
 
 const MyResume = () => {
   const { 
@@ -16,6 +20,8 @@ const MyResume = () => {
     certifications, 
     skills 
   } = useResumeData();
+
+  const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | null>(null);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -104,7 +110,7 @@ const MyResume = () => {
               <Briefcase className="w-5 h-5" />
               Work Experience
             </CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setEditingSection('work')}>
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -167,7 +173,7 @@ const MyResume = () => {
               <GraduationCap className="w-5 h-5" />
               Education
             </CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setEditingSection('education')}>
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -220,7 +226,7 @@ const MyResume = () => {
               <Award className="w-5 h-5" />
               Certifications
             </CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setEditingSection('certifications')}>
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -303,6 +309,34 @@ const MyResume = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Modals */}
+      <Dialog open={editingSection === 'work'} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Work Experience</DialogTitle>
+          </DialogHeader>
+          <WorkExperienceBlocks />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingSection === 'education'} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Education</DialogTitle>
+          </DialogHeader>
+          <Education />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingSection === 'certifications'} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Certifications</DialogTitle>
+          </DialogHeader>
+          <Certifications />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
