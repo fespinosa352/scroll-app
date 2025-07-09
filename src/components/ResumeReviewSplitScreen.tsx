@@ -164,7 +164,15 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
       });
     });
 
-    return blocks;
+    // Sort blocks to match the My Resume section order: Personal, Experience, Education, Certifications, Skills
+    const sectionOrder = ['personal', 'experience', 'education', 'certifications', 'skills'];
+    const sortedBlocks = blocks.sort((a, b) => {
+      const aIndex = sectionOrder.indexOf(a.section);
+      const bIndex = sectionOrder.indexOf(b.section);
+      return aIndex - bIndex;
+    });
+
+    return sortedBlocks;
   });
 
   const [acceptedBlocks, setAcceptedBlocks] = useState<{
