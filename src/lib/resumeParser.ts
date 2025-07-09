@@ -199,11 +199,13 @@ function extractExperience(text: string): ParsedResume['experience'] {
   console.log('=== EXPERIENCE EXTRACTION DEBUG ===');
   console.log('Full text length:', text.length);
   
-  // Enhanced section headers for experience
+  // Enhanced section headers for experience - more comprehensive patterns
   const experienceHeaders = [
     'EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 
     'EMPLOYMENT', 'CAREER', 'WORK HISTORY', 'EMPLOYMENT HISTORY',
-    'WORK', 'JOBS', 'POSITIONS', 'ROLES', 'CAREER HISTORY'
+    'WORK', 'JOBS', 'POSITIONS', 'ROLES', 'CAREER HISTORY',
+    'PROFESSIONAL BACKGROUND', 'CAREER SUMMARY', 'EMPLOYMENT BACKGROUND',
+    'PROFESSIONAL HISTORY', 'CAREER EXPERIENCE', 'WORK BACKGROUND'
   ];
   
   let experienceSection = '';
@@ -211,6 +213,23 @@ function extractExperience(text: string): ParsedResume['experience'] {
   
   console.log('Total lines in text:', lines.length);
   console.log('Looking for headers:', experienceHeaders);
+  
+  // Debug: Show first 20 lines to understand document structure
+  console.log('First 20 lines of document:');
+  lines.slice(0, 20).forEach((line, i) => {
+    console.log(`Line ${i}: "${line.trim()}"`);
+  });
+  
+  // Debug: Show all lines that contain any experience-related words
+  console.log('\nLines containing experience-related words:');
+  lines.forEach((line, i) => {
+    const upperLine = line.trim().toUpperCase();
+    if (upperLine.includes('EXPERIENCE') || upperLine.includes('PROFESSIONAL') || 
+        upperLine.includes('EMPLOYMENT') || upperLine.includes('CAREER') || 
+        upperLine.includes('WORK')) {
+      console.log(`Line ${i}: "${line.trim()}"`);
+    }
+  });
   
   // Find experience section with better detection
   let inExperienceSection = false;
@@ -230,10 +249,23 @@ function extractExperience(text: string): ParsedResume['experience'] {
     const line = lines[i].trim();
     const upperLine = line.toUpperCase();
     
-    // Enhanced header detection
+    // Enhanced header detection with more flexible matching
     const headerFound = experienceHeaders.some(header => {
-      if (upperLine === header || upperLine.includes(header)) {
+      // Exact match
+      if (upperLine === header) {
+        console.log(`Found exact experience header "${header}" in line ${i}: "${line}"`);
+        return true;
+      }
+      // Contains match (but ensure it's not within a sentence)
+      if (upperLine.includes(header) && 
+          (upperLine.startsWith(header) || upperLine.endsWith(header) || 
+           upperLine === header || upperLine.match(new RegExp(`\\b${header}\\b`)))) {
         console.log(`Found experience header "${header}" in line ${i}: "${line}"`);
+        return true;
+      }
+      // Partial match for multi-word headers
+      if (header.includes(' ') && header.split(' ').every(word => upperLine.includes(word))) {
+        console.log(`Found multi-word experience header "${header}" in line ${i}: "${line}"`);
         return true;
       }
       return false;
@@ -246,20 +278,31 @@ function extractExperience(text: string): ParsedResume['experience'] {
       continue;
     }
     
-    // Stop if we hit another major section (be more strict about what constitutes a section header)
+    // Stop if we hit another major section
     if (inExperienceSection) {
-      const isRealSectionHeader = (
-        (line.includes('EDUCATION') || line.includes('SKILLS') || 
-         line.includes('PROJECTS') || line.includes('CERTIFICATIONS') ||
-         line.includes('SUMMARY') || line.includes('OBJECTIVE')) &&
-        // Make sure it's actually a section header, not just content that mentions these words
-        (line.length < 50 && // Section headers are usually short
-         !line.includes('.') && // Headers usually don't end with periods
-         !line.includes('(') && // Headers usually don't have parentheses
-         !line.includes('enabling') && // Not achievement text
-         !line.includes('achieving') && // Not achievement text
-         !line.includes('boosting')) // Not achievement text
-      );
+      const otherSectionHeaders = [
+        'EDUCATION', 'SKILLS', 'PROJECTS', 'CERTIFICATIONS', 'SUMMARY', 
+        'OBJECTIVE', 'CORE COMPETENCIES', 'TECHNICAL SKILLS', 'AFFILIATIONS',
+        'ACHIEVEMENTS', 'AWARDS', 'PUBLICATIONS', 'LANGUAGES', 'INTERESTS',
+        'VOLUNTEER', 'REFERENCES', 'ADDITIONAL'
+      ];
+      
+      const isRealSectionHeader = otherSectionHeaders.some(sectionHeader => {
+        // Check if this line looks like a section header
+        return (
+          (upperLine === sectionHeader || 
+           upperLine.includes(sectionHeader) || 
+           (sectionHeader.includes(' ') && sectionHeader.split(' ').every(word => upperLine.includes(word)))) &&
+          // Make sure it's actually a section header, not content
+          line.length < 60 && // Section headers are usually short
+          !line.includes('.') && // Headers usually don't end with periods
+          !line.includes('(') && // Headers usually don't have parentheses
+          !line.includes('enabling') && // Not achievement text
+          !line.includes('achieving') && // Not achievement text
+          !line.includes('boosting') && // Not achievement text
+          !line.includes('experience') // Not talking about experience
+        );
+      });
       
       if (isRealSectionHeader) {
         console.log(`Ending experience section at line ${i} due to header: "${line}"`);
@@ -278,38 +321,64 @@ function extractExperience(text: string): ParsedResume['experience'] {
   if (!experienceSection) {
     console.log('No explicit experience section found, trying alternative methods...');
     
-    // Try to find job-like patterns throughout the text
-    const jobPatterns = [
-      // Company name followed by job title and dates
-      /([A-Z][a-zA-Z\s&]+)\s*\n\s*([A-Z][a-zA-Z\s]+)\s*\n.*?(\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/gm,
+    // Method 1: Look for job title patterns with companies
+    const jobTitlePatterns = [
       // Job title at company format
-      /([A-Z][a-zA-Z\s]+)\s+at\s+([A-Z][a-zA-Z\s&]+)/gm,
-      // Lines that contain years and look like job titles
-      /^.*?(19|20)\d{2}.*?(19|20)\d{2}.*$/gm
+      /([A-Z][a-zA-Z\s]+)\s+at\s+([A-Z][a-zA-Z\s&.,]+)/gm,
+      // Company - Job title format
+      /([A-Z][a-zA-Z\s&.,]+)\s*[-–—]\s*([A-Z][a-zA-Z\s]+)/gm,
+      // Job title | Company format
+      /([A-Z][a-zA-Z\s]+)\s*\|\s*([A-Z][a-zA-Z\s&.,]+)/gm,
     ];
     
-    let foundJobs = false;
-    for (const pattern of jobPatterns) {
+    let foundJobPatterns = false;
+    for (const pattern of jobTitlePatterns) {
       const matches = text.match(pattern);
       if (matches && matches.length > 0) {
-        console.log('Found job-like patterns:', matches.slice(0, 3));
+        console.log('Found job title patterns:', matches.slice(0, 3));
         experienceSection = matches.join('\n\n');
-        foundJobs = true;
+        foundJobPatterns = true;
         break;
       }
     }
     
-    if (!foundJobs) {
-      // Last resort - look for any lines with years that might be experience
-      const linesWithYears = lines.filter(line => {
+    // Method 2: Look for lines with years and potential job words
+    if (!foundJobPatterns) {
+      const jobWords = [
+        'manager', 'director', 'engineer', 'developer', 'analyst', 'specialist', 
+        'coordinator', 'assistant', 'lead', 'senior', 'junior', 'consultant',
+        'supervisor', 'executive', 'officer', 'associate', 'administrator',
+        'technician', 'architect', 'designer', 'programmer', 'administrator'
+      ];
+      
+      const potentialJobLines = lines.filter(line => {
         const hasYear = /\b(19|20)\d{2}\b/.test(line);
-        const hasJobWords = /\b(manager|director|engineer|developer|analyst|specialist|coordinator|assistant|lead|senior|junior)\b/i.test(line);
-        return hasYear || hasJobWords;
+        const hasJobWords = jobWords.some(word => 
+          line.toLowerCase().includes(word.toLowerCase())
+        );
+        const hasCompanyIndicators = /\b(inc|corp|corporation|company|ltd|llc|group|systems|technologies|solutions)\b/i.test(line);
+        
+        return hasYear || hasJobWords || hasCompanyIndicators;
       });
       
-      if (linesWithYears.length > 0) {
-        console.log('Found lines with job indicators:', linesWithYears.slice(0, 3));
-        experienceSection = linesWithYears.join('\n');
+      if (potentialJobLines.length > 0) {
+        console.log('Found potential job lines:', potentialJobLines.slice(0, 5));
+        experienceSection = potentialJobLines.join('\n');
+      }
+    }
+    
+    // Method 3: If still nothing, try to find any structured content with dates
+    if (!experienceSection) {
+      const dateLines = lines.filter(line => {
+        const hasDatePattern = /\b(19|20)\d{2}\b/.test(line) || 
+                             /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i.test(line);
+        const isNotHeader = !line.match(/^[A-Z\s]+$/) || line.length > 50;
+        return hasDatePattern && isNotHeader && line.trim().length > 10;
+      });
+      
+      if (dateLines.length > 0) {
+        console.log('Found date-containing lines:', dateLines.slice(0, 5));
+        experienceSection = dateLines.join('\n');
       } else {
         console.log('No experience patterns found anywhere in text');
         return experience; // Return empty array
