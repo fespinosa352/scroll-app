@@ -196,13 +196,11 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
   });
 
   const [acceptedBlocks, setAcceptedBlocks] = useState<{
-    personal: DraggableResumeBlock[];
     experience: DraggableResumeBlock[];
     education: DraggableResumeBlock[];
     certifications: DraggableResumeBlock[];
     skills: DraggableResumeBlock[];
   }>({
-    personal: [],
     experience: [],
     education: [],
     certifications: [],
@@ -224,8 +222,9 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
 
     const { source, destination } = result;
 
-    // Only allow drops to the My Resume sections (right side)
-    if (!destination.droppableId.startsWith('my-resume-')) return;
+    // Only allow drops to the My Resume sections (right side), excluding personal
+    if (!destination.droppableId.startsWith('my-resume-') || 
+        destination.droppableId === 'my-resume-personal') return;
 
     const sourceBlockIndex = parseInt(source.index.toString());
     const draggedBlock = availableBlocks[sourceBlockIndex];
@@ -278,17 +277,6 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
 
   const updateResumeData = (block: DraggableResumeBlock, targetSection: string) => {
     switch (targetSection) {
-      case 'personal':
-        if (block.metadata?.field && block.metadata?.value) {
-          setPersonalInfo({
-            name: personalInfo?.name || '',
-            email: personalInfo?.email || '',
-            phone: personalInfo?.phone || '',
-            location: personalInfo?.location || '',
-            [block.metadata.field]: block.metadata.value
-          });
-        }
-        break;
       
       case 'experience':
         if (block.metadata?.isIndividualAchievement) {
@@ -310,7 +298,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
             updatedExperience[existingIndex].description = currentDesc 
               ? `${currentDesc}\n• ${achievement}`
               : `• ${achievement}`;
-            setWorkExperience(updatedExperience);
+            setWorkExperience(sortExperienceByDate(updatedExperience));
           } else {
             // Create new entry
             const newExp = {
@@ -323,7 +311,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
               isCurrentRole: duration?.includes('Present') || false,
               skills: []
             };
-            setWorkExperience([...workExperience, newExp]);
+            setWorkExperience(sortExperienceByDate([...workExperience, newExp]));
           }
         } else if (block.metadata?.originalData) {
           // Handle legacy format
@@ -338,7 +326,7 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
             isCurrentRole: exp.duration?.includes('Present') || false,
             skills: []
           };
-          setWorkExperience([...workExperience, newExp]);
+          setWorkExperience(sortExperienceByDate([...workExperience, newExp]));
         }
         break;
       
@@ -407,6 +395,20 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
     return dateStr;
   };
 
+  const sortExperienceByDate = (experiences: typeof workExperience) => {
+    return experiences.sort((a, b) => {
+      // Current roles first
+      if (a.isCurrentRole && !b.isCurrentRole) return -1;
+      if (!a.isCurrentRole && b.isCurrentRole) return 1;
+      
+      // Then sort by start date (most recent first)
+      const aStartDate = new Date(a.startDate || '2000-01-01');
+      const bStartDate = new Date(b.startDate || '2000-01-01');
+      
+      return bStartDate.getTime() - aStartDate.getTime();
+    });
+  };
+
   const handleBlockSelection = (blockId: string, index: number, event: React.MouseEvent) => {
     if (event.ctrlKey || event.metaKey) {
       // Ctrl/Cmd + Click: Toggle selection
@@ -438,6 +440,27 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
   };
 
   const clearSelection = () => {
+    setSelectedBlocks(new Set());
+    setLastSelectedIndex(null);
+  };
+
+  const moveAllToMyResume = () => {
+    // Move all available blocks to their respective sections
+    const newAcceptedBlocks = { ...acceptedBlocks };
+    
+    availableBlocks.forEach(block => {
+      const targetSection = block.section as keyof typeof acceptedBlocks;
+      if (newAcceptedBlocks[targetSection]) {
+        newAcceptedBlocks[targetSection].push(block);
+      }
+      
+      // Update the resume data context
+      updateResumeData(block, block.section);
+    });
+    
+    // Update state
+    setAcceptedBlocks(newAcceptedBlocks);
+    setAvailableBlocks([]);
     setSelectedBlocks(new Set());
     setLastSelectedIndex(null);
   };
@@ -513,6 +536,14 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
                         {selectedBlocks.size} selected
                       </Badge>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={moveAllToMyResume}
+                      className="text-xs"
+                    >
+                      Move All to My Resume
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -605,47 +636,6 @@ const ResumeReviewSplitScreen: React.FC<ResumeReviewSplitScreenProps> = ({
               </p>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col space-y-4 overflow-y-auto">
-              {/* Personal Information */}
-              <div>
-                <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
-                  {getSectionIcon('personal')}
-                  Personal Information
-                </h4>
-                <Droppable droppableId="my-resume-personal">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`
-                        min-h-[80px] p-3 border-2 border-dashed rounded-lg
-                        ${snapshot.isDraggingOver 
-                          ? 'border-blue-300 bg-blue-50' 
-                          : 'border-slate-200 bg-slate-50'
-                        }
-                      `}
-                    >
-                      {acceptedBlocks.personal.length === 0 ? (
-                        <p className="text-center text-slate-400 py-4">Drop personal info here</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {acceptedBlocks.personal.map((block, index) => (
-                            <div key={block.id} className="p-2 bg-white rounded border">
-                              <div className="flex items-center space-x-2">
-                                {getBlockIcon(block.type)}
-                                <span className="font-medium">{block.title}:</span>
-                                <span className="text-slate-600">{block.content}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-
-              <Separator />
 
               {/* Work Experience */}
               <div>

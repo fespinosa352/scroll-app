@@ -493,7 +493,11 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </div>
 
               <Button 
-                onClick={handleCompleteSetup}
+                onClick={() => {
+                  handleCompleteSetup();
+                  // Navigate to My Resume module
+                  window.location.hash = '#my-resume';
+                }}
                 size="lg"
                 className="text-lg px-12 py-4"
               >
