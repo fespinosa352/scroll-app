@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Award, Calendar, Building, Edit2, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Award, Calendar, Building, Edit2, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { useCertifications } from "@/hooks/useCertifications";
 
 interface Certification {
   id: string;
@@ -20,6 +21,7 @@ interface Certification {
 
 const Certifications = () => {
   const { certifications: resumeCertifications, setCertifications } = useResumeData();
+  const { saveCertification, updateCertification: updateCertificationDb, deleteCertification, saving } = useCertifications();
   
   // Use resume data if available, otherwise show empty state
   const certificationsList = resumeCertifications || [];
@@ -40,7 +42,7 @@ const Certifications = () => {
     doesNotExpire: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.issuer) {
@@ -48,28 +50,62 @@ const Certifications = () => {
       return;
     }
 
-    const newCertification: Certification = {
-      id: editingId || Date.now().toString(),
+    // Prepare database format
+    const certificationData = {
       name: formData.name,
-      issuer: formData.issuer,
-      issueDate: formData.issueDate,
-      expiryDate: formData.doesNotExpire ? undefined : formData.expiryDate,
-      credentialId: formData.credentialId,
-      credentialUrl: formData.credentialUrl,
-      doesNotExpire: formData.doesNotExpire
+      issuing_organization: formData.issuer,
+      issue_date: formData.issueDate || null,
+      expiration_date: formData.doesNotExpire ? null : formData.expiryDate || null,
+      credential_id: formData.credentialId || null,
+      credential_url: formData.credentialUrl || null,
     };
 
-    if (editingId) {
-      const updatedCertifications = certificationsList.map(cert => cert.id === editingId ? newCertification : cert);
-      updateCertifications(updatedCertifications);
-      toast.success("Certification updated!");
-    } else {
-      const updatedCertifications = [newCertification, ...certificationsList];
-      updateCertifications(updatedCertifications);
-      toast.success("Certification added!");
+    try {
+      if (editingId && !editingId.startsWith('parsed-cert-')) {
+        // Update existing database record
+        const result = await updateCertificationDb(editingId, certificationData);
+        if (result) {
+          // Update local state
+          const updatedCertifications = certificationsList.map(cert => 
+            cert.id === editingId ? {
+              ...cert,
+              name: formData.name,
+              issuer: formData.issuer,
+              issueDate: formData.issueDate,
+              expiryDate: formData.doesNotExpire ? undefined : formData.expiryDate,
+              credentialId: formData.credentialId,
+              credentialUrl: formData.credentialUrl,
+              doesNotExpire: formData.doesNotExpire
+            } : cert
+          );
+          updateCertifications(updatedCertifications);
+        }
+      } else {
+        // Create new database record
+        const result = await saveCertification(certificationData);
+        if (result) {
+          // Create local format for UI
+          const newCertification: Certification = {
+            id: result.id,
+            name: formData.name,
+            issuer: formData.issuer,
+            issueDate: formData.issueDate,
+            expiryDate: formData.doesNotExpire ? undefined : formData.expiryDate,
+            credentialId: formData.credentialId,
+            credentialUrl: formData.credentialUrl,
+            doesNotExpire: formData.doesNotExpire
+          };
+          
+          const updatedCertifications = [newCertification, ...certificationsList];
+          updateCertifications(updatedCertifications);
+        }
+      }
+      
+      resetForm();
+    } catch (error) {
+      console.error('Error saving certification:', error);
+      toast.error('Failed to save certification');
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -100,10 +136,23 @@ const Certifications = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedCertifications = certificationsList.filter(cert => cert.id !== id);
-    updateCertifications(updatedCertifications);
-    toast.success("Certification deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      // Only delete from database if it's not a local-only record
+      if (!id.startsWith('parsed-cert-')) {
+        const success = await deleteCertification(id);
+        if (!success) {
+          return; // Don't update local state if database deletion failed
+        }
+      }
+      
+      // Update local state
+      const updatedCertifications = certificationsList.filter(cert => cert.id !== id);
+      updateCertifications(updatedCertifications);
+    } catch (error) {
+      console.error('Error deleting certification:', error);
+      toast.error('Failed to delete certification');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -234,10 +283,17 @@ const Certifications = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none">
-                  {editingId ? "Update" : "Add"} Certification
+                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    `${editingId ? "Update" : "Add"} Certification`
+                  )}
                 </Button>
-                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none">
+                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none" disabled={saving}>
                   Cancel
                 </Button>
               </div>

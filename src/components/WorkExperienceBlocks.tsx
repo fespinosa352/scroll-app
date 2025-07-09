@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Briefcase, Calendar, Building, Edit2, Trash2, GripVertical } from "lucide-react";
+import { Plus, Briefcase, Calendar, Building, Edit2, Trash2, GripVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { useWorkExperience } from "@/hooks/useWorkExperience";
 import { WorkExperienceWithBlocks, BlockSection, Block, BlockType } from "@/types/blocks";
 import { BlockSection as BlockSectionComponent } from "@/components/blocks/BlockSection";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
 
 const WorkExperienceBlocks = () => {
   const { workExperienceBlocks, setWorkExperienceBlocks, convertToBlockFormat, workExperience } = useResumeData();
+  const { saveWorkExperience, updateWorkExperience, deleteWorkExperience, saving } = useWorkExperience();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
@@ -24,6 +26,40 @@ const WorkExperienceBlocks = () => {
     isCurrentRole: false
   });
 
+  // Debounced save functionality
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const debouncedSave = useCallback((experienceId: string, experience: WorkExperienceWithBlocks) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (!experienceId.startsWith('exp-')) {
+        try {
+          const description = experience.sections
+            .flatMap(section => section.blocks.map(block => block.content))
+            .join('\n• ');
+
+          const workExperienceData = {
+            title: experience.position,
+            company_name: experience.company,
+            start_date: experience.startDate,
+            end_date: experience.isCurrentRole ? null : experience.endDate,
+            is_current: experience.isCurrentRole,
+            location: experience.location,
+            description: description,
+          };
+
+          await updateWorkExperience(experienceId, workExperienceData);
+          console.log('Auto-saved work experience:', experienceId);
+        } catch (error) {
+          console.error('Error auto-saving work experience:', error);
+        }
+      }
+    }, 2000); // 2 second delay
+  }, [updateWorkExperience]);
+
   // Initialize block experiences from traditional format if needed
   const experiences = workExperienceBlocks.length > 0 
     ? workExperienceBlocks 
@@ -33,7 +69,7 @@ const WorkExperienceBlocks = () => {
     setWorkExperienceBlocks(newExperiences);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.company || !formData.position) {
@@ -41,48 +77,83 @@ const WorkExperienceBlocks = () => {
       return;
     }
 
-    const newExperience: WorkExperienceWithBlocks = {
-      id: editingId || `exp-${Date.now()}`,
-      company: formData.company,
-      position: formData.position,
-      startDate: formData.startDate,
-      endDate: formData.isCurrentRole ? "" : formData.endDate,
-      isCurrentRole: formData.isCurrentRole,
+    // Prepare database format
+    const workExperienceData = {
+      title: formData.position,
+      company_name: formData.company, // Store company name directly for now
+      start_date: formData.startDate,
+      end_date: formData.isCurrentRole ? null : formData.endDate,
+      is_current: formData.isCurrentRole,
       location: formData.location,
-      sections: [
-        {
-          id: `section-responsibilities-${Date.now()}`,
-          title: 'Key Responsibilities',
-          blocks: [],
-          order: 0,
-          collapsible: true,
-          collapsed: false,
-        },
-        {
-          id: `section-achievements-${Date.now()}`,
-          title: 'Key Achievements',
-          blocks: [],
-          order: 1,
-          collapsible: true,
-          collapsed: false,
-        }
-      ],
-      skills: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      description: "", // Will be populated from blocks later
     };
 
-    if (editingId) {
-      const updatedExperiences = experiences.map(exp => exp.id === editingId ? { ...exp, ...newExperience } : exp);
-      updateExperiences(updatedExperiences);
-      toast.success("Work experience updated!");
-    } else {
-      const updatedExperiences = [newExperience, ...experiences];
-      updateExperiences(updatedExperiences);
-      toast.success("Work experience added!");
+    try {
+      if (editingId && !editingId.startsWith('exp-')) {
+        // Update existing database record
+        const result = await updateWorkExperience(editingId, workExperienceData);
+        if (result) {
+          // Update local state with new data
+          const updatedExperiences = experiences.map(exp => 
+            exp.id === editingId ? { 
+              ...exp, 
+              company: formData.company,
+              position: formData.position,
+              startDate: formData.startDate,
+              endDate: formData.isCurrentRole ? "" : formData.endDate,
+              isCurrentRole: formData.isCurrentRole,
+              location: formData.location,
+              updated_at: new Date().toISOString()
+            } : exp
+          );
+          updateExperiences(updatedExperiences);
+        }
+      } else {
+        // Create new database record
+        const result = await saveWorkExperience(workExperienceData);
+        if (result) {
+          // Create block format for UI
+          const newExperience: WorkExperienceWithBlocks = {
+            id: result.id,
+            company: formData.company,
+            position: formData.position,
+            startDate: formData.startDate,
+            endDate: formData.isCurrentRole ? "" : formData.endDate,
+            isCurrentRole: formData.isCurrentRole,
+            location: formData.location,
+            sections: [
+              {
+                id: `section-responsibilities-${Date.now()}`,
+                title: 'Key Responsibilities',
+                blocks: [],
+                order: 0,
+                collapsible: true,
+                collapsed: false,
+              },
+              {
+                id: `section-achievements-${Date.now()}`,
+                title: 'Key Achievements',
+                blocks: [],
+                order: 1,
+                collapsible: true,
+                collapsed: false,
+              }
+            ],
+            skills: [],
+            created_at: result.created_at,
+            updated_at: result.updated_at,
+          };
+          
+          const updatedExperiences = [newExperience, ...experiences];
+          updateExperiences(updatedExperiences);
+        }
+      }
+      
+      resetForm();
+    } catch (error) {
+      console.error('Error saving work experience:', error);
+      toast.error('Failed to save work experience');
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -111,17 +182,34 @@ const WorkExperienceBlocks = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedExperiences = experiences.filter(exp => exp.id !== id);
-    updateExperiences(updatedExperiences);
-    toast.success("Work experience deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      // Only delete from database if it's not a local-only record
+      if (!id.startsWith('exp-')) {
+        const success = await deleteWorkExperience(id);
+        if (!success) {
+          return; // Don't update local state if database deletion failed
+        }
+      }
+      
+      // Update local state
+      const updatedExperiences = experiences.filter(exp => exp.id !== id);
+      updateExperiences(updatedExperiences);
+    } catch (error) {
+      console.error('Error deleting work experience:', error);
+      toast.error('Failed to delete work experience');
+    }
   };
 
   const handleUpdateExperience = (updatedExperience: WorkExperienceWithBlocks) => {
+    // Update local state immediately for responsive UI
     const updatedExperiences = experiences.map(exp =>
       exp.id === updatedExperience.id ? updatedExperience : exp
     );
     updateExperiences(updatedExperiences);
+
+    // Trigger debounced auto-save
+    debouncedSave(updatedExperience.id, updatedExperience);
   };
 
   const handleUpdateSection = (experienceId: string, updatedSection: BlockSection) => {
@@ -366,10 +454,17 @@ const WorkExperienceBlocks = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none">
-                    {editingId ? "Update" : "Add"} Experience
+                  <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      `${editingId ? "Update" : "Add"} Experience`
+                    )}
                   </Button>
-                  <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none">
+                  <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none" disabled={saving}>
                     Cancel
                   </Button>
                 </div>

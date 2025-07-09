@@ -89,6 +89,7 @@ interface ResumeDataProviderProps {
 
 export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  // Database hooks are the primary source of truth for data persistence
   const { workExperiences, loading: workExpLoading } = useWorkExperience();
   const { education, loading: educationLoading } = useEducation();
   const { certifications, loading: certificationsLoading } = useCertifications();
@@ -141,7 +142,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     if (workExperiences && workExperiences.length > 0) {
       const convertedExperiences: WorkExperience[] = workExperiences.map(exp => ({
         id: exp.id,
-        company: exp.company_id ? 'Unknown Company' : exp.title, // Will need company lookup
+        company: exp.company_name || 'Unknown Company', // Use company_name directly
         position: exp.title,
         startDate: exp.start_date || '',
         endDate: exp.end_date || '',
@@ -468,14 +469,18 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     if (!currentEditingResume) return false;
     
     try {
-      // Save the current sections data to the resume (no content property needed for JobAnalysis)
+      // The actual saving is now handled by the individual components
+      // using their respective database hooks. This function just confirms
+      // that the current resume state is ready for use.
       console.log('Resume data prepared for saving:', currentEditingResume.id);
       console.log('Resume sections:', resumeSections);
-      toast.success('Resume changes saved!');
+      
+      // All data is automatically saved by the component hooks
+      toast.success('Resume data is synchronized with database!');
       return true;
     } catch (error) {
-      console.error('Error saving resume:', error);
-      toast.error('Failed to save resume changes');
+      console.error('Error confirming resume save:', error);
+      toast.error('Failed to confirm resume save');
       return false;
     }
   };

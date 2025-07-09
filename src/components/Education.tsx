@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GraduationCap, Calendar, Building, Edit2, Trash2 } from "lucide-react";
+import { Plus, GraduationCap, Calendar, Building, Edit2, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { useEducation } from "@/hooks/useEducation";
 
 interface Education {
   id: string;
@@ -20,6 +21,7 @@ interface Education {
 
 const Education = () => {
   const { education: resumeEducation, setEducation } = useResumeData();
+  const { saveEducation, updateEducation: updateEducationDb, deleteEducation, saving } = useEducation();
   
   // Use resume data if available, otherwise show empty state
   const educationList = resumeEducation || [];
@@ -40,7 +42,7 @@ const Education = () => {
     isCurrentlyEnrolled: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.institution || !formData.degree) {
@@ -48,28 +50,63 @@ const Education = () => {
       return;
     }
 
-    const newEducation: Education = {
-      id: editingId || Date.now().toString(),
+    // Prepare database format
+    const educationData = {
       institution: formData.institution,
       degree: formData.degree,
-      fieldOfStudy: formData.fieldOfStudy,
-      startDate: formData.startDate,
-      endDate: formData.isCurrentlyEnrolled ? "" : formData.endDate,
-      gpa: formData.gpa,
-      isCurrentlyEnrolled: formData.isCurrentlyEnrolled
+      field_of_study: formData.fieldOfStudy,
+      start_date: formData.startDate || null,
+      end_date: formData.isCurrentlyEnrolled ? null : formData.endDate || null,
+      gpa: formData.gpa ? parseFloat(formData.gpa) : null,
+      is_current: formData.isCurrentlyEnrolled,
     };
 
-    if (editingId) {
-      const updatedEducation = educationList.map(edu => edu.id === editingId ? newEducation : edu);
-      updateEducation(updatedEducation);
-      toast.success("Education updated!");
-    } else {
-      const updatedEducation = [newEducation, ...educationList];
-      updateEducation(updatedEducation);
-      toast.success("Education added!");
+    try {
+      if (editingId && !editingId.startsWith('parsed-edu-')) {
+        // Update existing database record
+        const result = await updateEducationDb(editingId, educationData);
+        if (result) {
+          // Update local state
+          const updatedEducation = educationList.map(edu => 
+            edu.id === editingId ? {
+              ...edu,
+              institution: formData.institution,
+              degree: formData.degree,
+              fieldOfStudy: formData.fieldOfStudy,
+              startDate: formData.startDate,
+              endDate: formData.isCurrentlyEnrolled ? "" : formData.endDate,
+              gpa: formData.gpa,
+              isCurrentlyEnrolled: formData.isCurrentlyEnrolled
+            } : edu
+          );
+          updateEducation(updatedEducation);
+        }
+      } else {
+        // Create new database record
+        const result = await saveEducation(educationData);
+        if (result) {
+          // Create local format for UI
+          const newEducation: Education = {
+            id: result.id,
+            institution: formData.institution,
+            degree: formData.degree,
+            fieldOfStudy: formData.fieldOfStudy,
+            startDate: formData.startDate,
+            endDate: formData.isCurrentlyEnrolled ? "" : formData.endDate,
+            gpa: formData.gpa,
+            isCurrentlyEnrolled: formData.isCurrentlyEnrolled
+          };
+          
+          const updatedEducation = [newEducation, ...educationList];
+          updateEducation(updatedEducation);
+        }
+      }
+      
+      resetForm();
+    } catch (error) {
+      console.error('Error saving education:', error);
+      toast.error('Failed to save education');
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -100,10 +137,23 @@ const Education = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedEducation = educationList.filter(edu => edu.id !== id);
-    updateEducation(updatedEducation);
-    toast.success("Education deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      // Only delete from database if it's not a local-only record
+      if (!id.startsWith('parsed-edu-')) {
+        const success = await deleteEducation(id);
+        if (!success) {
+          return; // Don't update local state if database deletion failed
+        }
+      }
+      
+      // Update local state
+      const updatedEducation = educationList.filter(edu => edu.id !== id);
+      updateEducation(updatedEducation);
+    } catch (error) {
+      console.error('Error deleting education:', error);
+      toast.error('Failed to delete education');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -218,10 +268,17 @@ const Education = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none">
-                  {editingId ? "Update" : "Add"} Education
+                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    `${editingId ? "Update" : "Add"} Education`
+                  )}
                 </Button>
-                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none">
+                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none" disabled={saving}>
                   Cancel
                 </Button>
               </div>
