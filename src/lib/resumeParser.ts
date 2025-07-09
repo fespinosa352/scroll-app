@@ -194,13 +194,25 @@ function extractExperience(text: string): ParsedResume['experience'] {
       continue;
     }
     
-    // Stop if we hit another major section
-    if (inExperienceSection && 
-        (upperLine.includes('EDUCATION') || upperLine.includes('SKILLS') || 
-         upperLine.includes('PROJECTS') || upperLine.includes('CERTIFICATIONS') ||
-         upperLine.includes('SUMMARY') || upperLine.includes('OBJECTIVE'))) {
-      console.log(`Ending experience section at line ${i} due to header: "${line}"`);
-      break;
+    // Stop if we hit another major section (be more strict about what constitutes a section header)
+    if (inExperienceSection) {
+      const isRealSectionHeader = (
+        (line.includes('EDUCATION') || line.includes('SKILLS') || 
+         line.includes('PROJECTS') || line.includes('CERTIFICATIONS') ||
+         line.includes('SUMMARY') || line.includes('OBJECTIVE')) &&
+        // Make sure it's actually a section header, not just content that mentions these words
+        (line.length < 50 && // Section headers are usually short
+         !line.includes('.') && // Headers usually don't end with periods
+         !line.includes('(') && // Headers usually don't have parentheses
+         !line.includes('enabling') && // Not achievement text
+         !line.includes('achieving') && // Not achievement text
+         !line.includes('boosting')) // Not achievement text
+      );
+      
+      if (isRealSectionHeader) {
+        console.log(`Ending experience section at line ${i} due to header: "${line}"`);
+        break;
+      }
     }
     
     if (inExperienceSection) {
