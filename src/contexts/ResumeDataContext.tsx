@@ -142,7 +142,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     if (workExperiences && workExperiences.length > 0) {
       const convertedExperiences: WorkExperience[] = workExperiences.map(exp => ({
         id: exp.id,
-        company: exp.company_name || 'Unknown Company', // Use company_name directly
+        company: exp.company_id || 'Unknown Company', // Note: Using company_id as company field
         position: exp.title,
         startDate: exp.start_date || '',
         endDate: exp.end_date || '',

@@ -58,7 +58,8 @@ const Education = () => {
       start_date: formData.startDate || null,
       end_date: formData.isCurrentlyEnrolled ? null : formData.endDate || null,
       gpa: formData.gpa ? parseFloat(formData.gpa) : null,
-      is_current: formData.isCurrentlyEnrolled,
+      description: null,
+      user_id: '', // Will be set by the hook
     };
 
     try {

@@ -58,6 +58,7 @@ const Certifications = () => {
       expiration_date: formData.doesNotExpire ? null : formData.expiryDate || null,
       credential_id: formData.credentialId || null,
       credential_url: formData.credentialUrl || null,
+      user_id: '', // Will be set by the hook
     };
 
     try {
