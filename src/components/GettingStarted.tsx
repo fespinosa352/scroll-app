@@ -179,7 +179,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
       
       if (successCount === completedResumes.length) {
         toast.success("Your professional data has been imported successfully!");
-        // Navigate to Job Match module
+        // Navigate to Analyze & Optimize module
         onComplete?.();
       } else if (successCount > 0) {
         toast.success(`${successCount} of ${completedResumes.length} resumes imported successfully!`);

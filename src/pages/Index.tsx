@@ -184,7 +184,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Job Match</span>
+              <span className="text-xs md:text-sm">Analyze & Optimize</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
