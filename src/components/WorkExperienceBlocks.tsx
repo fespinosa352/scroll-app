@@ -7,6 +7,7 @@ import { Plus, Briefcase, Calendar, Building, Edit2, Trash2, GripVertical, Loade
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { useWorkExperience } from "@/hooks/useWorkExperience";
+import { standardizeDate } from "@/lib/dateUtils";
 import { WorkExperienceWithBlocks, BlockSection, Block, BlockType } from "@/types/blocks";
 import { BlockSection as BlockSectionComponent } from "@/components/blocks/BlockSection";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
@@ -44,8 +45,8 @@ const WorkExperienceBlocks = () => {
           const workExperienceData = {
             title: experience.position,
             company_name: experience.company,
-            start_date: experience.startDate,
-            end_date: experience.isCurrentRole ? null : experience.endDate,
+            start_date: standardizeDate(experience.startDate),
+            end_date: experience.isCurrentRole ? null : standardizeDate(experience.endDate),
             is_current: experience.isCurrentRole,
             location: experience.location,
             description: description,
@@ -81,8 +82,8 @@ const WorkExperienceBlocks = () => {
     const workExperienceData = {
       title: formData.position,
       company_name: formData.company, // Store company name directly for now
-      start_date: formData.startDate,
-      end_date: formData.isCurrentRole ? null : formData.endDate,
+      start_date: standardizeDate(formData.startDate),
+      end_date: formData.isCurrentRole ? null : standardizeDate(formData.endDate),
       is_current: formData.isCurrentRole,
       location: formData.location,
       description: "", // Will be populated from blocks later
@@ -113,7 +114,7 @@ const WorkExperienceBlocks = () => {
         const result = await saveWorkExperience({
           ...workExperienceData,
           company_id: null,
-          user_id: '', // Will be set by the hook
+          // Don't include user_id here - let the hook handle it
           employment_type: null,
         });
         if (result) {

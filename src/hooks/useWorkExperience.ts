@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 type WorkExperience = Tables<'work_experiences'>;
-type WorkExperienceInsert = Omit<WorkExperience, 'id' | 'created_at' | 'updated_at'>;
-type WorkExperienceUpdate = Partial<WorkExperienceInsert>;
+type WorkExperienceInsert = Omit<TablesInsert<'work_experiences'>, 'user_id'>;
+type WorkExperienceUpdate = TablesUpdate<'work_experiences'>;
 
 export const useWorkExperience = () => {
   const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
