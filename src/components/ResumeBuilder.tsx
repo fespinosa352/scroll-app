@@ -101,7 +101,7 @@ const ResumeBuilder = () => {
   const createCertificationBlocks = (): DraggableBlock[] => {
     return certifications.map((cert, index) => ({
       id: `certification-${cert.id}`,
-      type: 'achievement' as const,
+      type: 'certification' as const,
       content: `${cert.name} - ${cert.issuer}${cert.issueDate ? ` (${cert.issueDate})` : ''}`,
       metadata: {},
       order: index,
@@ -394,6 +394,7 @@ const ResumeBuilder = () => {
     text: Type,
     bullet: List,
     achievement: Target,
+    certification: Award,
     heading: Type,
     metric: BarChart,
     skill_tag: Tag,

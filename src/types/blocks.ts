@@ -4,6 +4,7 @@ export type BlockType =
   | 'text' 
   | 'bullet' 
   | 'achievement' 
+  | 'certification'
   | 'heading' 
   | 'metric'
   | 'skill_tag';
@@ -60,7 +61,7 @@ export interface BlockTemplate {
   name: string;
   description: string;
   blocks: Omit<Block, 'id' | 'created_at' | 'updated_at'>[];
-  category: 'achievement' | 'responsibility' | 'project' | 'skill';
+  category: 'achievement' | 'responsibility' | 'project' | 'skill' | 'certification';
 }
 
 // For resume building - blocks that can be dragged
