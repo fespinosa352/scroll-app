@@ -7,6 +7,7 @@ import { Plus, GraduationCap, Calendar, Building, Edit2, Trash2, Loader2 } from 
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { useEducation } from "@/hooks/useEducation";
+import { standardizeDate, formatDateForDisplay, formatForMonthInput } from "@/lib/dateUtils";
 
 interface Education {
   id: string;
@@ -50,19 +51,13 @@ const Education = () => {
       return;
     }
 
-    // Helper function to convert YYYY-MM format to YYYY-MM-DD
-    const convertMonthToDate = (monthStr: string): string | null => {
-      if (!monthStr) return null;
-      return `${monthStr}-01`; // Add day as 01 for month inputs
-    };
-
-    // Prepare database format
+    // Prepare database format using standardized date utilities
     const educationData = {
       institution: formData.institution,
       degree: formData.degree,
       field_of_study: formData.fieldOfStudy,
-      start_date: convertMonthToDate(formData.startDate),
-      end_date: formData.isCurrentlyEnrolled ? null : convertMonthToDate(formData.endDate),
+      start_date: standardizeDate(formData.startDate),
+      end_date: formData.isCurrentlyEnrolled ? null : standardizeDate(formData.endDate),
       gpa: formData.gpa ? parseFloat(formData.gpa) : null,
       description: null,
       user_id: '', // Will be set by the hook
@@ -135,8 +130,8 @@ const Education = () => {
       institution: education.institution,
       degree: education.degree,
       fieldOfStudy: education.fieldOfStudy,
-      startDate: education.startDate,
-      endDate: education.endDate,
+      startDate: formatForMonthInput(education.startDate),
+      endDate: formatForMonthInput(education.endDate),
       gpa: education.gpa || "",
       isCurrentlyEnrolled: education.isCurrentlyEnrolled
     });
@@ -163,11 +158,7 @@ const Education = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "Present";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-  };
+  // Remove the old formatDate function - now using standardized utilities
 
   return (
     <div className="space-y-6">
@@ -337,7 +328,7 @@ const Education = () => {
                     )}
                     <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
                       <Calendar className="w-4 h-4" />
-                      <span>{formatDate(education.startDate)} - {formatDate(education.endDate)}</span>
+                      <span>{formatDateForDisplay(education.startDate)} - {formatDateForDisplay(education.endDate)}</span>
                     </div>
                     {education.gpa && (
                       <div className="flex items-center gap-2">

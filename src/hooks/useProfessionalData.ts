@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import { standardizeDate } from '@/lib/dateUtils';
 
 type Company = Database['public']['Tables']['companies']['Row'];
 type CompanyInsert = Database['public']['Tables']['companies']['Insert'];
@@ -140,10 +141,10 @@ export const useProfessionalData = () => {
         const companyId = await getOrCreateCompany(exp.company);
         if (!companyId) continue;
 
-        // Parse dates
+        // Parse dates using standardized utilities
         const dates = exp.duration.split(' - ');
-        const startDate = parseDateString(dates[0]);
-        const endDate = dates[1] && dates[1] !== 'Present' ? parseDateString(dates[1]) : null;
+        const startDate = standardizeDate(dates[0]);
+        const endDate = dates[1] && dates[1] !== 'Present' ? standardizeDate(dates[1]) : null;
         const isCurrent = dates[1] === 'Present' || !endDate;
 
         // Create work experience
@@ -192,7 +193,7 @@ export const useProfessionalData = () => {
           degree: edu.degree,
           field_of_study: edu.fieldOfStudy || null,
           gpa: edu.gpa ? parseFloat(edu.gpa) : null,
-          end_date: parseDateString(edu.year)
+          end_date: standardizeDate(edu.year)
         };
 
         await supabase.from('education').insert(eduData);
@@ -204,8 +205,8 @@ export const useProfessionalData = () => {
           user_id: user.id,
           name: cert.name,
           issuing_organization: cert.issuer,
-          issue_date: cert.issueDate ? parseDateString(cert.issueDate) : null,
-          expiration_date: cert.expiryDate ? parseDateString(cert.expiryDate) : null,
+          issue_date: cert.issueDate ? standardizeDate(cert.issueDate) : null,
+          expiration_date: cert.expiryDate ? standardizeDate(cert.expiryDate) : null,
           credential_id: cert.credentialId || null
         };
 
@@ -218,7 +219,7 @@ export const useProfessionalData = () => {
           user_id: user.id,
           name: `${affiliation.role || 'Member'} - ${affiliation.organization}`,
           issuing_organization: affiliation.organization,
-          issue_date: affiliation.year ? parseDateString(affiliation.year) : null
+          issue_date: affiliation.year ? standardizeDate(affiliation.year) : null
         };
 
         await supabase.from('certifications').insert(affiliationData);
@@ -248,71 +249,9 @@ export const useProfessionalData = () => {
     }
   };
 
-  // Helper function to parse date strings
-  const parseDateString = (dateStr: string): string | null => {
-    if (!dateStr || dateStr === 'Present') return null;
-    
-    // Clean the date string
-    const cleanDate = dateStr.trim();
-    
-    // Handle MM/YYYY format (e.g., "09/2007")
-    const mmYyyy = cleanDate.match(/^(\d{1,2})\/(\d{4})$/);
-    if (mmYyyy) {
-      const month = mmYyyy[1].padStart(2, '0');
-      const year = mmYyyy[2];
-      return `${year}-${month}-01`;
-    }
-    
-    // Handle YYYY format (e.g., "2020")
-    const yearOnly = cleanDate.match(/^(\d{4})$/);
-    if (yearOnly) {
-      return `${yearOnly[1]}-01-01`;
-    }
-    
-    // Handle month name + year format (e.g., "January 2020", "Jan 2020")
-    const monthYear = cleanDate.match(/^(\w+)\s+(\d{4})$/);
-    if (monthYear) {
-      const month = monthYear[1];
-      const year = monthYear[2];
-      const monthNum = getMonthNumber(month);
-      return `${year}-${monthNum.toString().padStart(2, '0')}-01`;
-    }
-    
-    // Handle YYYY-MM-DD format (already valid)
-    const fullDate = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (fullDate) {
-      return cleanDate;
-    }
-    
-    // Try to extract year as fallback
-    const yearMatch = cleanDate.match(/\d{4}/);
-    if (yearMatch) {
-      return `${yearMatch[0]}-01-01`;
-    }
-    
-    return null;
-  };
-
-  // Helper to convert month names to numbers
-  const getMonthNumber = (monthName: string): number => {
-    const months = {
-      'jan': 1, 'january': 1,
-      'feb': 2, 'february': 2,
-      'mar': 3, 'march': 3,
-      'apr': 4, 'april': 4,
-      'may': 5,
-      'jun': 6, 'june': 6,
-      'jul': 7, 'july': 7,
-      'aug': 8, 'august': 8,
-      'sep': 9, 'september': 9,
-      'oct': 10, 'october': 10,
-      'nov': 11, 'november': 11,
-      'dec': 12, 'december': 12
-    };
-    
-    return months[monthName.toLowerCase()] || 1;
-  };
-
+  // Note: parseDateString and getMonthNumber functions removed
+  // All date parsing is now handled by the centralized dateUtils
+  
   return {
     loading,
     saving,
