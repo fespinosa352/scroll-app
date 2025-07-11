@@ -250,12 +250,11 @@ const Index = () => {
                       Upload a job description to get your personalized ATS optimization score and tailored resume suggestions.
                     </p>
                     <Button 
-                      variant="primary-lg" 
-                      className="w-full md:w-auto"
+                      className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-lg px-8 py-4 h-auto min-h-[48px]"
                       onClick={() => setActiveTab("jobs")}
                     >
                       <Search className="w-5 h-5 mr-2" />
-                      Analyze a Job Posting
+                      Analyze a Job Description
                     </Button>
                   </div>
                 </div>
