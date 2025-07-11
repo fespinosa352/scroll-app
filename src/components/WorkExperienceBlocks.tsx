@@ -115,10 +115,16 @@ const WorkExperienceBlocks = () => {
         }
       } else {
         // Create new database record
+        // First create/find company if needed
+        let companyId = null;
+        if (formData.company.trim()) {
+          // For now, we'll store company name in description until we have a proper company field
+          workExperienceData.description = `Company: ${formData.company}`;
+        }
+        
         const result = await saveWorkExperience({
           ...workExperienceData,
-          company_id: null,
-          // Don't include user_id here - let the hook handle it
+          company_id: companyId,
           employment_type: null,
         });
         if (result) {
