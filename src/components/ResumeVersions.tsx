@@ -125,8 +125,8 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
                   DOCX
                 </Button>
                 <Button 
-                  variant="primary" 
                   size="touch"
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
                   onClick={() => handleEdit(resume)}
                 >
                   <Edit3 className="w-4 h-4 mr-1" />

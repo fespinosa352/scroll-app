@@ -263,7 +263,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                 />
                 <Button 
                   size="lg" 
-                  className="text-lg px-8 py-4"
+                  className="text-lg px-8 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
                   onClick={() => document.getElementById('resume-upload')?.click()}
                 >
                   Choose Files
@@ -432,7 +432,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                   <Button 
                     onClick={() => setCurrentStep("review")}
                     size="lg"
-                    className="px-8"
+                    className="px-8 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
                   >
                     Review & Organize Data
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -504,7 +504,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               <Button 
                 onClick={handleCompleteSetup}
                 size="lg"
-                className="text-lg px-12 py-4"
+                className="text-lg px-12 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
               >
                 Go to My Resume
                 <ArrowRight className="w-5 h-5 ml-2" />
