@@ -252,19 +252,42 @@ export const useProfessionalData = () => {
   const parseDateString = (dateStr: string): string | null => {
     if (!dateStr || dateStr === 'Present') return null;
     
-    // Try to parse common date formats
-    const year = dateStr.match(/\d{4}/)?.[0];
-    if (year) {
-      return `${year}-01-01`; // Default to January 1st for year-only dates
+    // Clean the date string
+    const cleanDate = dateStr.trim();
+    
+    // Handle MM/YYYY format (e.g., "09/2007")
+    const mmYyyy = cleanDate.match(/^(\d{1,2})\/(\d{4})$/);
+    if (mmYyyy) {
+      const month = mmYyyy[1].padStart(2, '0');
+      const year = mmYyyy[2];
+      return `${year}-${month}-01`;
     }
     
-    // Try to parse month/year format
-    const monthYear = dateStr.match(/(\w+)\s+(\d{4})/);
+    // Handle YYYY format (e.g., "2020")
+    const yearOnly = cleanDate.match(/^(\d{4})$/);
+    if (yearOnly) {
+      return `${yearOnly[1]}-01-01`;
+    }
+    
+    // Handle month name + year format (e.g., "January 2020", "Jan 2020")
+    const monthYear = cleanDate.match(/^(\w+)\s+(\d{4})$/);
     if (monthYear) {
       const month = monthYear[1];
       const year = monthYear[2];
       const monthNum = getMonthNumber(month);
       return `${year}-${monthNum.toString().padStart(2, '0')}-01`;
+    }
+    
+    // Handle YYYY-MM-DD format (already valid)
+    const fullDate = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (fullDate) {
+      return cleanDate;
+    }
+    
+    // Try to extract year as fallback
+    const yearMatch = cleanDate.match(/\d{4}/);
+    if (yearMatch) {
+      return `${yearMatch[0]}-01-01`;
     }
     
     return null;
