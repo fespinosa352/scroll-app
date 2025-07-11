@@ -61,9 +61,15 @@ const WorkExperienceBlocks = () => {
   }, [updateWorkExperience]);
 
   // Initialize block experiences from traditional format if needed
-  const experiences = workExperienceBlocks.length > 0 
+  const experiences = (workExperienceBlocks.length > 0 
     ? workExperienceBlocks 
-    : (workExperience.length > 0 ? convertToBlockFormat(workExperience) : []);
+    : (workExperience.length > 0 ? convertToBlockFormat(workExperience) : []))
+    .sort((a, b) => {
+      // Sort by start date descending (latest first)
+      const dateA = new Date(a.startDate || '1970-01-01');
+      const dateB = new Date(b.startDate || '1970-01-01');
+      return dateB.getTime() - dateA.getTime();
+    });
 
   const updateExperiences = (newExperiences: WorkExperienceWithBlocks[]) => {
     setWorkExperienceBlocks(newExperiences);
@@ -368,7 +374,7 @@ const WorkExperienceBlocks = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="w-5 h-5" />
-              Work Experience (Block Editor)
+              Work Experience
             </CardTitle>
             <CardDescription>
               Create detailed, block-based work experience that can be easily reorganized and reused in resumes
