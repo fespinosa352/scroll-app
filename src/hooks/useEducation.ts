@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 type Education = Tables<'education'>;
-type EducationInsert = Omit<Education, 'id' | 'created_at' | 'updated_at'>;
-type EducationUpdate = Partial<EducationInsert>;
+type EducationInsert = Omit<TablesInsert<'education'>, 'user_id'>;
+type EducationUpdate = TablesUpdate<'education'>;
 
 export const useEducation = () => {
   const [education, setEducation] = useState<Education[]>([]);

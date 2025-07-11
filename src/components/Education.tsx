@@ -60,7 +60,7 @@ const Education = () => {
       end_date: formData.isCurrentlyEnrolled ? null : standardizeDate(formData.endDate),
       gpa: formData.gpa ? parseFloat(formData.gpa) : null,
       description: null,
-      user_id: '', // Will be set by the hook
+      // Don't include user_id here - let the hook handle it
     };
 
     try {
