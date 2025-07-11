@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { 
   FileText, 
   Plus, 
@@ -28,6 +29,8 @@ import { useResumeData } from "@/contexts/ResumeDataContext";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
 import { DraggableBlock, ResumeSection, Block } from "@/types/blocks";
 import { Block as BlockComponent } from "@/components/blocks/Block";
+import { useResumes } from "@/hooks/useResumes";
+import { toast } from "sonner";
 
 const ResumeBuilder = () => {
   const { 
@@ -41,11 +44,15 @@ const ResumeBuilder = () => {
     certifications,
     skills
   } = useResumeData();
+  const { saveResume } = useResumes();
   const [resumeName, setResumeName] = useState(currentEditingResume?.name || "My Resume");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [tempResumeName, setTempResumeName] = useState("");
   
   // Update resume name when editing resume changes
   useEffect(() => {
@@ -343,18 +350,44 @@ const ResumeBuilder = () => {
     setResumeSections(updatedSections);
   };
 
-  const handleSaveResume = async () => {
+  const handleSaveResume = () => {
+    setTempResumeName(resumeName);
+    setShowSaveDialog(true);
+  };
+
+  const confirmSaveResume = async () => {
+    if (!tempResumeName.trim()) {
+      toast.error('Please enter a resume name');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const success = await saveCurrentResume();
-      if (success) {
-        // Could show success message or navigate back to resume list
+      const resumeData = {
+        name: tempResumeName,
+        content: {
+          personalInfo,
+          sections: activeResumeSections,
+          resumeName: tempResumeName
+        }
+      };
+      
+      const savedResume = await saveResume(resumeData);
+      if (savedResume) {
+        setResumeName(tempResumeName);
+        setShowSaveDialog(false);
+        toast.success('Resume saved successfully!');
       }
     } catch (error) {
       console.error('Error saving resume:', error);
+      toast.error('Failed to save resume');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePreview = () => {
+    setShowPreview(true);
   };
 
   const blockTypeIcons = {
@@ -789,18 +822,25 @@ const ResumeBuilder = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button 
-                    variant="primary" 
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg font-semibold"
                     size="sm" 
                     onClick={handleSaveResume}
                     disabled={isSaving}
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg font-semibold"
+                    size="sm"
+                    onClick={handlePreview}
+                  >
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg font-semibold"
+                    size="sm"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
@@ -907,6 +947,87 @@ const ResumeBuilder = () => {
           </Card>
         </div>
       </div>
+
+      {/* Save Resume Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Resume</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Resume Name</label>
+              <Input
+                value={tempResumeName}
+                onChange={(e) => setTempResumeName(e.target.value)}
+                placeholder="Enter resume name"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmSaveResume} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Resume'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Resume Preview</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 p-6 bg-white border rounded-lg">
+            {/* Resume Header */}
+            <div className="border-b pb-4">
+              <h1 className="text-2xl font-bold">{resumeName}</h1>
+              {personalInfo && (
+                <div className="mt-2 text-sm text-gray-600">
+                  <div className="font-medium">{personalInfo.name}</div>
+                  <div>{personalInfo.email} • {personalInfo.phone}</div>
+                  <div>{personalInfo.location}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Resume Sections */}
+            <div className="space-y-6">
+              {activeResumeSections
+                .filter(section => section.blocks.length > 0)
+                .map((section) => (
+                <div key={section.id} className="space-y-3">
+                  <h2 className="text-lg font-semibold border-b pb-1">
+                    {section.title}
+                  </h2>
+                  <div className="space-y-2">
+                    {section.blocks.map((block) => (
+                      <div key={block.id} className="text-sm">
+                        {block.type === 'skill_tag' ? (
+                          <Badge variant="secondary" className="mr-1 mb-1">
+                            {block.content}
+                          </Badge>
+                        ) : (
+                          <div className="mb-2">{block.content}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DragDropContext>
   );
 };
