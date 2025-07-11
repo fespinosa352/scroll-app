@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateRange, formatDateForDisplay } from '@/lib/dateUtils';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText } from "lucide-react";
-import { format } from "date-fns";
+
 import WorkExperienceBlocks from "./WorkExperienceBlocks";
 import Education from "./Education";
 import Certifications from "./Certifications";
@@ -23,21 +24,7 @@ const MyResume = () => {
 
   const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | null>(null);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr + '-01');
-      return format(date, 'MMM yyyy');
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatDateRange = (startDate: string, endDate: string, isCurrent?: boolean) => {
-    const start = formatDate(startDate);
-    const end = isCurrent ? 'Present' : formatDate(endDate);
-    return `${start} - ${end}`;
-  };
+  // Use standard date utilities instead of custom formatting
 
   const hasAnyData = personalInfo || workExperience.length > 0 || education.length > 0 || certifications.length > 0 || skills.length > 0;
 
@@ -248,12 +235,12 @@ const MyResume = () => {
                         {cert.issueDate && (
                           <p className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Issued: {formatDate(cert.issueDate)}
+                            Issued: {formatDateForDisplay(cert.issueDate)}
                           </p>
                         )}
                         {cert.expiryDate && !cert.doesNotExpire && (
                           <p className="text-red-600">
-                            Expires: {formatDate(cert.expiryDate)}
+                            Expires: {formatDateForDisplay(cert.expiryDate)}
                           </p>
                         )}
                         {cert.doesNotExpire && (
