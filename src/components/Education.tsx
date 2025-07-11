@@ -50,13 +50,19 @@ const Education = () => {
       return;
     }
 
+    // Helper function to convert YYYY-MM format to YYYY-MM-DD
+    const convertMonthToDate = (monthStr: string): string | null => {
+      if (!monthStr) return null;
+      return `${monthStr}-01`; // Add day as 01 for month inputs
+    };
+
     // Prepare database format
     const educationData = {
       institution: formData.institution,
       degree: formData.degree,
       field_of_study: formData.fieldOfStudy,
-      start_date: formData.startDate || null,
-      end_date: formData.isCurrentlyEnrolled ? null : formData.endDate || null,
+      start_date: convertMonthToDate(formData.startDate),
+      end_date: formData.isCurrentlyEnrolled ? null : convertMonthToDate(formData.endDate),
       gpa: formData.gpa ? parseFloat(formData.gpa) : null,
       description: null,
       user_id: '', // Will be set by the hook
