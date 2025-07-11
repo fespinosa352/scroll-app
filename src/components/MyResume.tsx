@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateRange, formatDateForDisplay } from '@/lib/dateUtils';
+import { formatWithInvalidHighlight } from '@/utils/dataValidation';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,16 @@ const MyResume = () => {
     certifications, 
     skills 
   } = useResumeData();
+
+  // Component to render text with invalid data highlighting
+  const InvalidDataText = ({ children }: { children: string }) => {
+    const { isInvalid } = formatWithInvalidHighlight(children);
+    return (
+      <span className={isInvalid ? 'text-red-600 font-medium' : ''}>
+        {children}
+      </span>
+    );
+  };
 
   const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | null>(null);
 
@@ -112,12 +123,16 @@ const MyResume = () => {
                   <div className="space-y-3">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{exp.position}</h3>
-                        <p className="text-slate-700 font-medium">{exp.company}</p>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          <InvalidDataText>{exp.position}</InvalidDataText>
+                        </h3>
+                        <p className="text-slate-700 font-medium">
+                          <InvalidDataText>{exp.company}</InvalidDataText>
+                        </p>
                       </div>
                       <div className="text-sm text-slate-500 flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {formatDateRange(exp.startDate, exp.endDate, exp.isCurrentRole)}
+                        <InvalidDataText>{formatDateRange(exp.startDate, exp.endDate, exp.isCurrentRole)}</InvalidDataText>
                       </div>
                     </div>
                     {exp.description && (
@@ -175,15 +190,19 @@ const MyResume = () => {
                   <div className="space-y-2">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{edu.degree}</h3>
-                        <p className="text-slate-700 font-medium">{edu.institution}</p>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          <InvalidDataText>{edu.degree}</InvalidDataText>
+                        </h3>
+                        <p className="text-slate-700 font-medium">
+                          <InvalidDataText>{edu.institution}</InvalidDataText>
+                        </p>
                         {edu.fieldOfStudy && (
                           <p className="text-slate-600">{edu.fieldOfStudy}</p>
                         )}
                       </div>
                       <div className="text-sm text-slate-500 flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {formatDateRange(edu.startDate, edu.endDate, edu.isCurrentlyEnrolled)}
+                        <InvalidDataText>{formatDateRange(edu.startDate, edu.endDate, edu.isCurrentlyEnrolled)}</InvalidDataText>
                       </div>
                     </div>
                     {edu.gpa && (
@@ -228,19 +247,23 @@ const MyResume = () => {
                   <div className="space-y-2">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{cert.name}</h3>
-                        <p className="text-slate-700 font-medium">{cert.issuer}</p>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          <InvalidDataText>{cert.name}</InvalidDataText>
+                        </h3>
+                        <p className="text-slate-700 font-medium">
+                          <InvalidDataText>{cert.issuer}</InvalidDataText>
+                        </p>
                       </div>
                       <div className="text-sm text-slate-500">
                         {cert.issueDate && (
                           <p className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Issued: {formatDateForDisplay(cert.issueDate)}
+                            Issued: <InvalidDataText>{formatDateForDisplay(cert.issueDate)}</InvalidDataText>
                           </p>
                         )}
                         {cert.expiryDate && !cert.doesNotExpire && (
                           <p className="text-red-600">
-                            Expires: {formatDateForDisplay(cert.expiryDate)}
+                            Expires: <InvalidDataText>{formatDateForDisplay(cert.expiryDate)}</InvalidDataText>
                           </p>
                         )}
                         {cert.doesNotExpire && (

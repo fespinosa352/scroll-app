@@ -1,4 +1,5 @@
 // Data validation utilities for detecting invalid or placeholder values
+import { formatDateForDisplay } from '@/lib/dateUtils';
 
 export const INVALID_VALUE_PATTERNS = [
   'Unknown Company',
@@ -38,19 +39,25 @@ export const getInvalidDataCount = (workExperience: any[], education: any[], cer
   workExperience.forEach(exp => {
     if (isInvalidValue(exp.company)) count++;
     if (isInvalidValue(exp.position)) count++;
-    if (isInvalidValue(exp.startDate) || isInvalidValue(exp.endDate)) count++;
+    if (isInvalidValue(exp.startDate)) count++;
+    if (isInvalidValue(exp.endDate)) count++;
+    // Check formatted date displays
+    if (exp.startDate && formatDateForDisplay(exp.startDate) === 'Invalid Date') count++;
+    if (exp.endDate && formatDateForDisplay(exp.endDate) === 'Invalid Date') count++;
   });
   
   // Check education
   education.forEach(edu => {
     if (isInvalidValue(edu.institution)) count++;
     if (isInvalidValue(edu.degree)) count++;
+    if (edu.graduationDate && formatDateForDisplay(edu.graduationDate) === 'Invalid Date') count++;
   });
   
   // Check certifications  
   certifications.forEach(cert => {
     if (isInvalidValue(cert.name)) count++;
     if (isInvalidValue(cert.issuer)) count++;
+    if (cert.issueDate && formatDateForDisplay(cert.issueDate) === 'Invalid Date') count++;
   });
   
   return count;
