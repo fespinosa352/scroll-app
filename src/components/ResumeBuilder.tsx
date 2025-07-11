@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   FileText, 
   Plus, 
@@ -14,7 +16,13 @@ import {
   List,
   Type,
   BarChart,
-  Tag
+  Tag,
+  ChevronDown,
+  ChevronRight,
+  Building,
+  GraduationCap,
+  Award,
+  User
 } from "lucide-react";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
@@ -28,10 +36,16 @@ const ResumeBuilder = () => {
     currentEditingResume, 
     resumeSections, 
     setResumeSections,
-    saveCurrentResume 
+    saveCurrentResume,
+    education,
+    certifications,
+    skills
   } = useResumeData();
   const [resumeName, setResumeName] = useState(currentEditingResume?.name || "My Resume");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   // Update resume name when editing resume changes
   useEffect(() => {
@@ -60,8 +74,57 @@ const ResumeBuilder = () => {
     }
   ];
 
+  // Helper functions for creating draggable blocks from different data sources
+  const createEducationBlocks = (): DraggableBlock[] => {
+    return education.map((edu, index) => ({
+      id: `education-${edu.id}`,
+      type: 'text' as const,
+      content: `${edu.degree} in ${edu.fieldOfStudy || 'General Studies'} from ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''}`,
+      metadata: {},
+      order: index,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: 'education',
+      sourceSectionId: 'education-items',
+      isDraggable: true,
+      tags: ['education', edu.institution.toLowerCase(), edu.degree.toLowerCase()]
+    }));
+  };
+
+  const createCertificationBlocks = (): DraggableBlock[] => {
+    return certifications.map((cert, index) => ({
+      id: `certification-${cert.id}`,
+      type: 'achievement' as const,
+      content: `${cert.name} - ${cert.issuer}${cert.issueDate ? ` (${cert.issueDate})` : ''}`,
+      metadata: {},
+      order: index,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: 'certifications',
+      sourceSectionId: 'certification-items',
+      isDraggable: true,
+      tags: ['certification', cert.issuer.toLowerCase(), cert.name.toLowerCase()]
+    }));
+  };
+
+  const createSkillBlocks = (): DraggableBlock[] => {
+    return skills.map((skill, index) => ({
+      id: `skill-${skill}-${index}`,
+      type: 'skill_tag' as const,
+      content: skill,
+      metadata: {},
+      order: index,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: 'skills',
+      sourceSectionId: 'skill-items',
+      isDraggable: true,
+      tags: ['skill', skill.toLowerCase()]
+    }));
+  };
+
   // Convert work experience blocks to draggable blocks
-  const availableBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
+  const workExperienceBlocks_draggable: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
     experience.sections.flatMap(section =>
       section.blocks.map(block => ({
         ...block,
@@ -78,12 +141,122 @@ const ResumeBuilder = () => {
     )
   );
 
+  // Combine all available blocks
+  const availableBlocks: DraggableBlock[] = [
+    ...workExperienceBlocks_draggable,
+    ...createEducationBlocks(),
+    ...createCertificationBlocks(),
+    ...createSkillBlocks()
+  ];
+
+  // Group blocks by company/source
+  const groupedBlocks = () => {
+    const groups: { [key: string]: { name: string; icon: any; items: any[] } } = {};
+    
+    // Work Experience groups (by company)
+    workExperienceBlocks.forEach(experience => {
+      if (!groups[experience.company]) {
+        groups[experience.company] = {
+          name: experience.company,
+          icon: Building,
+          items: []
+        };
+      }
+      groups[experience.company].items.push({
+        type: 'experience',
+        experience,
+        sections: experience.sections
+      });
+    });
+
+    // Education group
+    if (education.length > 0) {
+      groups['education'] = {
+        name: 'Education',
+        icon: GraduationCap,
+        items: education.map(edu => ({ type: 'education', data: edu }))
+      };
+    }
+
+    // Certifications group
+    if (certifications.length > 0) {
+      groups['certifications'] = {
+        name: 'Certifications',
+        icon: Award,
+        items: certifications.map(cert => ({ type: 'certification', data: cert }))
+      };
+    }
+
+    // Skills group
+    if (skills.length > 0) {
+      groups['skills'] = {
+        name: 'Skills',
+        icon: Tag,
+        items: skills.map(skill => ({ type: 'skill', data: skill }))
+      };
+    }
+
+    return groups;
+  };
+
+  // Selection handlers
+  const handleBlockSelection = (blockId: string, isSelected: boolean) => {
+    const newSelection = new Set(selectedBlocks);
+    if (isSelected) {
+      newSelection.add(blockId);
+    } else {
+      newSelection.delete(blockId);
+    }
+    setSelectedBlocks(newSelection);
+  };
+
+  const handleSelectAll = (blocks: DraggableBlock[], select: boolean) => {
+    const newSelection = new Set(selectedBlocks);
+    blocks.forEach(block => {
+      if (select) {
+        newSelection.add(block.id);
+      } else {
+        newSelection.delete(block.id);
+      }
+    });
+    setSelectedBlocks(newSelection);
+  };
+
+  const addSelectedBlocksToSection = (targetSectionId: string) => {
+    const selectedBlocksArray = availableBlocks.filter(block => selectedBlocks.has(block.id));
+    if (selectedBlocksArray.length === 0) return;
+
+    const updatedSections = activeResumeSections.map(section => {
+      if (section.id === targetSectionId) {
+        const resumeBlocks = selectedBlocksArray.map(block => ({
+          ...block,
+          id: `resume-${block.id}-${Date.now()}`
+        }));
+        return {
+          ...section,
+          blocks: [...section.blocks, ...resumeBlocks]
+        };
+      }
+      return section;
+    });
+
+    setResumeSections(updatedSections);
+    setSelectedBlocks(new Set()); // Clear selection
+  };
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
 
-    if (source.droppableId === 'available-blocks') {
+    // Handle dragging from any block library source to resume
+    const isFromBlockLibrary = source.droppableId === 'available-blocks' || 
+                              source.droppableId.startsWith('section-') ||
+                              source.droppableId === 'education-blocks' ||
+                              source.droppableId === 'certification-blocks' ||
+                              source.droppableId === 'skill-blocks';
+
+    if (isFromBlockLibrary && destination.droppableId.startsWith('resume-section-')) {
       // Dragging from available blocks to resume
       const blockIndex = parseInt(source.index.toString());
       const block = availableBlocks[blockIndex];
@@ -201,61 +374,401 @@ const ResumeBuilder = () => {
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-        {/* Block Library */}
+        {/* Enhanced Block Library */}
         <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Block Library</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <List className="w-4 h-4" />
+                My Resume Elements
+              </CardTitle>
               <CardDescription className="text-xs">
-                Drag blocks from your experiences to build your resume
+                Select and drag elements from your profile data
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4">
-              <Droppable droppableId="available-blocks" isDropDisabled={true}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="space-y-2 max-h-96 overflow-y-auto"
-                  >
-                    {availableBlocks.map((block, index) => {
-                      const experience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
-                      const section = experience?.sections.find(sec => sec.id === block.sourceSectionId);
-                      
-                      return (
-                        <Draggable key={`${block.sourceExperienceId}-${block.id}`} draggableId={`${block.sourceExperienceId}-${block.id}`} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`
-                                p-2 bg-white border rounded text-xs cursor-grab active:cursor-grabbing
-                                ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
-                              `}
-                            >
-                              <div className="flex items-start space-x-2">
-                                <div className="flex-shrink-0 mt-0.5">
-                                  {getBlockIcon(block.type)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs text-gray-500 mb-1">
-                                    {experience?.company} • {section?.title}
-                                  </div>
-                                  <div className="truncate">
-                                    {block.content || 'Empty block'}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {/* Selection Actions */}
+                {selectedBlocks.size > 0 && (
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <div className="text-xs font-medium text-blue-800 mb-2">
+                      {selectedBlocks.size} items selected
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {activeResumeSections.map(section => (
+                        <Button
+                          key={section.id}
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-xs px-2"
+                          onClick={() => addSelectedBlocksToSection(section.id)}
+                        >
+                          Add to {section.title}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </Droppable>
+
+                {/* Grouped Content */}
+                {Object.entries(groupedBlocks()).map(([groupKey, group]) => (
+                  <Collapsible
+                    key={groupKey}
+                    open={expandedCompanies.has(groupKey)}
+                    onOpenChange={(isOpen) => {
+                      const newExpanded = new Set(expandedCompanies);
+                      if (isOpen) {
+                        newExpanded.add(groupKey);
+                      } else {
+                        newExpanded.delete(groupKey);
+                      }
+                      setExpandedCompanies(newExpanded);
+                    }}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-2 h-auto"
+                      >
+                        <div className="flex items-center gap-2">
+                          <group.icon className="w-4 h-4" />
+                          <span className="text-sm font-medium">{group.name}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {group.items.length}
+                          </Badge>
+                        </div>
+                        {expandedCompanies.has(groupKey) ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="space-y-2 pl-2">
+                      {/* Work Experience Items */}
+                      {group.items.map((item, itemIndex) => {
+                        if (item.type === 'experience') {
+                          return (
+                            <div key={`exp-${item.experience.id}`} className="space-y-1">
+                              <div className="text-xs font-medium text-gray-600 px-2">
+                                {item.experience.position}
+                              </div>
+                              {item.sections.map((section: any) => {
+                                const sectionBlocks = availableBlocks.filter(
+                                  block => block.sourceExperienceId === item.experience.id && 
+                                          block.sourceSectionId === section.id
+                                );
+                                
+                                return (
+                                  <Collapsible
+                                    key={section.id}
+                                    open={expandedSections.has(section.id)}
+                                    onOpenChange={(isOpen) => {
+                                      const newExpanded = new Set(expandedSections);
+                                      if (isOpen) {
+                                        newExpanded.add(section.id);
+                                      } else {
+                                        newExpanded.delete(section.id);
+                                      }
+                                      setExpandedSections(newExpanded);
+                                    }}
+                                  >
+                                    <CollapsibleTrigger asChild>
+                                      <Button variant="ghost" className="w-full justify-between p-1 h-auto text-xs">
+                                        <span>{section.title}</span>
+                                        <div className="flex items-center gap-1">
+                                          <Badge variant="outline" className="text-xs h-4">
+                                            {sectionBlocks.length}
+                                          </Badge>
+                                          {expandedSections.has(section.id) ? (
+                                            <ChevronDown className="w-3 h-3" />
+                                          ) : (
+                                            <ChevronRight className="w-3 h-3" />
+                                          )}
+                                        </div>
+                                      </Button>
+                                    </CollapsibleTrigger>
+                                    
+                                    <CollapsibleContent className="space-y-1 pl-2">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Checkbox
+                                          checked={sectionBlocks.every(block => selectedBlocks.has(block.id))}
+                                          onCheckedChange={(checked) => 
+                                            handleSelectAll(sectionBlocks, checked as boolean)
+                                          }
+                                        />
+                                        <span className="text-xs text-gray-500">Select All</span>
+                                      </div>
+                                      
+                                      <Droppable droppableId={`section-${section.id}`} isDropDisabled={true}>
+                                        {(provided) => (
+                                          <div ref={provided.innerRef} {...provided.droppableProps}>
+                                            {sectionBlocks.map((block, blockIndex) => (
+                                              <Draggable 
+                                                key={block.id} 
+                                                draggableId={block.id} 
+                                                index={availableBlocks.indexOf(block)}
+                                              >
+                                                {(provided, snapshot) => (
+                                                  <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className={`
+                                                      p-2 border rounded text-xs cursor-grab active:cursor-grabbing mb-1 bg-white
+                                                      ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
+                                                      ${selectedBlocks.has(block.id) ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
+                                                    `}
+                                                  >
+                                                    <div className="flex items-start gap-2">
+                                                      <Checkbox
+                                                        checked={selectedBlocks.has(block.id)}
+                                                        onCheckedChange={(checked) => 
+                                                          handleBlockSelection(block.id, checked as boolean)
+                                                        }
+                                                        onClick={(e) => e.stopPropagation()}
+                                                      />
+                                                      <div {...provided.dragHandleProps} className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                          {getBlockIcon(block.type)}
+                                                          <Badge variant="outline" className="text-xs h-4">
+                                                            {block.type}
+                                                          </Badge>
+                                                        </div>
+                                                        <div className="text-xs leading-relaxed">
+                                                          {block.content}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                          </div>
+                                        )}
+                                      </Droppable>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                        
+                        // Education items
+                        if (item.type === 'education') {
+                          const educationBlocks = availableBlocks.filter(
+                            block => block.sourceExperienceId === 'education'
+                          );
+                          
+                          return (
+                            <div key="education-items" className="space-y-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Checkbox
+                                  checked={educationBlocks.every(block => selectedBlocks.has(block.id))}
+                                  onCheckedChange={(checked) => 
+                                    handleSelectAll(educationBlocks, checked as boolean)
+                                  }
+                                />
+                                <span className="text-xs text-gray-500">Select All</span>
+                              </div>
+                              
+                              <Droppable droppableId="education-blocks" isDropDisabled={true}>
+                                {(provided) => (
+                                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    {educationBlocks.map((block) => (
+                                      <Draggable 
+                                        key={block.id} 
+                                        draggableId={block.id} 
+                                        index={availableBlocks.indexOf(block)}
+                                      >
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className={`
+                                              p-2 border rounded text-xs cursor-grab active:cursor-grabbing mb-1 bg-white
+                                              ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
+                                              ${selectedBlocks.has(block.id) ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
+                                            `}
+                                          >
+                                            <div className="flex items-start gap-2">
+                                              <Checkbox
+                                                checked={selectedBlocks.has(block.id)}
+                                                onCheckedChange={(checked) => 
+                                                  handleBlockSelection(block.id, checked as boolean)
+                                                }
+                                                onClick={(e) => e.stopPropagation()}
+                                              />
+                                              <div {...provided.dragHandleProps} className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1 mb-1">
+                                                  {getBlockIcon(block.type)}
+                                                  <Badge variant="outline" className="text-xs h-4">
+                                                    {block.type}
+                                                  </Badge>
+                                                </div>
+                                                <div className="text-xs leading-relaxed">
+                                                  {block.content}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </div>
+                          );
+                        }
+                        
+                        // Certification items
+                        if (item.type === 'certification') {
+                          const certificationBlocks = availableBlocks.filter(
+                            block => block.sourceExperienceId === 'certifications'
+                          );
+                          
+                          return (
+                            <div key="certification-items" className="space-y-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Checkbox
+                                  checked={certificationBlocks.every(block => selectedBlocks.has(block.id))}
+                                  onCheckedChange={(checked) => 
+                                    handleSelectAll(certificationBlocks, checked as boolean)
+                                  }
+                                />
+                                <span className="text-xs text-gray-500">Select All</span>
+                              </div>
+                              
+                              <Droppable droppableId="certification-blocks" isDropDisabled={true}>
+                                {(provided) => (
+                                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    {certificationBlocks.map((block) => (
+                                      <Draggable 
+                                        key={block.id} 
+                                        draggableId={block.id} 
+                                        index={availableBlocks.indexOf(block)}
+                                      >
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className={`
+                                              p-2 border rounded text-xs cursor-grab active:cursor-grabbing mb-1 bg-white
+                                              ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
+                                              ${selectedBlocks.has(block.id) ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
+                                            `}
+                                          >
+                                            <div className="flex items-start gap-2">
+                                              <Checkbox
+                                                checked={selectedBlocks.has(block.id)}
+                                                onCheckedChange={(checked) => 
+                                                  handleBlockSelection(block.id, checked as boolean)
+                                                }
+                                                onClick={(e) => e.stopPropagation()}
+                                              />
+                                              <div {...provided.dragHandleProps} className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1 mb-1">
+                                                  {getBlockIcon(block.type)}
+                                                  <Badge variant="outline" className="text-xs h-4">
+                                                    {block.type}
+                                                  </Badge>
+                                                </div>
+                                                <div className="text-xs leading-relaxed">
+                                                  {block.content}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </div>
+                          );
+                        }
+                        
+                        // Skills items
+                        if (item.type === 'skill') {
+                          const skillBlocks = availableBlocks.filter(
+                            block => block.sourceExperienceId === 'skills'
+                          );
+                          
+                          return (
+                            <div key="skill-items" className="space-y-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Checkbox
+                                  checked={skillBlocks.every(block => selectedBlocks.has(block.id))}
+                                  onCheckedChange={(checked) => 
+                                    handleSelectAll(skillBlocks, checked as boolean)
+                                  }
+                                />
+                                <span className="text-xs text-gray-500">Select All</span>
+                              </div>
+                              
+                              <Droppable droppableId="skill-blocks" isDropDisabled={true}>
+                                {(provided) => (
+                                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    {skillBlocks.map((block) => (
+                                      <Draggable 
+                                        key={block.id} 
+                                        draggableId={block.id} 
+                                        index={availableBlocks.indexOf(block)}
+                                      >
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className={`
+                                              p-2 border rounded text-xs cursor-grab active:cursor-grabbing mb-1 bg-white
+                                              ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
+                                              ${selectedBlocks.has(block.id) ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
+                                            `}
+                                          >
+                                            <div className="flex items-start gap-2">
+                                              <Checkbox
+                                                checked={selectedBlocks.has(block.id)}
+                                                onCheckedChange={(checked) => 
+                                                  handleBlockSelection(block.id, checked as boolean)
+                                                }
+                                                onClick={(e) => e.stopPropagation()}
+                                              />
+                                              <div {...provided.dragHandleProps} className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1 mb-1">
+                                                  {getBlockIcon(block.type)}
+                                                  <Badge variant="outline" className="text-xs h-4">
+                                                    {block.type}
+                                                  </Badge>
+                                                </div>
+                                                <div className="text-xs leading-relaxed">
+                                                  {block.content}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
