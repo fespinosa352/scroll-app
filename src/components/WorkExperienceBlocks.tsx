@@ -44,7 +44,6 @@ const WorkExperienceBlocks = () => {
 
           const workExperienceData = {
             title: experience.position,
-            company_name: experience.company,
             start_date: standardizeDate(experience.startDate),
             end_date: experience.isCurrentRole ? null : standardizeDate(experience.endDate),
             is_current: experience.isCurrentRole,
@@ -81,7 +80,6 @@ const WorkExperienceBlocks = () => {
     // Prepare database format
     const workExperienceData = {
       title: formData.position,
-      company_name: formData.company, // Store company name directly for now
       start_date: standardizeDate(formData.startDate),
       end_date: formData.isCurrentRole ? null : standardizeDate(formData.endDate),
       is_current: formData.isCurrentRole,
