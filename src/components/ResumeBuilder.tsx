@@ -31,6 +31,7 @@ import { DraggableBlock, ResumeSection, Block } from "@/types/blocks";
 import { Block as BlockComponent } from "@/components/blocks/Block";
 import { useResumes } from "@/hooks/useResumes";
 import { toast } from "sonner";
+import { formatWithInvalidHighlight, getInvalidDataCount } from "@/utils/dataValidation";
 
 const ResumeBuilder = () => {
   const { 
@@ -60,6 +61,20 @@ const ResumeBuilder = () => {
       setResumeName(currentEditingResume.name);
     }
   }, [currentEditingResume]);
+
+  // Check for invalid data and show notifications
+  useEffect(() => {
+    const invalidCount = getInvalidDataCount(workExperienceBlocks, education, certifications);
+    if (invalidCount > 0) {
+      toast.error(`Found ${invalidCount} data quality issue(s). Please review items marked in red.`, {
+        duration: 5000,
+        action: {
+          label: "Got it",
+          onClick: () => {}
+        }
+      });
+    }
+  }, [workExperienceBlocks, education, certifications]);
 
   // Use context resume sections if available, otherwise fall back to default
   const activeResumeSections = resumeSections.length > 0 ? resumeSections : [
@@ -405,6 +420,16 @@ const ResumeBuilder = () => {
     return <Icon className="w-3 h-3" />;
   };
 
+  // Component to render text with invalid data highlighting
+  const InvalidDataText = ({ children }: { children: string }) => {
+    const { isInvalid } = formatWithInvalidHighlight(children);
+    return (
+      <span className={isInvalid ? 'text-red-600 font-medium' : ''}>
+        {children}
+      </span>
+    );
+  };
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -466,7 +491,9 @@ const ResumeBuilder = () => {
                       >
                         <div className="flex items-center gap-2">
                           <group.icon className="w-4 h-4" />
-                          <span className="text-sm font-medium">{group.name}</span>
+                          <span className="text-sm font-medium">
+                            <InvalidDataText>{group.name}</InvalidDataText>
+                          </span>
                           <Badge variant="secondary" className="text-xs">
                             {group.items.length}
                           </Badge>
@@ -486,7 +513,7 @@ const ResumeBuilder = () => {
                           return (
                             <div key={`exp-${item.experience.id}`} className="space-y-1">
                               <div className="text-xs font-medium text-gray-600 px-2">
-                                {item.experience.position}
+                                <InvalidDataText>{item.experience.position}</InvalidDataText>
                               </div>
                               {item.sections.map((section: any) => {
                                 const sectionBlocks = availableBlocks.filter(
@@ -570,7 +597,7 @@ const ResumeBuilder = () => {
                                                           </Badge>
                                                         </div>
                                                         <div className="text-xs leading-relaxed">
-                                                          {block.content}
+                                                          <InvalidDataText>{block.content}</InvalidDataText>
                                                         </div>
                                                       </div>
                                                     </div>
@@ -643,7 +670,7 @@ const ResumeBuilder = () => {
                                                   </Badge>
                                                 </div>
                                                 <div className="text-xs leading-relaxed">
-                                                  {block.content}
+                                                  <InvalidDataText>{block.content}</InvalidDataText>
                                                 </div>
                                               </div>
                                             </div>
@@ -712,7 +739,7 @@ const ResumeBuilder = () => {
                                                   </Badge>
                                                 </div>
                                                 <div className="text-xs leading-relaxed">
-                                                  {block.content}
+                                                  <InvalidDataText>{block.content}</InvalidDataText>
                                                 </div>
                                               </div>
                                             </div>
@@ -781,7 +808,7 @@ const ResumeBuilder = () => {
                                                   </Badge>
                                                 </div>
                                                 <div className="text-xs leading-relaxed">
-                                                  {block.content}
+                                                  <InvalidDataText>{block.content}</InvalidDataText>
                                                 </div>
                                               </div>
                                             </div>
@@ -918,7 +945,7 @@ const ResumeBuilder = () => {
                                               </Badge>
                                             </div>
                                             <div className="text-sm">
-                                              {block.content}
+                                              <InvalidDataText>{block.content}</InvalidDataText>
                                             </div>
                                           </div>
                                           <Button
@@ -1010,10 +1037,12 @@ const ResumeBuilder = () => {
                       <div key={block.id} className="text-sm">
                         {block.type === 'skill_tag' ? (
                           <Badge variant="secondary" className="mr-1 mb-1">
-                            {block.content}
+                            <InvalidDataText>{block.content}</InvalidDataText>
                           </Badge>
                         ) : (
-                          <div className="mb-2">{block.content}</div>
+                          <div className="mb-2">
+                            <InvalidDataText>{block.content}</InvalidDataText>
+                          </div>
                         )}
                       </div>
                     ))}
