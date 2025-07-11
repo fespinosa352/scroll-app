@@ -7,6 +7,7 @@ import { Plus, Award, Calendar, Building, Edit2, Trash2, ExternalLink, Loader2 }
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { useCertifications } from "@/hooks/useCertifications";
+import { standardizeDate } from "@/lib/dateUtils";
 
 interface Certification {
   id: string;
@@ -54,11 +55,11 @@ const Certifications = () => {
     const certificationData = {
       name: formData.name,
       issuing_organization: formData.issuer,
-      issue_date: formData.issueDate || null,
-      expiration_date: formData.doesNotExpire ? null : formData.expiryDate || null,
+      issue_date: formData.issueDate ? standardizeDate(formData.issueDate) : null,
+      expiration_date: formData.doesNotExpire ? null : (formData.expiryDate ? standardizeDate(formData.expiryDate) : null),
       credential_id: formData.credentialId || null,
       credential_url: formData.credentialUrl || null,
-      user_id: '', // Will be set by the hook
+      // Don't include user_id here - let the hook handle it
     };
 
     try {

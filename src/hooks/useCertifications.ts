@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 type Certification = Tables<'certifications'>;
-type CertificationInsert = Omit<Certification, 'id' | 'created_at' | 'updated_at'>;
-type CertificationUpdate = Partial<CertificationInsert>;
+type CertificationInsert = Omit<TablesInsert<'certifications'>, 'user_id'>;
+type CertificationUpdate = TablesUpdate<'certifications'>;
 
 export const useCertifications = () => {
   const [certifications, setCertifications] = useState<Certification[]>([]);
