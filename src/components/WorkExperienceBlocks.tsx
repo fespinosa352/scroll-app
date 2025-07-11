@@ -110,7 +110,12 @@ const WorkExperienceBlocks = () => {
         }
       } else {
         // Create new database record
-        const result = await saveWorkExperience(workExperienceData);
+        const result = await saveWorkExperience({
+          ...workExperienceData,
+          company_id: null,
+          user_id: '', // Will be set by the hook
+          employment_type: null,
+        });
         if (result) {
           // Create block format for UI
           const newExperience: WorkExperienceWithBlocks = {

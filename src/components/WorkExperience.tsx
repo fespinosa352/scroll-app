@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Briefcase, Calendar, Building, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { WorkExperienceModal, WorkExperienceFormData } from "./WorkExperienceModal";
 
 interface WorkExperience {
   id: string;
@@ -29,41 +28,23 @@ const WorkExperience = () => {
     setWorkExperience(newExperiences);
   };
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    company: "",
-    position: "",
-    startDate: "",
-    endDate: "",
-    description: "",
-    isCurrentRole: false,
-    skills: ""
-  });
+  const [showModal, setShowModal] = useState(false);
+  const [editingExperience, setEditingExperience] = useState<WorkExperience | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.company || !formData.position || !formData.startDate) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const skillsArray = formData.skills.split(",").map(s => s.trim()).filter(s => s);
-    
+  const handleSave = (formData: WorkExperienceFormData) => {
     const newExperience: WorkExperience = {
-      id: editingId || Date.now().toString(),
+      id: editingExperience?.id || Date.now().toString(),
       company: formData.company,
-      position: formData.position,
-      startDate: formData.startDate,
-      endDate: formData.isCurrentRole ? "" : formData.endDate,
+      position: formData.title,
+      startDate: `${formData.startYear}-${formData.startMonth.padStart(2, '0')}`,
+      endDate: formData.isCurrentRole ? "" : `${formData.endYear}-${formData.endMonth.padStart(2, '0')}`,
       description: formData.description,
       isCurrentRole: formData.isCurrentRole,
-      skills: skillsArray
+      skills: [] // Skills can be extracted from description if needed
     };
 
-    if (editingId) {
-      const updatedExperiences = experiences.map(exp => exp.id === editingId ? newExperience : exp);
+    if (editingExperience) {
+      const updatedExperiences = experiences.map(exp => exp.id === editingExperience.id ? newExperience : exp);
       updateExperiences(updatedExperiences);
       toast.success("Work experience updated!");
     } else {
@@ -72,41 +53,40 @@ const WorkExperience = () => {
       toast.success("Work experience added!");
     }
 
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      company: "",
-      position: "",
-      startDate: "",
-      endDate: "",
-      description: "",
-      isCurrentRole: false,
-      skills: ""
-    });
-    setShowForm(false);
-    setEditingId(null);
+    setEditingExperience(null);
   };
 
   const handleEdit = (experience: WorkExperience) => {
-    setFormData({
-      company: experience.company,
-      position: experience.position,
-      startDate: experience.startDate,
-      endDate: experience.endDate,
-      description: experience.description,
-      isCurrentRole: experience.isCurrentRole,
-      skills: experience.skills.join(", ")
-    });
-    setEditingId(experience.id);
-    setShowForm(true);
+    setEditingExperience(experience);
+    setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedExperiences = experiences.filter(exp => exp.id !== id);
-    updateExperiences(updatedExperiences);
-    toast.success("Work experience deleted");
+  const handleDelete = () => {
+    if (editingExperience) {
+      const updatedExperiences = experiences.filter(exp => exp.id !== editingExperience.id);
+      updateExperiences(updatedExperiences);
+      toast.success("Work experience deleted");
+      setEditingExperience(null);
+    }
+  };
+
+  const convertToModalFormat = (experience: WorkExperience): WorkExperienceFormData => {
+    const [startYear, startMonth] = experience.startDate.split('-');
+    const [endYear, endMonth] = experience.endDate ? experience.endDate.split('-') : ['', ''];
+    
+    return {
+      id: experience.id,
+      title: experience.position,
+      company: experience.company,
+      location: "",
+      country: "",
+      isCurrentRole: experience.isCurrentRole,
+      startMonth: startMonth || "",
+      startYear: startYear || "",
+      endMonth: endMonth || "",
+      endYear: endYear || "",
+      description: experience.description,
+    };
   };
 
   const formatDate = (dateString: string) => {
@@ -130,7 +110,7 @@ const WorkExperience = () => {
         </CardHeader>
         <CardContent>
           <Button 
-            onClick={() => setShowForm(true)}
+            onClick={() => setShowModal(true)}
             variant="primary"
             size="touch"
           >
@@ -140,101 +120,17 @@ const WorkExperience = () => {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit" : "Add"} Work Experience</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Company *</label>
-                  <Input
-                    placeholder="e.g., Microsoft, Google, Airbnb"
-                    value={formData.company}
-                    onChange={(e) => setFormData({...formData, company: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Position *</label>
-                  <Input
-                    placeholder="e.g., Senior Product Manager"
-                    value={formData.position}
-                    onChange={(e) => setFormData({...formData, position: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Start Date *</label>
-                  <Input
-                    type="month"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">End Date</label>
-                  <Input
-                    type="month"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                    disabled={formData.isCurrentRole}
-                    placeholder={formData.isCurrentRole ? "Present" : ""}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="currentRole"
-                  checked={formData.isCurrentRole}
-                  onChange={(e) => setFormData({...formData, isCurrentRole: e.target.checked, endDate: e.target.checked ? "" : formData.endDate})}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="currentRole" className="text-sm font-medium">
-                  This is my current role
-                </label>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  placeholder="Describe your role, achievements, and key responsibilities..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  rows={4}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Skills (comma-separated)</label>
-                <Input
-                  placeholder="e.g., Product Management, Leadership, Data Analysis"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" size="touch" className="flex-1 md:flex-none">
-                  {editingId ? "Update" : "Add"} Experience
-                </Button>
-                <Button type="button" variant="outline" size="touch" onClick={resetForm} className="flex-1 md:flex-none">
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <WorkExperienceModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingExperience(null);
+        }}
+        onSave={handleSave}
+        onDelete={editingExperience ? handleDelete : undefined}
+        initialData={editingExperience ? convertToModalFormat(editingExperience) : undefined}
+        isEditing={!!editingExperience}
+      />
 
       {/* Experience List */}
       <div className="space-y-4">
@@ -248,7 +144,7 @@ const WorkExperience = () => {
                   Upload a resume in Getting Started or manually add your work experience here.
                 </p>
                 <Button 
-                  onClick={() => setShowForm(true)}
+                  onClick={() => setShowModal(true)}
                   variant="primary"
                   size="touch"
                 >
@@ -301,15 +197,18 @@ const WorkExperience = () => {
                     <Edit2 className="w-4 h-4 md:mr-2" />
                     <span className="hidden md:inline">Edit</span>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="touch"
-                    onClick={() => handleDelete(experience.id)}
-                    className="text-red-600 hover:text-red-700 flex-1 md:flex-none"
-                  >
-                    <Trash2 className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">Delete</span>
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="touch"
+                      onClick={() => {
+                        setEditingExperience(experience);
+                        handleDelete();
+                      }}
+                      className="text-red-600 hover:text-red-700 flex-1 md:flex-none"
+                    >
+                      <Trash2 className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Delete</span>
+                    </Button>
                 </div>
               </div>
             </CardContent>
