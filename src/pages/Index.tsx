@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,153 @@ const ResumeContent: React.FC<{ isEditingResume: boolean; setIsEditingResume: (e
         />
       )}
     </>
+  );
+};
+
+// Component to handle HybridResumeEditor with resume data
+const HybridResumeContent: React.FC = () => {
+  const { 
+    workExperience, 
+    personalInfo, 
+    education, 
+    certifications, 
+    skills 
+  } = useResumeData();
+  
+  const [initialMarkup, setInitialMarkup] = useState('');
+
+  // Convert structured resume data to markup format
+  const convertToMarkup = useCallback(() => {
+    let markup = '';
+    
+    // Header with personal info
+    if (personalInfo?.name) {
+      markup += `# ${personalInfo.name}\n\n`;
+      if (personalInfo.email) markup += `${personalInfo.email}\n`;
+      if (personalInfo.phone) markup += `${personalInfo.phone}\n`;
+      if (personalInfo.location) markup += `${personalInfo.location}\n`;
+      markup += '\n';
+    } else {
+      markup += `# Your Name\n\nyour.email@example.com\n(555) 123-4567\nYour City, State\n\n`;
+    }
+
+    // Professional Experience
+    if (workExperience.length > 0) {
+      markup += '## Professional Experience\n\n';
+      
+      workExperience.forEach(exp => {
+        markup += `### ${exp.position}\n`;
+        markup += `**${exp.company}**\n`;
+        if (exp.startDate || exp.endDate) {
+          const endDate = exp.isCurrentRole ? 'Present' : exp.endDate;
+          markup += `*${exp.startDate} - ${endDate}*\n`;
+        }
+        if (exp.location) {
+          markup += `*${exp.location}*\n`;
+        }
+        markup += '\n';
+        
+        if (exp.description) {
+          // Split description by bullet points and clean them
+          const bullets = exp.description
+            .split(/\n•\s*|\n-\s*|\n\*\s*/)
+            .map(bullet => bullet.replace(/^•\s*|^-\s*|^\*\s*/, '').trim())
+            .filter(bullet => bullet.length > 0);
+            
+          bullets.forEach(bullet => {
+            markup += `- ${bullet}\n`;
+          });
+        }
+        markup += '\n';
+      });
+    }
+
+    // Education
+    if (education.length > 0) {
+      markup += '## Education\n\n';
+      
+      education.forEach(edu => {
+        markup += `### ${edu.degree}`;
+        if (edu.fieldOfStudy) markup += ` in ${edu.fieldOfStudy}`;
+        markup += '\n';
+        markup += `**${edu.institution}**\n`;
+        if (edu.startDate || edu.endDate) {
+          const endDate = edu.isCurrentlyEnrolled ? 'Present' : edu.endDate;
+          markup += `*${edu.startDate} - ${endDate}*\n`;
+        }
+        if (edu.gpa) markup += `*GPA: ${edu.gpa}*\n`;
+        markup += '\n';
+      });
+    }
+
+    // Certifications
+    if (certifications.length > 0) {
+      markup += '## Certifications\n\n';
+      
+      certifications.forEach(cert => {
+        markup += `### ${cert.name}\n`;
+        markup += `**${cert.issuer}**\n`;
+        if (cert.issueDate) {
+          const expiry = cert.doesNotExpire ? 'No expiration' : cert.expiryDate;
+          markup += `*Issued: ${cert.issueDate}`;
+          if (expiry) markup += ` | Expires: ${expiry}`;
+          markup += '*\n';
+        }
+        if (cert.credentialId) markup += `*Credential ID: ${cert.credentialId}*\n`;
+        markup += '\n';
+      });
+    }
+
+    // Skills
+    if (skills.length > 0) {
+      markup += '## Skills\n\n';
+      skills.forEach(skill => {
+        markup += `- ${skill}\n`;
+      });
+      markup += '\n';
+    }
+
+    return markup || `# Your Name
+
+your.email@example.com
+(555) 123-4567
+linkedin.com/in/yourprofile
+
+## Professional Experience
+
+### Your Current Job Title
+**Your Company Name**
+
+- Add your key achievements here
+- Use action verbs and quantify results
+- Focus on impact and outcomes
+
+### Previous Position
+**Previous Company**
+
+- Another achievement with metrics
+- Show progression and growth
+- Highlight relevant skills`;
+  }, [workExperience, personalInfo, education, certifications, skills]);
+
+  // Update markup when resume data changes
+  useEffect(() => {
+    setInitialMarkup(convertToMarkup());
+  }, [workExperience, personalInfo, education, certifications, skills, convertToMarkup]);
+
+  return (
+    <HybridResumeEditor 
+      key={initialMarkup} // Force re-render when data changes
+      initialContent={initialMarkup}
+      onSave={(markup, structured) => {
+        console.log('Saving resume:', { markup, structured });
+        // TODO: Integrate with existing save functionality
+      }}
+      onExport={(format) => {
+        console.log('Exporting resume as:', format);
+        // TODO: Integrate with existing export functionality
+      }}
+    />
   );
 };
 
@@ -342,16 +489,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="hybrid-editor">
-            <HybridResumeEditor 
-              onSave={(markup, structured) => {
-                console.log('Saving resume:', { markup, structured });
-                // TODO: Integrate with existing save functionality
-              }}
-              onExport={(format) => {
-                console.log('Exporting resume as:', format);
-                // TODO: Integrate with existing export functionality
-              }}
-            />
+            <HybridResumeContent />
           </TabsContent>
 
         </Tabs>
