@@ -20,7 +20,7 @@ import SkillsAssessment from "@/components/SkillsAssessment";
 import ATSOptimizer from "@/components/ATSOptimizer";
 import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
-import WorkExperienceBlocks from "@/components/WorkExperienceBlocks";
+import WorkExperienceSimple from "@/components/WorkExperienceSimple";
 import MyResume from "@/components/MyResume";
 
 import SocialProof from "@/components/SocialProof";
@@ -317,7 +317,7 @@ const Index = () => {
 
 
           <TabsContent value="experience">
-            <WorkExperienceBlocks />
+            <WorkExperienceSimple />
           </TabsContent>
 
           <TabsContent value="education">

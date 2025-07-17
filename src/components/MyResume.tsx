@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText, Trophy, Target } from "lucide-react";
 import { formatDateRange, formatDateForDisplay } from "@/lib/dateUtils";
-import WorkExperienceBlocks from "./WorkExperienceBlocks";
+import WorkExperienceSimple from "./WorkExperienceSimple";
 import Education from "./Education";
 import Certifications from "./Certifications";
 import UserSkills from "./UserSkills";
@@ -412,7 +412,7 @@ const MyResume = () => {
           <DialogHeader>
             <DialogTitle>Edit Work Experience</DialogTitle>
           </DialogHeader>
-          <WorkExperienceBlocks />
+          <WorkExperienceSimple onClose={() => setEditingSection(null)} />
         </DialogContent>
       </Dialog>
 
