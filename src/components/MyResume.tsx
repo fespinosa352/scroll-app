@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useResumeData } from "@/contexts/ResumeDataContext";
-import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText } from "lucide-react";
+import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText, Trophy, Target } from "lucide-react";
 import { format } from "date-fns";
 import WorkExperienceBlocks from "./WorkExperienceBlocks";
 import Education from "./Education";
 import Certifications from "./Certifications";
+import { useProjects } from "@/hooks/useProjects";
 
 const MyResume = () => {
   const { 
@@ -20,6 +21,8 @@ const MyResume = () => {
     certifications, 
     skills 
   } = useResumeData();
+  
+  const { projects } = useProjects();
 
   const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | null>(null);
 
@@ -159,6 +162,73 @@ const MyResume = () => {
               <p className="text-slate-500">No work experience added yet</p>
               <p className="text-sm text-slate-400 mt-2">
                 Use the Quick Launch tiles or Get Started module to add your experience
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Achievements & Wins */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Achievements & Wins
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {projects.length > 0 ? (
+            <div className="space-y-6">
+              {projects.map((project, index) => (
+                <div key={project.id} className="space-y-3">
+                  {index > 0 && <Separator />}
+                  <div className="space-y-3">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {project.title.replace('Win - ', '')}
+                        </h3>
+                        {project.work_experiences && (
+                          <p className="text-slate-700 font-medium">
+                            {project.work_experiences.company_name || 'Unknown Company'}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-sm text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {project.start_date ? format(new Date(project.start_date), 'MMM yyyy') : 'No date'}
+                      </div>
+                    </div>
+                    <div className="text-slate-600 leading-relaxed">
+                      <p>{project.description}</p>
+                    </div>
+                    {project.impact_metrics && (
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">
+                          Impact: {project.impact_metrics}
+                        </span>
+                      </div>
+                    )}
+                    {project.technologies_used && project.technologies_used.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies_used.map((tech, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {tech}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Trophy className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+              <p className="text-slate-500">No achievements logged yet</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Use the "+ Log Wins" button on the dashboard to add your achievements
               </p>
             </div>
           )}
