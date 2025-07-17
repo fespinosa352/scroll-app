@@ -22,6 +22,7 @@ import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
 import MyResume from "@/components/MyResume";
+import { HybridResumeEditor } from "@/components/HybridResumeEditor";
 
 import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
@@ -194,7 +195,7 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
@@ -214,6 +215,10 @@ const Index = () => {
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
               <span className="text-xs md:text-sm">Resume Vault</span>
+            </TabsTrigger>
+            <TabsTrigger value="hybrid-editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <Zap className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Hybrid Editor</span>
             </TabsTrigger>
           </TabsList>
 
@@ -334,6 +339,19 @@ const Index = () => {
 
           <TabsContent value="my-resume">
             <MyResume />
+          </TabsContent>
+
+          <TabsContent value="hybrid-editor">
+            <HybridResumeEditor 
+              onSave={(markup, structured) => {
+                console.log('Saving resume:', { markup, structured });
+                // TODO: Integrate with existing save functionality
+              }}
+              onExport={(format) => {
+                console.log('Exporting resume as:', format);
+                // TODO: Integrate with existing export functionality
+              }}
+            />
           </TabsContent>
 
         </Tabs>
