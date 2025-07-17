@@ -43,6 +43,7 @@ export const useResumeVersions = () => {
     duplicateResume: dbDuplicateResume, 
     deleteResume: dbDeleteResume, 
     updateResume,
+    saveResume,
     setActiveResume 
   } = useResumes();
   const [resumes, setResumes] = useState<ResumeVersion[]>([]);
@@ -67,12 +68,24 @@ export const useResumeVersions = () => {
       imported_from: 'Job Analysis'
     };
 
-    // This will be handled by the useResumes hook
-    toast.success(`Resume version created: ${resumeData.name}`, {
-      description: `ATS Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
-    });
-    
-    return resumeData;
+    // Use the saveResume function to create the resume in the database
+    try {
+      const newResume = await saveResume(resumeData);
+      
+      if (newResume) {
+        toast.success(`Resume created and saved to vault!`, {
+          description: `${resumeData.name} • ATS Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
+        });
+        
+        return newResume;
+      } else {
+        throw new Error('Failed to create resume');
+      }
+    } catch (error) {
+      console.error('Error creating resume:', error);
+      toast.error('Failed to create resume in vault');
+      return null;
+    }
   };
 
   const duplicateResume = async (resumeId: string) => {

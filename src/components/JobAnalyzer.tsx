@@ -18,6 +18,7 @@ const JobAnalyzer = () => {
   const [company, setCompany] = useState("");
   const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [recentlyCreatedResumeId, setRecentlyCreatedResumeId] = useState<string | null>(null);
   
   const { getUserSkillNames, saveJobAnalysis, loading } = useJobAnalysis();
   const { generateResumeFromAnalysis } = useResumeVersions();
@@ -153,13 +154,24 @@ const JobAnalyzer = () => {
     }
   };
 
-  const handleGenerateResume = () => {
+  const handleGenerateResume = async () => {
     if (!analysis) {
       toast.error("Please analyze a job first before generating a resume");
       return;
     }
     
-    generateResumeFromAnalysis(analysis);
+    const newResume = await generateResumeFromAnalysis(analysis);
+    if (newResume) {
+      setRecentlyCreatedResumeId(newResume.id);
+    }
+  };
+
+  const handleNavigateToVault = () => {
+    // This will be handled by the parent component (Index.tsx)
+    // Reset state and switch to Resume Vault tab
+    setRecentlyCreatedResumeId(null);
+    // Trigger navigation to resume vault
+    window.dispatchEvent(new CustomEvent('navigateToResumeVault'));
   };
 
   return (
@@ -231,6 +243,8 @@ const JobAnalyzer = () => {
         <AnalysisResults 
           analysis={analysis} 
           onGenerateResume={handleGenerateResume}
+          onNavigateToVault={handleNavigateToVault}
+          recentlyCreatedResumeId={recentlyCreatedResumeId}
         />
       )}
     </div>

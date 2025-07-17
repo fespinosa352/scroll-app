@@ -4,16 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, AlertCircle } from "lucide-react";
-import { type JobAnalysis } from "@/hooks/useJobAnalysis";
+import { FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Plus } from "lucide-react";
+import { type JobAnalysis, useJobAnalysis } from "@/hooks/useJobAnalysis";
+import { toast } from "sonner";
 
 interface AnalysisResultsProps {
   analysis: JobAnalysis;
   onGenerateResume: () => void;
+  onNavigateToVault?: () => void;
+  recentlyCreatedResumeId?: string;
 }
 
-const AnalysisResults = ({ analysis, onGenerateResume }: AnalysisResultsProps) => {
+const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recentlyCreatedResumeId }: AnalysisResultsProps) => {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  const [addingSkills, setAddingSkills] = useState(false);
+  const { addUserSkill, refetchSkills } = useJobAnalysis();
 
   // Generate critical issues based on analysis
   const getCriticalIssues = () => {
@@ -67,6 +72,44 @@ const AnalysisResults = ({ analysis, onGenerateResume }: AnalysisResultsProps) =
     if (score >= 80) return "Excellent match! Your profile aligns well with this role.";
     if (score >= 60) return "Good foundation with room for optimization.";
     return "Significant gaps that need addressing for better chances.";
+  };
+
+  const handleAddMissingSkills = async () => {
+    if (analysis.missing_skills.length === 0) {
+      toast.info("No missing skills to add");
+      return;
+    }
+
+    setAddingSkills(true);
+    try {
+      let addedCount = 0;
+      
+      for (const skill of analysis.missing_skills) {
+        const result = await addUserSkill({
+          skill_name: skill,
+          proficiency_level: 'beginner',
+          years_experience: 0
+        });
+        
+        if (result) {
+          addedCount++;
+        }
+      }
+      
+      if (addedCount > 0) {
+        toast.success(`Added ${addedCount} skills to your profile!`, {
+          description: "You can update proficiency levels and experience in the Skills section."
+        });
+        await refetchSkills();
+      } else {
+        toast.error("Failed to add skills. Some may already exist in your profile.");
+      }
+    } catch (error) {
+      console.error('Error adding skills:', error);
+      toast.error("Failed to add skills to your profile");
+    } finally {
+      setAddingSkills(false);
+    }
   };
 
   return (
@@ -127,32 +170,68 @@ const AnalysisResults = ({ analysis, onGenerateResume }: AnalysisResultsProps) =
         ))}
       </div>
 
-      {/* Primary CTA */}
-      <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
-        <CardContent className="p-6">
-          <div className="text-center space-y-4">
-            <h3 className="text-xl font-semibold text-slate-900">
-              Ready to optimize your resume?
-            </h3>
-            <p className="text-slate-600">
-              Generate a tailored version that addresses these issues and increases your ATS score
-            </p>
-            <div className="space-y-3">
-              <Button 
-                onClick={onGenerateResume} 
-                size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-lg px-8 py-4"
-              >
-                <FileText className="w-5 h-5 mr-2" />
-                Generate Optimized Resume
-              </Button>
-              <p className="text-xs text-slate-500">
-                Expected improvement: +15-25 ATS points
+      {/* Primary CTA or Navigation */}
+      {recentlyCreatedResumeId ? (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900">
+                Resume Created Successfully!
+              </h3>
+              <p className="text-slate-600">
+                Your optimized resume has been saved to the Resume Vault
               </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button 
+                  onClick={onNavigateToVault}
+                  size="lg"
+                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View in Resume Vault
+                </Button>
+                <Button 
+                  onClick={onGenerateResume} 
+                  size="lg"
+                  variant="outline"
+                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                >
+                  Generate Another
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-semibold text-slate-900">
+                Ready to optimize your resume?
+              </h3>
+              <p className="text-slate-600">
+                Generate a tailored version that addresses these issues and increases your ATS score
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={onGenerateResume} 
+                  size="lg"
+                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-lg px-8 py-4"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  Generate Optimized Resume
+                </Button>
+                <p className="text-xs text-slate-500">
+                  Expected improvement: +15-25 ATS points
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detailed Analysis - Hidden Behind Toggle */}
       <Collapsible open={showDetailedAnalysis} onOpenChange={setShowDetailedAnalysis}>
@@ -211,15 +290,35 @@ const AnalysisResults = ({ analysis, onGenerateResume }: AnalysisResultsProps) =
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.missing_skills.length > 0 ? (
-                    analysis.missing_skills.map((skill, index) => (
-                      <Badge key={index} variant="outline" className="border-orange-200 text-orange-700 bg-orange-50">
-                        {skill}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-slate-500 text-sm">Great! You have most skills needed for this role.</p>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.missing_skills.length > 0 ? (
+                      analysis.missing_skills.map((skill, index) => (
+                        <Badge key={index} variant="outline" className="border-orange-200 text-orange-700 bg-orange-50">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-slate-500 text-sm">Great! You have most skills needed for this role.</p>
+                    )}
+                  </div>
+                  
+                  {analysis.missing_skills.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <Button
+                        onClick={handleAddMissingSkills}
+                        disabled={addingSkills}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {addingSkills ? 'Adding Skills...' : `Add ${analysis.missing_skills.length} Skills to Profile`}
+                      </Button>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Skills will be added as beginner level. You can update proficiency in the Skills section.
+                      </p>
+                    </div>
                   )}
                 </div>
               </CardContent>

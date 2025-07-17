@@ -97,6 +97,18 @@ const Index = () => {
     }
   }, [loading, session, navigate]);
 
+  // Listen for navigation events from components
+  useEffect(() => {
+    const handleNavigateToResumeVault = () => {
+      setActiveTab('resume-vault');
+    };
+
+    window.addEventListener('navigateToResumeVault', handleNavigateToResumeVault);
+    return () => {
+      window.removeEventListener('navigateToResumeVault', handleNavigateToResumeVault);
+    };
+  }, []);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
