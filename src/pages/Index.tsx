@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown } from "lucide-react";
+import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown, Zap } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,7 +82,7 @@ const Index = () => {
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     // Trigger data refresh when switching to My Resume or any data-display tab
-    if (newTab === "my-resume" || newTab === "experience" || newTab === "education" || newTab === "certifications") {
+    if (newTab === "my-resume" || newTab === "experience" || newTab === "education" || newTab === "certifications" || newTab === "skills") {
       // The data refresh will be handled by the context invalidation
       setTimeout(() => {
         // Small delay to ensure the tab has switched before refreshing
@@ -209,7 +209,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Job Match</span>
+              <span className="text-xs md:text-sm">Analyze & Optimize</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
@@ -225,7 +225,7 @@ const Index = () => {
                 <CardDescription>Access key features directly from your dashboard</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
@@ -257,6 +257,14 @@ const Index = () => {
                   >
                     <Award className="w-6 h-6" />
                     <span className="text-sm">+ Certifications</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2"
+                    onClick={() => handleTabChange("skills")}
+                  >
+                    <Zap className="w-6 h-6" />
+                    <span className="text-sm">+ New Skills</span>
                   </Button>
                 </div>
               </CardContent>
@@ -318,6 +326,10 @@ const Index = () => {
 
           <TabsContent value="certifications">
             <Certifications />
+          </TabsContent>
+
+          <TabsContent value="skills">
+            <UserSkills />
           </TabsContent>
 
           <TabsContent value="my-resume">

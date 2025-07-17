@@ -58,7 +58,7 @@ const UserSkills = () => {
             Add Your Skills
           </CardTitle>
           <CardDescription>
-            Add your skills to get better job matching and personalized recommendations
+            Add your skills to get better analysis and personalized optimization recommendations
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

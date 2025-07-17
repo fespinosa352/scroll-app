@@ -97,9 +97,11 @@ const Settings = () => {
               <span>Back to Dashboard</span>
             </Button>
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center p-1">
-                <img src={chameleonLogo} alt="Chameleon" className="w-full h-full object-contain" />
-              </div>
+              <img 
+                src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png" 
+                alt="Chameleon Logo" 
+                className="w-8 h-8"
+              />
               <div>
                 <h1 className="text-xl font-bold text-slate-900">Settings</h1>
                 <p className="text-sm text-slate-600">Manage your profile and preferences</p>
