@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Mail, Camera, Save, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, Mail, Camera, Save, Trash2, AlertTriangle, Download, Upload, Shield } from "lucide-react";
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useDatabaseReset } from '@/hooks/useDatabaseReset';
+import { useDataBackup } from '@/hooks/useDataBackup';
 import { useNavigate } from 'react-router-dom';
 import chameleonLogo from "@/assets/chameleon-logo.png";
 
@@ -19,6 +20,7 @@ const Settings = () => {
   const { user } = useAuth();
   const { profile, loading, updating, updateProfile, createProfile } = useProfile();
   const { resetDatabase, isResetting } = useDatabaseReset();
+  const { exportUserData, importUserData, isExporting, isImporting } = useDataBackup();
   
   const [formData, setFormData] = useState({
     display_name: '',
@@ -62,6 +64,13 @@ const Settings = () => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      importUserData(file);
+    }
   };
 
   if (loading) {
@@ -220,6 +229,62 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Data Management Section */}
+        <Card className="mt-6 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-700">
+              <Shield className="w-5 h-5" />
+              <span>Data Management</span>
+            </CardTitle>
+            <CardDescription>
+              Backup and restore your professional data to prevent accidental loss
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h4 className="font-medium text-blue-800 mb-2">Data Protection:</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Export all your data as a backup file</li>
+                <li>• Restore data from a previous backup</li>
+                <li>• Keep your data safe during updates</li>
+                <li>• Transfer data between accounts if needed</li>
+              </ul>
+              <p className="text-sm text-blue-600 mt-3 font-medium">
+                💡 Tip: Export your data before using the reset function below
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={exportUserData}
+                disabled={isExporting}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isExporting ? 'Exporting...' : 'Export Data'}</span>
+              </Button>
+              
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileImport}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isImporting}
+                />
+                <Button 
+                  variant="outline"
+                  disabled={isImporting}
+                  className="flex items-center space-x-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{isImporting ? 'Importing...' : 'Import Data'}</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Database Reset Section */}
         <Card className="mt-6 border-red-200">
           <CardHeader>
@@ -229,6 +294,7 @@ const Settings = () => {
             </CardTitle>
             <CardDescription>
               Permanently delete all your professional data. This action cannot be undone.
+              <strong className="text-red-600"> Export your data first!</strong>
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -5,10 +5,34 @@ import { toast } from 'sonner';
 export const useDatabaseReset = () => {
   const [isResetting, setIsResetting] = useState(false);
 
+  // Add safety check for production environment
+  const isProductionSafetyEnabled = () => {
+    // Prevent accidental resets in production unless explicitly confirmed
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.includes('gitpod') ||
+                         window.location.hostname.includes('vercel-preview');
+    
+    return !isDevelopment;
+  };
+
   const resetDatabase = async () => {
     setIsResetting(true);
     
     try {
+      // Production safety check
+      if (isProductionSafetyEnabled()) {
+        const confirmText = 'DELETE ALL MY DATA';
+        const userConfirmation = prompt(
+          `⚠️ PRODUCTION ENVIRONMENT DETECTED ⚠️\n\nThis will permanently delete ALL your professional data!\n\nType "${confirmText}" to confirm:`
+        );
+        
+        if (userConfirmation !== confirmText) {
+          toast.error('Database reset cancelled for safety');
+          return { success: false, error: 'User cancelled for safety' };
+        }
+      }
+
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
