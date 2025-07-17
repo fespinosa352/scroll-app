@@ -281,7 +281,8 @@ export const testBatchOperations = async (userId: string, sampleData: any) => {
         user_id: userId,
         title: exp.title + ' (Sequential Test)',
         company_name: exp.company,
-        description: exp.achievements.join(', ')
+        description: exp.achievements.join(', '),
+        start_date: '2024-01-01'
       });
     const end = performance.now();
     console.log(`Sequential insert took: ${(end - start).toFixed(2)}ms`);

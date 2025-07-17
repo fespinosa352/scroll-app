@@ -5,10 +5,16 @@ import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Project = Tables<'projects'>;
-type WorkExperience = Tables<'work_experiences'>;
 
 interface ProjectWithWorkExperience extends Project {
-  work_experiences?: WorkExperience;
+  work_experiences?: {
+    id: string;
+    company_name: string | null;
+    title: string;
+    companies?: {
+      name: string;
+    } | null;
+  } | null;
 }
 
 export const useProjects = () => {

@@ -54,7 +54,7 @@ interface UserProfileData {
     id: string;
     skill_name: string;
     proficiency_level?: string;
-    years_of_experience?: number;
+    years_experience?: number;
   }>;
 }
 
@@ -73,16 +73,54 @@ export const useUserProfileData = () => {
       if (!user?.id) return null;
 
       try {
-        const { data, error } = await supabase
+        // First get the profile
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select(`
             id,
             user_id,
             display_name,
-            email,
-            phone,
-            location,
-            work_experiences (
+            avatar_url,
+            bio
+          `)
+          .eq('user_id', user.id)
+          .single();
+
+        // If profile doesn't exist, create it
+        if (profileError && profileError.code === 'PGRST116') {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: user.id,
+              display_name: user.user_metadata?.display_name || user.email?.split('@')[0],
+            })
+            .select(`
+              id,
+              user_id,
+              display_name,
+              avatar_url,
+              bio
+            `)
+            .single();
+
+          if (createError) throw createError;
+          
+          return {
+            ...newProfile,
+            work_experiences: [],
+            education: [],
+            certifications: [],
+            user_skills: []
+          };
+        }
+
+        if (profileError) throw profileError;
+
+        // Fetch all related data separately
+        const [workExpData, educationData, certificationsData, skillsData] = await Promise.all([
+          supabase
+            .from('work_experiences')
+            .select(`
               id,
               title,
               company_name,
@@ -102,18 +140,27 @@ export const useUserProfileData = () => {
                 title,
                 description
               )
-            ),
-            education (
+            `)
+            .eq('user_id', user.id)
+            .order('start_date', { ascending: false }),
+          
+          supabase
+            .from('education')
+            .select(`
               id,
               institution,
               degree,
               field_of_study,
               start_date,
               end_date,
-              gpa,
-              is_current
-            ),
-            certifications (
+              gpa
+            `)
+            .eq('user_id', user.id)
+            .order('start_date', { ascending: false }),
+          
+          supabase
+            .from('certifications')
+            .select(`
               id,
               name,
               issuing_organization,
@@ -121,54 +168,29 @@ export const useUserProfileData = () => {
               expiration_date,
               credential_id,
               credential_url
-            ),
-            user_skills (
+            `)
+            .eq('user_id', user.id)
+            .order('issue_date', { ascending: false }),
+          
+          supabase
+            .from('user_skills')
+            .select(`
               id,
               skill_name,
               proficiency_level,
-              years_of_experience
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('start_date', { referencedTable: 'work_experiences', ascending: false })
-          .order('start_date', { referencedTable: 'education', ascending: false })
-          .order('issue_date', { referencedTable: 'certifications', ascending: false })
-          .single();
+              years_experience
+            `)
+            .eq('user_id', user.id)
+        ]);
 
-        if (error) {
-          // If profile doesn't exist, create it
-          if (error.code === 'PGRST116') {
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                user_id: user.id,
-                display_name: user.user_metadata?.display_name || user.email?.split('@')[0],
-                email: user.email,
-              })
-              .select(`
-                id,
-                user_id,
-                display_name,
-                email,
-                phone,
-                location
-              `)
-              .single();
+        return {
+          ...profileData,
+          work_experiences: workExpData.data || [],
+          education: educationData.data || [],
+          certifications: certificationsData.data || [],
+          user_skills: skillsData.data || []
+        };
 
-            if (createError) throw createError;
-
-            return {
-              ...newProfile,
-              work_experiences: [],
-              education: [],
-              certifications: [],
-              user_skills: []
-            };
-          }
-          throw error;
-        }
-
-        return data;
       } catch (error) {
         console.error('Error fetching user profile data:', error);
         toast.error('Failed to load profile data');
