@@ -24,6 +24,9 @@ import { Block as BlockComponent } from "@/components/blocks/Block";
 const ResumeBuilder = () => {
   const { 
     workExperienceBlocks, 
+    education,
+    certifications,
+    skills,
     personalInfo, 
     currentEditingResume, 
     resumeSections, 
@@ -52,23 +55,40 @@ const ResumeBuilder = () => {
       visible: true,
     },
     {
+      id: 'section-education',
+      title: 'Education',
+      type: 'education',
+      blocks: [],
+      order: 1,
+      visible: true,
+    },
+    {
+      id: 'section-certifications',
+      title: 'Certifications',
+      type: 'certifications',
+      blocks: [],
+      order: 2,
+      visible: true,
+    },
+    {
       id: 'section-skills',
       title: 'Key Skills',
       type: 'skills',
       blocks: [],
-      order: 1,
+      order: 3,
       visible: true,
     }
   ];
 
-  // Convert work experience blocks to draggable blocks
-  const availableBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
+  // Convert all data to draggable blocks
+  const workBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
     experience.sections.flatMap(section =>
       section.blocks.map(block => ({
         ...block,
         sourceExperienceId: experience.id,
         sourceSectionId: section.id,
         isDraggable: true,
+        contentType: 'experience' as const,
         tags: [
           experience.company.toLowerCase(),
           experience.position.toLowerCase(),
@@ -78,6 +98,77 @@ const ResumeBuilder = () => {
       }))
     )
   );
+
+  // Convert education to draggable blocks
+  const educationBlocks: DraggableBlock[] = education.map(edu => ({
+    id: `education-${edu.id}`,
+    type: 'text' as const,
+    content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''}`,
+    metadata: {
+      education: {
+        institution: edu.institution,
+        degree: edu.degree,
+        fieldOfStudy: edu.fieldOfStudy,
+        dates: `${edu.startDate} - ${edu.endDate || 'Present'}`,
+        gpa: edu.gpa
+      }
+    },
+    order: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    sourceExperienceId: edu.id,
+    sourceSectionId: 'education',
+    isDraggable: true,
+    contentType: 'education' as const,
+    tags: [edu.institution.toLowerCase(), edu.degree.toLowerCase(), 'education']
+  }));
+
+  // Convert certifications to draggable blocks
+  const certificationBlocks: DraggableBlock[] = certifications.map(cert => ({
+    id: `certification-${cert.id}`,
+    type: 'text' as const,
+    content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''}`,
+    metadata: {
+      certification: {
+        name: cert.name,
+        issuer: cert.issuer,
+        issueDate: cert.issueDate,
+        expiryDate: cert.expiryDate,
+        credentialId: cert.credentialId,
+        credentialUrl: cert.credentialUrl
+      }
+    },
+    order: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    sourceExperienceId: cert.id,
+    sourceSectionId: 'certifications',
+    isDraggable: true,
+    contentType: 'certifications' as const,
+    tags: [cert.name.toLowerCase(), cert.issuer.toLowerCase(), 'certification']
+  }));
+
+  // Convert skills to draggable blocks
+  const skillBlocks: DraggableBlock[] = skills.map((skill, index) => ({
+    id: `skill-${index}`,
+    type: 'skill_tag' as const,
+    content: skill,
+    order: index,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    sourceExperienceId: `skill-${index}`,
+    sourceSectionId: 'skills',
+    isDraggable: true,
+    contentType: 'skills' as const,
+    tags: [skill.toLowerCase(), 'skill']
+  }));
+
+  const availableBlocks: DraggableBlock[] = [
+    ...workBlocks,
+    ...educationBlocks,
+    ...certificationBlocks,
+    ...skillBlocks
+  ];
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -215,6 +306,105 @@ const ResumeBuilder = () => {
               <CardDescription className="text-xs">
                 Drag blocks from your experiences to build your resume
               </CardDescription>
+              {/* Add All Buttons */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {workBlocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const experienceSection = activeResumeSections.find(s => s.type === 'experience');
+                      if (experienceSection) {
+                        const newBlocks = workBlocks.map(block => ({
+                          ...block,
+                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                        }));
+                        const updatedSections = activeResumeSections.map(section => 
+                          section.id === experienceSection.id 
+                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                            : section
+                        );
+                        setResumeSections(updatedSections);
+                      }
+                    }}
+                    className="text-xs h-6"
+                  >
+                    + All Work ({workBlocks.length})
+                  </Button>
+                )}
+                {educationBlocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const educationSection = activeResumeSections.find(s => s.type === 'education');
+                      if (educationSection) {
+                        const newBlocks = educationBlocks.map(block => ({
+                          ...block,
+                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                        }));
+                        const updatedSections = activeResumeSections.map(section => 
+                          section.id === educationSection.id 
+                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                            : section
+                        );
+                        setResumeSections(updatedSections);
+                      }
+                    }}
+                    className="text-xs h-6"
+                  >
+                    + All Education ({educationBlocks.length})
+                  </Button>
+                )}
+                {certificationBlocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const certSection = activeResumeSections.find(s => s.type === 'certifications');
+                      if (certSection) {
+                        const newBlocks = certificationBlocks.map(block => ({
+                          ...block,
+                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                        }));
+                        const updatedSections = activeResumeSections.map(section => 
+                          section.id === certSection.id 
+                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                            : section
+                        );
+                        setResumeSections(updatedSections);
+                      }
+                    }}
+                    className="text-xs h-6"
+                  >
+                    + All Certs ({certificationBlocks.length})
+                  </Button>
+                )}
+                {skillBlocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const skillsSection = activeResumeSections.find(s => s.type === 'skills');
+                      if (skillsSection) {
+                        const newBlocks = skillBlocks.map(block => ({
+                          ...block,
+                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                        }));
+                        const updatedSections = activeResumeSections.map(section => 
+                          section.id === skillsSection.id 
+                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                            : section
+                        );
+                        setResumeSections(updatedSections);
+                      }
+                    }}
+                    className="text-xs h-6"
+                  >
+                    + All Skills ({skillBlocks.length})
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-4">
               <Droppable droppableId="available-blocks" isDropDisabled={true}>
@@ -225,8 +415,21 @@ const ResumeBuilder = () => {
                     className="space-y-2 max-h-96 overflow-y-auto"
                   >
                     {availableBlocks.map((block, index) => {
-                      const experience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
-                      const section = experience?.sections.find(sec => sec.id === block.sourceSectionId);
+                      // Get context information based on content type
+                      let contextInfo = '';
+                      if (block.contentType === 'experience') {
+                        const experience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
+                        const section = experience?.sections.find(sec => sec.id === block.sourceSectionId);
+                        contextInfo = `${experience?.company} • ${section?.title}`;
+                      } else if (block.contentType === 'education') {
+                        const edu = education.find(e => e.id === block.sourceExperienceId);
+                        contextInfo = `${edu?.institution} • Education`;
+                      } else if (block.contentType === 'certifications') {
+                        const cert = certifications.find(c => c.id === block.sourceExperienceId);
+                        contextInfo = `${cert?.issuer} • Certification`;
+                      } else if (block.contentType === 'skills') {
+                        contextInfo = 'Skills';
+                      }
                       
                       return (
                         <Draggable key={`${block.sourceExperienceId}-${block.id}`} draggableId={`${block.sourceExperienceId}-${block.id}`} index={index}>
@@ -246,9 +449,9 @@ const ResumeBuilder = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs text-gray-500 mb-1">
-                                    {experience?.company} • {section?.title}
+                                    {contextInfo}
                                   </div>
-                                  <div className="truncate">
+                                  <div className="break-words">
                                     {block.content || 'Empty block'}
                                   </div>
                                 </div>
@@ -403,7 +606,9 @@ const ResumeBuilder = () => {
                                                         <p className="text-gray-600">{sourceExperience.company} • {sourceExperience.startDate} - {sourceExperience.isCurrentRole ? 'Present' : sourceExperience.endDate}</p>
                                                       </div>
                                                     )}
-                                                    • {block.content}
+                                                    <div className="break-words whitespace-pre-wrap">
+                                                      {block.type === 'skill_tag' ? block.content : `• ${block.content}`}
+                                                    </div>
                                                   </div>
                                                 </div>
                                               );

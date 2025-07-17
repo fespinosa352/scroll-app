@@ -25,6 +25,21 @@ export interface Block {
       name: string;
       proficiency?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
     };
+    education?: {
+      institution: string;
+      degree: string;
+      fieldOfStudy: string;
+      dates: string;
+      gpa?: string;
+    };
+    certification?: {
+      name: string;
+      issuer: string;
+      issueDate: string;
+      expiryDate?: string;
+      credentialId?: string;
+      credentialUrl?: string;
+    };
   };
   order: number;
   created_at: string;
@@ -69,6 +84,7 @@ export interface DraggableBlock extends Block {
   sourceSectionId: string;
   isDraggable: boolean;
   tags: string[]; // for filtering/searching
+  contentType?: 'experience' | 'education' | 'certifications' | 'skills';
 }
 
 // Resume structure with blocks
