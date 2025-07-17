@@ -124,6 +124,16 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   const [currentEditingResume, setCurrentEditingResume] = useState<ResumeVersion | null>(null);
   const [resumeSections, setResumeSections] = useState<ResumeSection[]>([]);
 
+  // Listen for custom refresh events from tab switching
+  useEffect(() => {
+    const handleRefreshData = () => {
+      invalidateUserData();
+    };
+
+    window.addEventListener('refreshUserData', handleRefreshData);
+    return () => window.removeEventListener('refreshUserData', handleRefreshData);
+  }, [invalidateUserData]);
+
   // Convert optimized user profile data to legacy format
   useEffect(() => {
     if (userProfileData) {

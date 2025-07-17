@@ -7,6 +7,7 @@ import { Calendar, Target, MessageSquare, List, Trophy, Building2 } from "lucide
 import ChatAchievementLogger from "./ChatAchievementLogger";
 import WinLogger from "./WinLogger";
 import { useProjects } from "@/hooks/useProjects";
+import { formatDateForDisplay } from "@/lib/dateUtils";
 
 interface Achievement {
   id: string;
@@ -87,7 +88,7 @@ const AchievementLogger = () => {
                         <div className="flex items-center gap-4 text-sm text-slate-600 mb-2">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'No date'}
+                            {project.start_date ? formatDateForDisplay(project.start_date) : 'No date'}
                           </span>
                           {project.work_experiences && (
                             <span className="flex items-center gap-1">

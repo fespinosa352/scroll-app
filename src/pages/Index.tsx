@@ -78,6 +78,19 @@ const Index = () => {
   const { getFirstName } = useProfile();
   const navigate = useNavigate();
 
+  // Custom tab change handler with data refresh
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    // Trigger data refresh when switching to My Resume or any data-display tab
+    if (newTab === "my-resume" || newTab === "experience" || newTab === "education" || newTab === "certifications") {
+      // The data refresh will be handled by the context invalidation
+      setTimeout(() => {
+        // Small delay to ensure the tab has switched before refreshing
+        window.dispatchEvent(new CustomEvent('refreshUserData'));
+      }, 100);
+    }
+  };
+
   useEffect(() => {
     if (!loading && !session) {
       navigate('/auth');
@@ -168,7 +181,7 @@ const Index = () => {
         </header>
 
         <div className="container mx-auto px-4 py-6 md:py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Target className="w-4 h-4" />
@@ -204,7 +217,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("achievements")}
+                    onClick={() => handleTabChange("achievements")}
                   >
                     <Trophy className="w-6 h-6" />
                     <span className="text-sm">+ Log Wins</span>
@@ -212,7 +225,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("experience")}
+                    onClick={() => handleTabChange("experience")}
                   >
                     <Briefcase className="w-6 h-6" />
                     <span className="text-sm">+ Experience</span>
@@ -220,7 +233,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("education")}
+                    onClick={() => handleTabChange("education")}
                   >
                     <GraduationCap className="w-6 h-6" />
                     <span className="text-sm">+ Education</span>
@@ -228,7 +241,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
-                    onClick={() => setActiveTab("certifications")}
+                    onClick={() => handleTabChange("certifications")}
                   >
                     <Award className="w-6 h-6" />
                     <span className="text-sm">+ Certifications</span>
@@ -252,7 +265,7 @@ const Index = () => {
                     <Button 
                       variant="primary-lg" 
                       className="w-full md:w-auto"
-                      onClick={() => setActiveTab("jobs")}
+                      onClick={() => handleTabChange("jobs")}
                     >
                       <Search className="w-5 h-5 mr-2" />
                       Analyze a Job Posting
@@ -264,7 +277,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="getting-started">
-            <GettingStarted onComplete={() => setActiveTab("my-resume")} />
+            <GettingStarted onComplete={() => handleTabChange("my-resume")} />
           </TabsContent>
 
           <TabsContent value="achievements">

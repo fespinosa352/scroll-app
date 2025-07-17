@@ -6,11 +6,13 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { Briefcase, GraduationCap, Award, Calendar, MapPin, Building, Edit, FileText, Trophy, Target } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateRange, formatDateForDisplay } from "@/lib/dateUtils";
 import WorkExperienceBlocks from "./WorkExperienceBlocks";
 import Education from "./Education";
 import Certifications from "./Certifications";
+import UserSkills from "./UserSkills";
 import { useProjects } from "@/hooks/useProjects";
+import { useJobAnalysis } from "@/hooks/useJobAnalysis";
 
 const MyResume = () => {
   const { 
@@ -23,24 +25,9 @@ const MyResume = () => {
   } = useResumeData();
   
   const { projects } = useProjects();
+  const { userSkills } = useJobAnalysis();
 
-  const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | null>(null);
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr + '-01');
-      return format(date, 'MMM yyyy');
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatDateRange = (startDate: string, endDate: string, isCurrent?: boolean) => {
-    const start = formatDate(startDate);
-    const end = isCurrent ? 'Present' : formatDate(endDate);
-    return `${start} - ${end}`;
-  };
+  const [editingSection, setEditingSection] = useState<'work' | 'education' | 'certifications' | 'skills' | null>(null);
 
   const hasAnyData = personalInfo || workExperience.length > 0 || education.length > 0 || certifications.length > 0 || skills.length > 0;
 
@@ -196,7 +183,7 @@ const MyResume = () => {
                       </div>
                       <div className="text-sm text-slate-500 flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {project.start_date ? format(new Date(project.start_date), 'MMM yyyy') : 'No date'}
+                        {project.start_date ? formatDateForDisplay(project.start_date) : 'No date'}
                       </div>
                     </div>
                     <div className="text-slate-600 leading-relaxed">
@@ -318,12 +305,12 @@ const MyResume = () => {
                         {cert.issueDate && (
                           <p className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Issued: {formatDate(cert.issueDate)}
+                            Issued: {formatDateForDisplay(cert.issueDate)}
                           </p>
                         )}
                         {cert.expiryDate && !cert.doesNotExpire && (
                           <p className="text-red-600">
-                            Expires: {formatDate(cert.expiryDate)}
+                            Expires: {formatDateForDisplay(cert.expiryDate)}
                           </p>
                         )}
                         {cert.doesNotExpire && (
@@ -363,18 +350,57 @@ const MyResume = () => {
       </Card>
 
       {/* Skills Summary */}
-      {skills.length > 0 && (
+      {(skills.length > 0 || userSkills.length > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle>Skills Summary</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Skills Summary</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setEditingSection('skills')}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill, index) => (
-                <Badge key={index} variant="outline">
-                  {skill}
-                </Badge>
-              ))}
+            <div className="space-y-4">
+              {/* Skills from resume parsing */}
+              {skills.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">From Resume</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {skills.map((skill, index) => (
+                      <Badge key={index} variant="outline">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* User-defined skills with proficiency levels */}
+              {userSkills.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Detailed Skills</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {userSkills.map((skill, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                        <span className="font-medium">{skill.skill_name}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={skill.proficiency_level === 'expert' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {skill.proficiency_level}
+                          </Badge>
+                          <span className="text-xs text-slate-500">
+                            {skill.years_experience}yr{skill.years_experience !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -405,6 +431,15 @@ const MyResume = () => {
             <DialogTitle>Edit Certifications</DialogTitle>
           </DialogHeader>
           <Certifications />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingSection === 'skills'} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Skills</DialogTitle>
+          </DialogHeader>
+          <UserSkills />
         </DialogContent>
       </Dialog>
     </div>
