@@ -32,6 +32,7 @@ const ResumeBuilder = () => {
   } = useResumeData();
   const [resumeName, setResumeName] = useState(currentEditingResume?.name || "My Resume");
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   
   // Update resume name when editing resume changes
   useEffect(() => {
@@ -184,6 +185,10 @@ const ResumeBuilder = () => {
     }
   };
 
+  const handlePreview = () => {
+    setIsPreviewMode(!isPreviewMode);
+  };
+
   const blockTypeIcons = {
     text: Type,
     bullet: List,
@@ -200,9 +205,10 @@ const ResumeBuilder = () => {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-        {/* Block Library */}
-        <div className="lg:col-span-1 space-y-4">
+      <div className={`grid gap-6 h-full ${isPreviewMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+        {/* Block Library - Hidden in preview mode */}
+        {!isPreviewMode && (
+          <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium">Block Library</CardTitle>
@@ -258,10 +264,11 @@ const ResumeBuilder = () => {
               </Droppable>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
 
         {/* Resume Builder */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className={`space-y-4 ${isPreviewMode ? '' : 'lg:col-span-2'}`}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -283,9 +290,13 @@ const ResumeBuilder = () => {
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePreview}
+                  >
                     <Eye className="w-4 h-4 mr-2" />
-                    Preview
+                    {isPreviewMode ? 'Edit Mode' : 'Preview'}
                   </Button>
                   <Button variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
@@ -327,18 +338,23 @@ const ResumeBuilder = () => {
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`
-                              min-h-[100px] p-4 border-2 border-dashed rounded-lg
-                              ${snapshot.isDraggingOver 
+                              ${isPreviewMode 
+                                ? 'min-h-0 p-0' 
+                                : 'min-h-[100px] p-4 border-2 border-dashed rounded-lg'
+                              }
+                              ${!isPreviewMode && snapshot.isDraggingOver 
                                 ? 'border-blue-300 bg-blue-50' 
-                                : 'border-gray-200 bg-gray-50'
+                                : !isPreviewMode ? 'border-gray-200 bg-gray-50' : ''
                               }
                             `}
                           >
                             {section.blocks.length === 0 ? (
-                              <div className="text-center text-gray-400 py-8">
-                                <Plus className="w-8 h-8 mx-auto mb-2" />
-                                <p className="text-sm">Drop blocks here to build this section</p>
-                              </div>
+                              !isPreviewMode && (
+                                <div className="text-center text-gray-400 py-8">
+                                  <Plus className="w-8 h-8 mx-auto mb-2" />
+                                  <p className="text-sm">Drop blocks here to build this section</p>
+                                </div>
+                              )
                             ) : (
                               <div className="space-y-2">
                                 {section.blocks.map((block, index) => (
@@ -348,33 +364,61 @@ const ResumeBuilder = () => {
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         className={`
-                                          bg-white p-3 rounded border
-                                          ${snapshot.isDragging ? 'shadow-lg' : ''}
+                                          ${isPreviewMode 
+                                            ? 'p-2 mb-1' 
+                                            : 'bg-white p-3 rounded border'
+                                          }
+                                          ${!isPreviewMode && snapshot.isDragging ? 'shadow-lg' : ''}
                                         `}
                                       >
                                         <div className="flex items-start space-x-2">
-                                          <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mt-1">
-                                            <GripVertical className="w-4 h-4 text-gray-400" />
-                                          </div>
+                                          {!isPreviewMode && (
+                                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mt-1">
+                                              <GripVertical className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                          )}
                                           <div className="flex-1">
-                                            <div className="flex items-center space-x-2 mb-1">
-                                              {getBlockIcon(block.type)}
-                                              <Badge variant="secondary" className="text-xs">
-                                                {block.type}
-                                              </Badge>
-                                            </div>
-                                            <div className="text-sm">
-                                              {block.content}
-                                            </div>
+                                            {(() => {
+                                              const sourceExperience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
+                                              const sourceSection = sourceExperience?.sections.find(sec => sec.id === block.sourceSectionId);
+                                              return (
+                                                <div>
+                                                  {!isPreviewMode && (
+                                                    <div className="flex items-center space-x-2 mb-1">
+                                                      {getBlockIcon(block.type)}
+                                                      <Badge variant="secondary" className="text-xs">
+                                                        {block.type}
+                                                      </Badge>
+                                                      {sourceExperience && (
+                                                        <div className="text-xs text-gray-500">
+                                                          {sourceExperience.company} • {sourceExperience.position}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                  <div className={`${isPreviewMode ? 'text-base leading-relaxed' : 'text-sm'}`}>
+                                                    {isPreviewMode && sourceExperience && section.type === 'experience' && index === 0 && (
+                                                      <div className="mb-2">
+                                                        <h4 className="font-semibold text-lg">{sourceExperience.position}</h4>
+                                                        <p className="text-gray-600">{sourceExperience.company} • {sourceExperience.startDate} - {sourceExperience.isCurrentRole ? 'Present' : sourceExperience.endDate}</p>
+                                                      </div>
+                                                    )}
+                                                    • {block.content}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })()}
                                           </div>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => removeBlockFromResume(section.id, block.id)}
-                                            className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                                          >
-                                            ×
-                                          </Button>
+                                          {!isPreviewMode && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeBlockFromResume(section.id, block.id)}
+                                              className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                                            >
+                                              ×
+                                            </Button>
+                                          )}
                                         </div>
                                       </div>
                                     )}
