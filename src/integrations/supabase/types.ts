@@ -493,6 +493,7 @@ export type Database = {
       work_experiences: {
         Row: {
           company_id: string | null
+          company_name: string | null
           created_at: string
           description: string | null
           employment_type: string | null
@@ -507,6 +508,7 @@ export type Database = {
         }
         Insert: {
           company_id?: string | null
+          company_name?: string | null
           created_at?: string
           description?: string | null
           employment_type?: string | null
@@ -521,6 +523,7 @@ export type Database = {
         }
         Update: {
           company_id?: string | null
+          company_name?: string | null
           created_at?: string
           description?: string | null
           employment_type?: string | null
