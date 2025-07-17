@@ -40,6 +40,12 @@ export interface Block {
       credentialId?: string;
       credentialUrl?: string;
     };
+    workExperience?: {
+      company: string;
+      position: string;
+      sectionTitle: string;
+      blocks: Block[];
+    };
   };
   order: number;
   created_at: string;

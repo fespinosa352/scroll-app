@@ -80,23 +80,34 @@ const ResumeBuilder = () => {
     }
   ];
 
-  // Convert all data to draggable blocks
+  // Convert work experience sections to draggable blocks (grouped by section)
   const workBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
-    experience.sections.flatMap(section =>
-      section.blocks.map(block => ({
-        ...block,
-        sourceExperienceId: experience.id,
-        sourceSectionId: section.id,
-        isDraggable: true,
-        contentType: 'experience' as const,
-        tags: [
-          experience.company.toLowerCase(),
-          experience.position.toLowerCase(),
-          section.title.toLowerCase(),
-          block.type
-        ]
-      }))
-    )
+    experience.sections.map(section => ({
+      id: `work-section-${experience.id}-${section.id}`,
+      type: 'text' as const,
+      content: `${section.title}: ${section.blocks.map(b => b.content).join('; ')}`,
+      metadata: {
+        workExperience: {
+          company: experience.company,
+          position: experience.position,
+          sectionTitle: section.title,
+          blocks: section.blocks
+        }
+      },
+      order: section.order,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: experience.id,
+      sourceSectionId: section.id,
+      isDraggable: true,
+      contentType: 'experience' as const,
+      tags: [
+        experience.company.toLowerCase(),
+        experience.position.toLowerCase(),
+        section.title.toLowerCase(),
+        'section'
+      ]
+    }))
   );
 
   // Convert education to draggable blocks
@@ -187,16 +198,38 @@ const ResumeBuilder = () => {
       
       if (!targetSection) return;
 
-      // Create a copy of the block for the resume
-      const resumeBlock: DraggableBlock = {
-        ...block,
-        id: `resume-${block.id}-${Date.now()}`, // New ID for the resume copy
-      };
+      // Create blocks for the resume based on block type
+      let resumeBlocks: DraggableBlock[] = [];
+      
+      if (block.contentType === 'experience' && block.metadata?.workExperience?.blocks) {
+        // If it's a work experience section, expand it into individual blocks
+        resumeBlocks = block.metadata.workExperience.blocks.map((originalBlock, index) => ({
+          id: `resume-${originalBlock.id}-${Date.now()}-${index}`,
+          type: originalBlock.type,
+          content: originalBlock.content,
+          metadata: originalBlock.metadata,
+          order: index,
+          created_at: originalBlock.created_at,
+          updated_at: originalBlock.updated_at,
+          sourceExperienceId: block.sourceExperienceId,
+          sourceSectionId: block.sourceSectionId,
+          isDraggable: true,
+          contentType: 'experience' as const,
+          tags: block.tags
+        }));
+      } else {
+        // For other block types, just copy the block
+        resumeBlocks = [{
+          ...block,
+          id: `resume-${block.id}-${Date.now()}`,
+        }];
+      }
 
       const updatedSections = activeResumeSections.map(section => {
         if (section.id === targetSectionId) {
           const newBlocks = [...section.blocks];
-          newBlocks.splice(destination.index, 0, resumeBlock);
+          // Insert all resume blocks at the destination index
+          newBlocks.splice(destination.index, 0, ...resumeBlocks);
           return { ...section, blocks: newBlocks };
         }
         return section;
@@ -419,8 +452,7 @@ const ResumeBuilder = () => {
                       let contextInfo = '';
                       if (block.contentType === 'experience') {
                         const experience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
-                        const section = experience?.sections.find(sec => sec.id === block.sourceSectionId);
-                        contextInfo = `${experience?.company} • ${section?.title}`;
+                        contextInfo = `${experience?.company} • ${experience?.position}`;
                       } else if (block.contentType === 'education') {
                         const edu = education.find(e => e.id === block.sourceExperienceId);
                         contextInfo = `${edu?.institution} • Education`;
