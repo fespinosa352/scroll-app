@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface BackupData {
   timestamp: string;
@@ -20,6 +21,7 @@ export const useDataBackup = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const exportUserData = async (): Promise<string | null> => {
     if (!user?.id) {
@@ -122,20 +124,24 @@ export const useDataBackup = () => {
 
         if (data.length > 0) {
           // Update user_id to current user and remove old IDs
-          const preparedData = data.map(item => ({
-            ...item,
-            id: undefined, // Let database generate new IDs
-            user_id: user.id
-          }));
+          const preparedData = data.map(item => {
+            const { id, created_at, updated_at, ...cleanItem } = item;
+            return {
+              ...cleanItem,
+              user_id: user.id
+            };
+          });
 
           const { error } = await supabase
             .from(tableName as string)
             .insert(preparedData);
 
           if (error) {
-            console.warn(`Failed to import ${tableName}:`, error);
+            console.error(`Failed to import ${tableName}:`, error);
+            console.error('Prepared data:', preparedData);
             importResults.push({ table: tableName, success: false, error: error.message });
           } else {
+            console.log(`Successfully imported ${data.length} items to ${tableName}`);
             importResults.push({ table: tableName, success: true, count: data.length });
           }
         }
@@ -144,11 +150,27 @@ export const useDataBackup = () => {
       const successCount = importResults.filter(r => r.success).length;
       const totalItems = importResults.reduce((sum, r) => sum + (r.success ? r.count || 0 : 0), 0);
 
-      toast.success(`Data imported successfully! ${totalItems} items restored from ${successCount} tables.`, {
-        description: 'Your professional data has been restored'
-      });
+      // Show detailed results
+      console.log('Import results:', importResults);
+      
+      if (successCount > 0) {
+        // Invalidate cache to refresh UI
+        queryClient.invalidateQueries({ queryKey: ['userProfileData', user.id] });
+        
+        toast.success(`Data imported successfully! ${totalItems} items restored from ${successCount} tables.`, {
+          description: 'Your professional data has been restored. The page will refresh to show the data.'
+        });
+        
+        // Force page refresh to ensure data shows
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast.error('No data was imported. Check console for details.');
+        console.error('Import failed for all tables:', importResults);
+      }
 
-      return true;
+      return successCount > 0;
     } catch (error) {
       console.error('Import failed:', error);
       toast.error('Failed to import backup data');

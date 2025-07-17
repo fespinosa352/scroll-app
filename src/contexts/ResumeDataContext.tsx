@@ -150,6 +150,8 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           skills: [] // Could be populated from related data if needed
         }));
         setWorkExperience(convertedExperiences);
+      } else {
+        setWorkExperience([]);
       }
 
       // Convert education
@@ -165,6 +167,8 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           isCurrentlyEnrolled: edu.is_current || false
         }));
         setLocalEducation(convertedEducation);
+      } else {
+        setLocalEducation([]);
       }
 
       // Convert certifications
@@ -180,6 +184,8 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           doesNotExpire: !cert.expiration_date
         }));
         setLocalCertifications(convertedCertifications);
+      } else {
+        setLocalCertifications([]);
       }
 
       // Convert personal info from profile
@@ -190,13 +196,24 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           phone: userProfileData.phone || '',
           location: userProfileData.location || ''
         });
+      } else {
+        setPersonalInfo(null);
       }
 
       // Convert skills
       if (userProfileData.user_skills && userProfileData.user_skills.length > 0) {
         const skillNames = userProfileData.user_skills.map(skill => skill.skill_name);
         setSkills(skillNames);
+      } else {
+        setSkills([]);
       }
+    } else {
+      // Clear all state when userProfileData is null/undefined
+      setWorkExperience([]);
+      setLocalEducation([]);
+      setLocalCertifications([]);
+      setSkills([]);
+      setPersonalInfo(null);
     }
   }, [userProfileData]);
 
