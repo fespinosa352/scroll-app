@@ -80,38 +80,38 @@ const ResumeBuilder = () => {
     }
   ];
 
-  // Convert work experience individual blocks to draggable blocks
-  const workBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience =>
-    experience.sections.flatMap(section =>
-      section.blocks.map(block => ({
-        id: `work-block-${experience.id}-${section.id}-${block.id}`,
-        type: block.type,
-        content: block.content,
-        metadata: {
-          ...block.metadata,
-          workExperience: {
-            company: experience.company,
-            position: experience.position,
-            sectionTitle: section.title,
-            blocks: [block]
-          }
-        },
-        order: block.order,
-        created_at: block.created_at,
-        updated_at: block.updated_at,
-        sourceExperienceId: experience.id,
-        sourceSectionId: section.id,
-        isDraggable: true,
-        contentType: 'experience' as const,
-        tags: [
-          experience.company.toLowerCase(),
-          experience.position.toLowerCase(),
-          section.title.toLowerCase(),
-          block.type
-        ]
-      }))
-    )
-  );
+  // Convert work experiences to draggable blocks (one block per complete work experience)
+  const workBlocks: DraggableBlock[] = workExperienceBlocks.map(experience => {
+    // Combine all blocks from all sections into one complete description
+    const allBlocks = experience.sections.flatMap(section => section.blocks);
+    const combinedContent = allBlocks.map(block => block.content).join('\n');
+    
+    return {
+      id: `work-experience-${experience.id}`,
+      type: 'text' as const,
+      content: combinedContent,
+      metadata: {
+        workExperience: {
+          company: experience.company,
+          position: experience.position,
+          sectionTitle: 'Complete Experience',
+          blocks: allBlocks
+        }
+      },
+      order: 0,
+      created_at: experience.created_at,
+      updated_at: experience.updated_at,
+      sourceExperienceId: experience.id,
+      sourceSectionId: 'complete-experience',
+      isDraggable: true,
+      contentType: 'experience' as const,
+      tags: [
+        experience.company.toLowerCase(),
+        experience.position.toLowerCase(),
+        'work-experience'
+      ]
+    };
+  });
 
   // Convert education to draggable blocks
   const educationBlocks: DraggableBlock[] = education.map(edu => ({

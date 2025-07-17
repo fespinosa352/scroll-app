@@ -308,13 +308,13 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     return experiences.map(exp => {
       const sections: BlockSection[] = [];
       
-      // Create sections from the experience description
+      // Create a single section with the complete experience description
       if (exp.description) {
-        const responsibilitiesSection: BlockSection = {
-          id: `section-responsibilities-${exp.id}`,
-          title: 'Key Responsibilities',
+        const experienceSection: BlockSection = {
+          id: `section-experience-${exp.id}`,
+          title: 'Experience Details',
           blocks: [{
-            id: `block-desc-${exp.id}`,
+            id: `block-experience-${exp.id}`,
             type: 'text',
             content: exp.description,
             order: 0,
@@ -325,32 +325,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           collapsible: true,
           collapsed: false,
         };
-        sections.push(responsibilitiesSection);
-      }
-
-      // Create achievements section if the description contains bullet points
-      const achievementLines = exp.description
-        ?.split(/[•\-*\n]/)
-        .map(line => line.trim())
-        .filter(line => line.length > 10) || [];
-
-      if (achievementLines.length > 1) {
-        const achievementsSection: BlockSection = {
-          id: `section-achievements-${exp.id}`,
-          title: 'Key Achievements',
-          blocks: achievementLines.map((line, index) => ({
-            id: `block-achievement-${exp.id}-${index}`,
-            type: 'achievement' as const,
-            content: line,
-            order: index,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })),
-          order: 1,
-          collapsible: true,
-          collapsed: false,
-        };
-        sections.push(achievementsSection);
+        sections.push(experienceSection);
       }
 
       // Create skills section
