@@ -641,9 +641,9 @@ const ResumeBuilder = () => {
                                                         <p className="text-gray-600">{sourceExperience.company} • {sourceExperience.startDate} - {sourceExperience.isCurrentRole ? 'Present' : sourceExperience.endDate}</p>
                                                       </div>
                                                     )}
-                                                    <div className="break-words whitespace-pre-wrap">
-                                                      {block.type === 'skill_tag' ? block.content : `• ${block.content}`}
-                                                    </div>
+                                                     <div className="break-words whitespace-pre-wrap">
+                                                       {block.type === 'skill_tag' || block.type === 'heading' ? block.content : `• ${block.content}`}
+                                                     </div>
                                                   </div>
                                                 </div>
                                               );
