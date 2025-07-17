@@ -126,24 +126,7 @@ const WorkExperienceBlocks = () => {
             endDate: formData.isCurrentRole ? "" : formData.endDate,
             isCurrentRole: formData.isCurrentRole,
             location: formData.location,
-            sections: [
-              {
-                id: `section-responsibilities-${Date.now()}`,
-                title: 'Key Responsibilities',
-                blocks: [],
-                order: 0,
-                collapsible: true,
-                collapsed: false,
-              },
-              {
-                id: `section-achievements-${Date.now()}`,
-                title: 'Key Achievements',
-                blocks: [],
-                order: 1,
-                collapsible: true,
-                collapsed: false,
-              }
-            ],
+            sections: [], // Start with empty sections, user can add their own
             skills: [],
             created_at: result.created_at,
             updated_at: result.updated_at,
