@@ -9,6 +9,7 @@ export const MarkupGuide: React.FC = () => {
       <p>• Use <code>### Job Title</code> for positions</p>
       <p>• Use <code>**Company**</code> for company names</p>
       <p>• Use <code>- Achievement</code> for bullet points</p>
+      <p><strong>Shortcuts:</strong> <code>F11</code> toggle fullscreen, <code>Esc</code> exit fullscreen</p>
     </div>
   );
 };

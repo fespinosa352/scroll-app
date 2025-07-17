@@ -12,7 +12,9 @@ import {
   AlertTriangle, 
   Zap,
   Target,
-  RefreshCw
+  RefreshCw,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
 import { useATSAnalyzer } from '@/hooks/useATSAnalyzer';
@@ -33,6 +35,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   onExport
 }) => {
   const [activeTab, setActiveTab] = useState('edit');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [markupContent, setMarkupContent] = useState(initialContent || `# Your Name
 
 your.email@example.com
@@ -68,6 +71,24 @@ linkedin.com/in/yourprofile
     const debounceTimer = setTimeout(processContent, 300);
     return () => clearTimeout(debounceTimer);
   }, [markupContent, processContent]);
+
+  // Keyboard shortcuts for fullscreen
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // F11 key to toggle fullscreen
+      if (event.key === 'F11') {
+        event.preventDefault();
+        setIsFullscreen(!isFullscreen);
+      }
+      // Escape key to exit fullscreen
+      if (event.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
 
   const handleSave = () => {
     if (onSave) {
@@ -156,9 +177,9 @@ linkedin.com/in/yourprofile
         </TabsList>
 
         <TabsContent value="edit" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card>
+          <div className={isFullscreen ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
+            <div className={isFullscreen ? "w-full" : "lg:col-span-2"}>
+              <Card className={isFullscreen ? "h-[calc(100vh-12rem)]" : ""}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Markup Editor</CardTitle>
@@ -167,15 +188,30 @@ linkedin.com/in/yourprofile
                       <Badge variant="secondary">
                         {markupContent.split('\n').length} lines
                       </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="h-8 w-8 p-0"
+                        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                      >
+                        {isFullscreen ? (
+                          <Minimize className="h-4 w-4" />
+                        ) : (
+                          <Maximize className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className={isFullscreen ? "h-[calc(100vh-16rem)] flex flex-col" : ""}>
                   <textarea
                     id="markup-editor"
                     value={markupContent}
                     onChange={(e) => setMarkupContent(e.target.value)}
-                    className="w-full h-96 p-4 border border-slate-300 rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full p-4 border border-slate-300 rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      isFullscreen ? 'flex-1 h-full' : 'h-96'
+                    }`}
                     placeholder="Start typing your resume in markdown format..."
                   />
                   <MarkupGuide />
@@ -183,26 +219,28 @@ linkedin.com/in/yourprofile
               </Card>
             </div>
 
-            <div className="space-y-4">
-              <QuickSuggestions onInsert={insertSuggestion} />
-              
-              {structuredData && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Keywords Found</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-1">
-                      {structuredData.keywordsFound?.slice(0, 8).map((keyword: string, idx: number) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            {!isFullscreen && (
+              <div className="space-y-4">
+                <QuickSuggestions onInsert={insertSuggestion} />
+                
+                {structuredData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Keywords Found</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-1">
+                        {structuredData.keywordsFound?.slice(0, 8).map((keyword: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
         </TabsContent>
 
