@@ -66,7 +66,7 @@ export const useDatabaseReset = () => {
       for (const table of tablesToClean) {
         try {
           const { error } = await supabase
-            .from(table)
+            .from(table as any)
             .delete()
             .eq('user_id', user.id);
             

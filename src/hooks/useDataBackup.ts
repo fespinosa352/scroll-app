@@ -133,7 +133,7 @@ export const useDataBackup = () => {
           });
 
           const { error } = await supabase
-            .from(tableName as string)
+            .from(tableName as any)
             .insert(preparedData);
 
           if (error) {

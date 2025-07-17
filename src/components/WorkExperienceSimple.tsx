@@ -9,6 +9,7 @@ import { Plus, Briefcase, FileText, Trash2, Edit, Calendar, MapPin } from "lucid
 import { toast } from "sonner";
 import { useWorkExperience } from "@/hooks/useWorkExperience";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { useAuth } from "@/hooks/useAuth";
 import { formatDateRange } from "@/lib/dateUtils";
 
 interface WorkExperienceForm {
@@ -30,6 +31,7 @@ interface WorkExperienceSimpleProps {
 const WorkExperienceSimple = ({ onClose, editingExperience }: WorkExperienceSimpleProps) => {
   const { saveWorkExperience, updateWorkExperience, deleteWorkExperience, saving } = useWorkExperience();
   const { workExperience } = useResumeData();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(!!editingExperience);
   const [currentEditingExp, setCurrentEditingExp] = useState(editingExperience);
   
@@ -139,7 +141,10 @@ const WorkExperienceSimple = ({ onClose, editingExperience }: WorkExperienceSimp
       end_date: workForm.isCurrentRole ? null : workForm.endDate,
       is_current: workForm.isCurrentRole,
       location: workForm.location,
-      description: description ? `• ${description}` : ""
+      description: description ? `• ${description}` : "",
+      user_id: user?.id || '',
+      employment_type: 'Full-time',
+      company_id: null
     };
 
     try {
@@ -210,10 +215,10 @@ const WorkExperienceSimple = ({ onClose, editingExperience }: WorkExperienceSimp
                           <Calendar className="w-4 h-4" />
                           {formatDateRange(exp.startDate, exp.endDate, exp.isCurrentRole)}
                         </div>
-                        {exp.location && (
+                        {(exp as any).location && (
                           <div className="flex items-center gap-1">
                             <MapPin className="w-4 h-4" />
-                            {exp.location}
+                            {(exp as any).location}
                           </div>
                         )}
                       </div>
