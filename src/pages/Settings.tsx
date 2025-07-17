@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Mail, Camera, Save } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ArrowLeft, User, Mail, Camera, Save, Trash2, AlertTriangle } from "lucide-react";
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
+import { useDatabaseReset } from '@/hooks/useDatabaseReset';
 import { useNavigate } from 'react-router-dom';
 import chameleonLogo from "@/assets/chameleon-logo.png";
 
@@ -16,6 +18,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, loading, updating, updateProfile, createProfile } = useProfile();
+  const { resetDatabase, isResetting } = useDatabaseReset();
   
   const [formData, setFormData] = useState({
     display_name: '',
@@ -214,6 +217,83 @@ const Settings = () => {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Database Reset Section */}
+        <Card className="mt-6 border-red-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-red-700">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Danger Zone</span>
+            </CardTitle>
+            <CardDescription>
+              Permanently delete all your professional data. This action cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <h4 className="font-medium text-red-800 mb-2">What will be deleted:</h4>
+              <ul className="text-sm text-red-700 space-y-1">
+                <li>• All work experience records</li>
+                <li>• All education records</li>
+                <li>• All certifications</li>
+                <li>• All saved resumes</li>
+                <li>• All job analyses</li>
+                <li>• All achievements and projects</li>
+                <li>• All skills data</li>
+              </ul>
+              <p className="text-sm text-red-600 mt-3 font-medium">
+                Your account and profile information will remain intact.
+              </p>
+            </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive"
+                  disabled={isResetting}
+                  className="flex items-center space-x-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>{isResetting ? 'Resetting...' : 'Reset All Data'}</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center space-x-2 text-red-700">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span>Are you absolutely sure?</span>
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>
+                      This action will permanently delete all your professional data including:
+                    </p>
+                    <ul className="text-sm text-slate-600 space-y-1 pl-4">
+                      <li>• Work experience records</li>
+                      <li>• Education records</li>
+                      <li>• Certifications</li>
+                      <li>• Saved resumes</li>
+                      <li>• Job analyses</li>
+                      <li>• Projects and achievements</li>
+                      <li>• Skills data</li>
+                    </ul>
+                    <p className="text-red-600 font-medium">
+                      This action cannot be undone. You'll need to re-enter all your information.
+                    </p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={resetDatabase}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Yes, delete all data
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </div>
