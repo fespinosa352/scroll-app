@@ -14,6 +14,7 @@ interface WorkExperience {
   endDate: string;
   description: string;
   isCurrentRole: boolean;
+  location?: string;
   skills: string[];
 }
 
@@ -147,6 +148,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           endDate: exp.end_date || '',
           description: exp.description || '',
           isCurrentRole: exp.is_current || false,
+          location: exp.location || '',
           skills: [] // Could be populated from related data if needed
         }));
         setWorkExperience(convertedExperiences);
