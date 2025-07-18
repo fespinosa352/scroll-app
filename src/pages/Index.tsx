@@ -23,7 +23,7 @@ import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
 import MyResume from "@/components/MyResume";
-import { HybridResumeEditor } from "@/components/HybridResumeEditor";
+import { ResumeEditor } from "@/components/ResumeEditor";
 import { exportResume, type ExportableResume } from "@/utils/resumeExport";
 import { useMarkupConverter } from "@/hooks/useMarkupConverter";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
@@ -78,7 +78,7 @@ const ResumeContent: React.FC<{
           onEditResume={(resumeId: string) => {
             setIsEditingResume(true);
             setEditingResumeId(resumeId);
-            handleTabChange('hybrid-editor'); // Switch to hybrid editor tab
+            handleTabChange('editor'); // Switch to editor tab
           }} 
           onCreateNew={handleCreateNew}
         />
@@ -87,8 +87,8 @@ const ResumeContent: React.FC<{
   );
 };
 
-// Component to handle HybridResumeEditor with resume data
-const HybridResumeContent: React.FC<{ editingResumeId?: string }> = ({ editingResumeId }) => {
+// Component to handle ResumeEditor with resume data
+const ResumeEditorContent: React.FC<{ editingResumeId?: string }> = ({ editingResumeId }) => {
   const { 
     workExperience, 
     personalInfo, 
@@ -368,7 +368,7 @@ linkedin.com/in/yourprofile
   };
 
   return (
-    <HybridResumeEditor 
+    <ResumeEditor 
       key={editingResumeId || 'new'} // Force re-render when editing different resume
       initialContent={initialMarkup}
       onSave={handleSave}
@@ -522,9 +522,9 @@ const Index = () => {
               <FileText className="w-4 h-4" />
               <span className="text-xs md:text-sm">Resume Vault</span>
             </TabsTrigger>
-            <TabsTrigger value="hybrid-editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+            <TabsTrigger value="editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Zap className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Hybrid Editor</span>
+              <span className="text-xs md:text-sm">Editor</span>
             </TabsTrigger>
           </TabsList>
 
@@ -645,8 +645,8 @@ const Index = () => {
             <MyResume />
           </TabsContent>
 
-          <TabsContent value="hybrid-editor">
-            <HybridResumeContent editingResumeId={editingResumeId} />
+          <TabsContent value="editor">
+            <ResumeEditorContent editingResumeId={editingResumeId} />
           </TabsContent>
 
         </Tabs>

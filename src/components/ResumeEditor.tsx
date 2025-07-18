@@ -23,13 +23,13 @@ import { MarkupGuide } from './MarkupGuide';
 import { ResumePreview } from './ResumePreview';
 import { ATSInsights } from './ATSInsights';
 
-interface HybridResumeEditorProps {
+interface ResumeEditorProps {
   initialContent?: string;
   onSave?: (markup: string, structured: any) => void;
   onExport?: (format: 'copy' | 'txt') => void;
 }
 
-export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
+export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   initialContent = '',
   onSave,
   onExport
@@ -116,7 +116,7 @@ linkedin.com/in/yourprofile
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Hybrid Resume Editor</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Resume Editor</h1>
         <p className="text-slate-600">Write naturally with markup, get AI-powered ATS optimization</p>
       </div>
 
