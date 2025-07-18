@@ -50,21 +50,26 @@ const Certifications = () => {
       return;
     }
 
-    // Prepare database format
-    const certificationData = {
+    // Prepare data for update (without user_id)
+    const updateData = {
       name: formData.name,
       issuing_organization: formData.issuer,
       issue_date: formData.issueDate || null,
       expiration_date: formData.doesNotExpire ? null : formData.expiryDate || null,
       credential_id: formData.credentialId || null,
       credential_url: formData.credentialUrl || null,
+    };
+
+    // Prepare data for creation (with user_id placeholder)
+    const createData = {
+      ...updateData,
       user_id: '', // Will be set by the hook
     };
 
     try {
       if (editingId && !editingId.startsWith('parsed-cert-')) {
         // Update existing database record
-        const result = await updateCertificationDb(editingId, certificationData);
+        const result = await updateCertificationDb(editingId, updateData);
         if (result) {
           // Update local state
           const updatedCertifications = certificationsList.map(cert => 
@@ -83,7 +88,7 @@ const Certifications = () => {
         }
       } else {
         // Create new database record
-        const result = await saveCertification(certificationData);
+        const result = await saveCertification(createData);
         if (result) {
           // Create local format for UI
           const newCertification: Certification = {
