@@ -112,17 +112,6 @@ linkedin.com/in/yourprofile
     setMarkupContent(newContent);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBg = (score: number) => {
-    if (score >= 85) return 'bg-green-100 border-green-200';
-    if (score >= 70) return 'bg-yellow-100 border-yellow-200';
-    return 'bg-red-100 border-red-200';
-  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -131,30 +120,6 @@ linkedin.com/in/yourprofile
         <p className="text-slate-600">Write naturally with markup, get AI-powered ATS optimization</p>
       </div>
 
-      {/* ATS Score Header */}
-      {atsAnalysis && (
-        <Card className={`border-2 ${getScoreBg(atsAnalysis.score)}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Target className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">ATS Optimization Score</h3>
-                  <p className="text-sm text-slate-600">
-                    {isAnalyzing ? 'Analyzing...' : 'Real-time analysis complete'}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className={`text-3xl font-bold ${getScoreColor(atsAnalysis.score)}`}>
-                  {atsAnalysis.score}/100
-                </div>
-                <Progress value={atsAnalysis.score} className="w-24 mt-1" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
