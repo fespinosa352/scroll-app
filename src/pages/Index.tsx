@@ -16,6 +16,7 @@ import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import ResumeBuilder from "@/components/ResumeBuilder";
 import JobAnalyzer from "@/components/JobAnalyzer";
+import ATSExpertAnalyzer from "@/components/ATSExpertAnalyzer";
 import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
 import ATSOptimizer from "@/components/ATSOptimizer";
@@ -501,7 +502,7 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
@@ -516,7 +517,11 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Analyze & Optimize</span>
+              <span className="text-xs md:text-sm">Job Analysis</span>
+            </TabsTrigger>
+            <TabsTrigger value="ats-expert" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-xs md:text-sm">ATS Expert</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
@@ -536,7 +541,7 @@ const Index = () => {
                 <CardDescription>Access key features directly from your dashboard</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2"
@@ -576,6 +581,14 @@ const Index = () => {
                   >
                     <Zap className="w-6 h-6" />
                     <span className="text-sm">+ New Skills</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                    onClick={() => handleTabChange("ats-expert")}
+                  >
+                    <TrendingUp className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm text-blue-700">ATS Expert</span>
                   </Button>
                 </div>
               </CardContent>
@@ -635,6 +648,10 @@ const Index = () => {
 
           <TabsContent value="jobs">
             <JobAnalyzer />
+          </TabsContent>
+
+          <TabsContent value="ats-expert">
+            <ATSExpertAnalyzer />
           </TabsContent>
 
 
