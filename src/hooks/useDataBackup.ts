@@ -106,6 +106,13 @@ export const useDataBackup = () => {
     setIsImporting(true);
 
     try {
+      // Verify current session is valid
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session || !session.user) {
+        toast.error('Authentication required. Please log in again.');
+        return false;
+      }
+
       const fileContent = await backupFile.text();
       const backupData: BackupData = JSON.parse(fileContent);
 
@@ -123,26 +130,35 @@ export const useDataBackup = () => {
         }
 
         if (data.length > 0) {
-          // Update user_id to current user and remove old IDs
+          // Update user_id to current authenticated user and remove auto-generated fields
           const preparedData = data.map(item => {
             const { id, created_at, updated_at, ...cleanItem } = item;
             return {
               ...cleanItem,
-              user_id: user.id
+              user_id: session.user.id // Use session user ID to ensure consistency
             };
           });
 
-          const { error } = await supabase
-            .from(tableName as any)
-            .insert(preparedData);
+          console.log(`Importing ${data.length} items to ${tableName}:`, preparedData);
 
-          if (error) {
-            console.error(`Failed to import ${tableName}:`, error);
-            console.error('Prepared data:', preparedData);
-            importResults.push({ table: tableName, success: false, error: error.message });
-          } else {
-            console.log(`Successfully imported ${data.length} items to ${tableName}`);
-            importResults.push({ table: tableName, success: true, count: data.length });
+          // Use explicit error handling for each table
+          try {
+            const { data: insertedData, error } = await supabase
+              .from(tableName as any)
+              .insert(preparedData)
+              .select();
+
+            if (error) {
+              console.error(`Failed to import ${tableName}:`, error);
+              console.error('Prepared data for table:', preparedData);
+              importResults.push({ table: tableName, success: false, error: error.message });
+            } else {
+              console.log(`Successfully imported ${insertedData?.length || data.length} items to ${tableName}`);
+              importResults.push({ table: tableName, success: true, count: insertedData?.length || data.length });
+            }
+          } catch (tableError: any) {
+            console.error(`Exception importing ${tableName}:`, tableError);
+            importResults.push({ table: tableName, success: false, error: tableError.message });
           }
         }
       }
@@ -166,8 +182,14 @@ export const useDataBackup = () => {
           window.location.reload();
         }, 2000);
       } else {
-        toast.error('No data was imported. Check console for details.');
+        const failedTables = importResults.filter(r => !r.success);
+        const errorMessages = failedTables.map(r => `${r.table}: ${r.error}`).join('; ');
+        
+        toast.error('Import failed. Please check if you are properly logged in.', {
+          description: 'All table inserts were rejected. Try logging out and back in.'
+        });
         console.error('Import failed for all tables:', importResults);
+        console.error('Error summary:', errorMessages);
       }
 
       return successCount > 0;
