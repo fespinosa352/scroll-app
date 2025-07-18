@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ interface Certification {
 const Certifications = () => {
   const { certifications: resumeCertifications, setCertifications } = useResumeData();
   const { saveCertification, updateCertification: updateCertificationDb, deleteCertification, saving } = useCertifications();
+  const formRef = useRef<HTMLDivElement>(null);
   
   // Use resume data if available, otherwise show empty state
   const certificationsList = resumeCertifications || [];
@@ -140,6 +141,14 @@ const Certifications = () => {
     });
     setEditingId(certification.id);
     setShowForm(true);
+    
+    // Scroll to form after state update
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }, 100);
   };
 
   const handleDelete = async (id: string) => {
@@ -207,7 +216,7 @@ const Certifications = () => {
 
       {/* Add/Edit Form */}
       {showForm && (
-        <Card>
+        <Card ref={formRef}>
           <CardHeader>
             <CardTitle>{editingId ? "Edit" : "Add"} Certification</CardTitle>
           </CardHeader>
