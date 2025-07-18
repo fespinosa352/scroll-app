@@ -220,7 +220,11 @@ linkedin.com/in/yourprofile
 
             {!isFullscreen && (
               <div className="space-y-4">
-                <QuickSuggestions onInsert={insertSuggestion} />
+                <QuickSuggestions 
+                  onInsert={insertSuggestion}
+                  targetRole={selectedResumeId ? resumes.find(r => r.id === selectedResumeId)?.targetRole : undefined}
+                />
+                
                 
                 {structuredData && (
                   <Card>
