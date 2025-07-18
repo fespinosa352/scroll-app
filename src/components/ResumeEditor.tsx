@@ -136,14 +136,14 @@ linkedin.com/in/yourprofile
             <span className="text-sm text-slate-600">Select Resume:</span>
           </div>
           <Select 
-            value={selectedResumeId || ''} 
-            onValueChange={onResumeChange}
+            value={selectedResumeId || 'new'} 
+            onValueChange={(value) => onResumeChange?.(value === 'new' ? undefined : value)}
           >
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Choose a resume to edit" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">New Resume</SelectItem>
+            <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
+              <SelectItem value="new">New Resume</SelectItem>
               {resumes.map((resume) => (
                 <SelectItem key={resume.id} value={resume.id}>
                   <div className="flex items-center justify-between w-full">

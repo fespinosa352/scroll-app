@@ -377,7 +377,7 @@ linkedin.com/in/yourprofile
       onSave={handleSave}
       onExport={handleExport}
       selectedResumeId={editingResumeId}
-      onResumeChange={(resumeId) => setEditingResumeId(resumeId || undefined)}
+      onResumeChange={(resumeId) => setEditingResumeId(resumeId === 'new' ? undefined : resumeId)}
     />
   );
 };
