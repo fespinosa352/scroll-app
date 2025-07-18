@@ -26,7 +26,7 @@ import { ATSInsights } from './ATSInsights';
 interface HybridResumeEditorProps {
   initialContent?: string;
   onSave?: (markup: string, structured: any) => void;
-  onExport?: (format: 'pdf' | 'docx' | 'txt') => void;
+  onExport?: (format: 'copy' | 'txt') => void;
 }
 
 export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
@@ -96,7 +96,7 @@ linkedin.com/in/yourprofile
     }
   };
 
-  const handleExport = (format: 'pdf' | 'docx' | 'txt') => {
+  const handleExport = (format: 'copy' | 'txt') => {
     if (onExport) {
       onExport(format);
     }
@@ -262,11 +262,11 @@ linkedin.com/in/yourprofile
         <Button size="lg" className="px-8" onClick={handleSave}>
           Save Resume
         </Button>
-        <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('pdf')}>
-          Export PDF
+        <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('copy')}>
+          Copy to Clipboard
         </Button>
-        <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('docx')}>
-          Export DOCX
+        <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('txt')}>
+          Download TXT
         </Button>
       </div>
     </div>

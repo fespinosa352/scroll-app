@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown, Zap } from "lucide-react";
+import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown, Zap, Download, Copy } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -214,7 +214,7 @@ linkedin.com/in/yourprofile
         console.log('Saving resume:', { markup, structured });
         // TODO: Integrate with existing save functionality
       }}
-      onExport={(format) => {
+      onExport={async (format) => {
         // Convert current markup to structured data for export
         const currentStructuredData = convertMarkupToStructured(initialMarkup);
         
@@ -224,7 +224,13 @@ linkedin.com/in/yourprofile
           ats_score: undefined, // Will be filled when ATS analysis is available
           created_at: new Date().toISOString()
         };
-        exportResume(exportableResume, format);
+        
+        if (format === 'copy') {
+          const success = await exportResume(exportableResume, format);
+          // Add toast notification here if needed
+        } else {
+          exportResume(exportableResume, format);
+        }
       }}
     />
   );

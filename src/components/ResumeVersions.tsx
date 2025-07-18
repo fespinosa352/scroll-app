@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Plus, Calendar, User, Download, Edit3, Archive, Trash2 } from "lucide-react";
+import { FileText, Plus, Calendar, User, Download, Edit3, Archive, Trash2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
 import { useResumeData } from "@/contexts/ResumeDataContext";
@@ -33,7 +33,7 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
     return "text-red-600";
   };
 
-  const handleDownload = (resume: any, format: 'pdf' | 'docx' | 'txt') => {
+  const handleDownload = async (resume: any, format: 'copy' | 'txt') => {
     try {
       const exportableResume: ExportableResume = {
         name: resume.name,
@@ -42,11 +42,20 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
         created_at: resume.createdDate
       };
       
-      exportResume(exportableResume, format);
-      toast.success(`Resume downloaded as ${format.toUpperCase()}`);
+      if (format === 'copy') {
+        const success = await exportResume(exportableResume, format);
+        if (success) {
+          toast.success('Resume copied to clipboard');
+        } else {
+          toast.error('Failed to copy to clipboard');
+        }
+      } else {
+        exportResume(exportableResume, format);
+        toast.success(`Resume downloaded as ${format.toUpperCase()}`);
+      }
     } catch (error) {
       console.error('Export error:', error);
-      toast.error(`Failed to export resume as ${format.toUpperCase()}`);
+      toast.error(`Failed to export resume`);
     }
   };
 
@@ -154,17 +163,17 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
 
               {/* Action Buttons */}
                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 pt-2">
-                 <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
-                   Duplicate
-                 </Button>
-                 <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'pdf')}>
-                   <Download className="w-4 h-4 mr-1" />
-                   PDF
-                 </Button>
-                 <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'docx')}>
-                   <Download className="w-4 h-4 mr-1" />
-                   DOCX
-                 </Button>
+                  <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
+                    Duplicate
+                  </Button>
+                  <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'copy')}>
+                    <Copy className="w-4 h-4 mr-1" />
+                    Copy
+                  </Button>
+                  <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'txt')}>
+                    <Download className="w-4 h-4 mr-1" />
+                    TXT
+                  </Button>
                  <Button 
                    variant="primary" 
                    size="touch"
