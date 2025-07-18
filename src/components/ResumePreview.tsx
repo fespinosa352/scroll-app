@@ -1,12 +1,22 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StructuredResumeData } from '@/hooks/useMarkupConverter';
+import { formatDateToMMDDYYYY } from '@/lib/dateUtils';
 
 interface ResumePreviewProps {
   structuredData: StructuredResumeData | null;
 }
 
 export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) => {
+  // Helper function to detect and format dates in text
+  const formatDatesInText = (text: string): string => {
+    // Detect YYYY-MM-DD format dates and convert them to MM/DD/YYYY
+    const dateRegex = /\b(\d{4}-\d{2}-\d{2})\b/g;
+    return text.replace(dateRegex, (match) => {
+      const formatted = formatDateToMMDDYYYY(match);
+      return formatted || match;
+    });
+  };
   if (!structuredData) {
     return (
       <Card>
@@ -49,11 +59,11 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
                     <h3 className="font-semibold text-lg text-slate-900">{exp.position}</h3>
                     {exp.company && <div className="font-medium text-slate-700 mb-2">{exp.company}</div>}
                     {exp.bullets?.length > 0 && (
-                      <ul className="list-disc list-inside space-y-1 text-slate-700">
-                        {exp.bullets.map((bullet, bulletIdx) => (
-                          <li key={bulletIdx}>{bullet}</li>
-                        ))}
-                      </ul>
+                       <ul className="list-disc list-inside space-y-1 text-slate-700">
+                         {exp.bullets.map((bullet, bulletIdx) => (
+                           <li key={bulletIdx}>{formatDatesInText(bullet)}</li>
+                         ))}
+                       </ul>
                     )}
                   </div>
                 ))}
@@ -92,9 +102,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
                     if (group.type === 'bullets') {
                       return (
                         <ul key={groupIdx} className="list-disc list-inside ml-4 space-y-1">
-                          {group.items.map((bullet, bulletIdx) => (
-                            <li key={bulletIdx} className="text-slate-700">{bullet}</li>
-                          ))}
+                           {group.items.map((bullet, bulletIdx) => (
+                             <li key={bulletIdx} className="text-slate-700">{formatDatesInText(bullet)}</li>
+                           ))}
                         </ul>
                       );
                     } else {
@@ -129,20 +139,21 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
                             </div>
                           );
                         }
-                      } else if (item.startsWith('*') && item.endsWith('*')) {
-                        // Italic text (like dates)
-                        return (
-                          <div key={groupIdx} className="italic text-slate-600 text-sm mb-2">
-                            {item.slice(1, -1)}
-                          </div>
-                        );
-                      } else {
-                        // Regular text
-                        return (
-                          <div key={groupIdx} className="text-slate-700">
-                            {item}
-                          </div>
-                        );
+                       } else if (item.startsWith('*') && item.endsWith('*')) {
+                         // Italic text (like dates)
+                         const content = item.slice(1, -1);
+                         return (
+                           <div key={groupIdx} className="italic text-slate-600 text-sm mb-2">
+                             {formatDatesInText(content)}
+                           </div>
+                         );
+                       } else {
+                         // Regular text
+                         return (
+                           <div key={groupIdx} className="text-slate-700">
+                             {formatDatesInText(item)}
+                           </div>
+                         );
                       }
                     }
                   })}
