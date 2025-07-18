@@ -581,23 +581,36 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Launch Tile - Analyze & Optimize */}
-            <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Target className="w-6 h-6 text-white" />
+            {/* Welcome Message */}
+            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+              <CardContent className="p-8">
+                <div className="space-y-4">
+                  <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    Welcome back to your career growth hub! 👋
+                  </h2>
+                  <p className="text-slate-700 leading-relaxed">
+                    Your professional journey is unique, and we're here to help you showcase it brilliantly. Whether you're 
+                    crafting the perfect resume, logging a recent win, or preparing for your dream role, every step you take 
+                    here moves you closer to your career goals.
+                  </p>
+                  <p className="text-slate-600 italic font-medium">
+                    Your achievements matter, your growth is measurable, and your next opportunity is within reach.
+                  </p>
+                  
+                  {/* Pro Tip Section */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-yellow-800 text-sm">💡</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-blue-700">Today's tip:</span>
+                        <span className="text-slate-700 ml-2">
+                          Log achievements as they happen – don't wait until update time!
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-slate-900">Analyze & Optimize</h3>
-                    <p className="text-sm text-slate-600">Get ATS optimization for your resume</p>
-                  </div>
-                  <Button 
-                    variant="default" 
-                    onClick={() => handleTabChange("jobs")}
-                  >
-                    Launch
-                  </Button>
                 </div>
               </CardContent>
             </Card>
