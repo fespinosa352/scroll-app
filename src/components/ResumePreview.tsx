@@ -61,52 +61,80 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
             </div>
           )}
 
-          {structuredData.sections?.map((section, idx) => (
-            <div key={idx} className="mt-6">
-              <h2 className="text-xl font-semibold mb-4 text-slate-800">{section.title}</h2>
-              <div className="space-y-3">
-                {section.content.map((item, itemIdx) => {
-                  // Handle different content types
-                  if (item.startsWith('### ')) {
-                    // Sub-headings (like degree titles)
-                    return (
-                      <h3 key={itemIdx} className="font-semibold text-lg text-slate-900 mt-4 mb-1">
-                        {item.substring(4)}
-                      </h3>
-                    );
-                  } else if (item.startsWith('**') && item.endsWith('**')) {
-                    // Bold text (like institution names)
-                    return (
-                      <div key={itemIdx} className="font-semibold text-slate-800 mb-1">
-                        {item.slice(2, -2)}
-                      </div>
-                    );
-                  } else if (item.startsWith('*') && item.endsWith('*')) {
-                    // Italic text (like dates)
-                    return (
-                      <div key={itemIdx} className="italic text-slate-600 text-sm mb-2">
-                        {item.slice(1, -1)}
-                      </div>
-                    );
-                  } else if (item.startsWith('- ')) {
-                    // Bullet points
-                    return (
-                      <ul key={itemIdx} className="list-disc list-inside ml-4">
-                        <li className="text-slate-700">{item.substring(2)}</li>
-                      </ul>
-                    );
-                  } else {
-                    // Regular text
-                    return (
-                      <div key={itemIdx} className="text-slate-700">
-                        {item}
-                      </div>
-                    );
-                  }
-                })}
+          {structuredData.sections?.map((section, idx) => {
+            // Group consecutive bullet points together
+            const groupedContent: Array<{ type: 'bullets', items: string[] } | { type: 'single', item: string }> = [];
+            let currentBullets: string[] = [];
+            
+            section.content.forEach((item, itemIdx) => {
+              if (item.startsWith('- ')) {
+                currentBullets.push(item.substring(2));
+              } else {
+                // If we have accumulated bullets, add them as a group
+                if (currentBullets.length > 0) {
+                  groupedContent.push({ type: 'bullets', items: [...currentBullets] });
+                  currentBullets = [];
+                }
+                groupedContent.push({ type: 'single', item });
+              }
+            });
+            
+            // Don't forget remaining bullets
+            if (currentBullets.length > 0) {
+              groupedContent.push({ type: 'bullets', items: currentBullets });
+            }
+
+            return (
+              <div key={idx} className="mt-6">
+                <h2 className="text-xl font-semibold mb-4 text-slate-800">{section.title}</h2>
+                <div className="space-y-3">
+                  {groupedContent.map((group, groupIdx) => {
+                    if (group.type === 'bullets') {
+                      return (
+                        <ul key={groupIdx} className="list-disc list-inside ml-4 space-y-1">
+                          {group.items.map((bullet, bulletIdx) => (
+                            <li key={bulletIdx} className="text-slate-700">{bullet}</li>
+                          ))}
+                        </ul>
+                      );
+                    } else {
+                      const item = group.item;
+                      // Handle different content types
+                      if (item.startsWith('### ')) {
+                        // Sub-headings (like degree titles)
+                        return (
+                          <h3 key={groupIdx} className="font-semibold text-lg text-slate-900 mt-4 mb-1">
+                            {item.substring(4)}
+                          </h3>
+                        );
+                      } else if (item.startsWith('**') && item.endsWith('**')) {
+                        // Bold text (like institution names)
+                        return (
+                          <div key={groupIdx} className="font-semibold text-slate-800 mb-1">
+                            {item.slice(2, -2)}
+                          </div>
+                        );
+                      } else if (item.startsWith('*') && item.endsWith('*')) {
+                        // Italic text (like dates)
+                        return (
+                          <div key={groupIdx} className="italic text-slate-600 text-sm mb-2">
+                            {item.slice(1, -1)}
+                          </div>
+                        );
+                      } else {
+                        // Regular text
+                        return (
+                          <div key={groupIdx} className="text-slate-700">
+                            {item}
+                          </div>
+                        );
+                      }
+                    }
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+           })}
         </div>
       </CardContent>
     </Card>
