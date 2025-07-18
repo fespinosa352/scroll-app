@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   FileText, 
   Eye, 
@@ -14,10 +15,12 @@ import {
   Target,
   RefreshCw,
   Maximize,
-  Minimize
+  Minimize,
+  FolderOpen
 } from 'lucide-react';
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
 import { useATSAnalyzer } from '@/hooks/useATSAnalyzer';
+import { useResumeVersions } from '@/hooks/useResumeVersions';
 import { QuickSuggestions } from './QuickSuggestions';
 import { MarkupGuide } from './MarkupGuide';
 import { ResumePreview } from './ResumePreview';
@@ -27,12 +30,16 @@ interface ResumeEditorProps {
   initialContent?: string;
   onSave?: (markup: string, structured: any) => void;
   onExport?: (format: 'copy' | 'txt') => void;
+  selectedResumeId?: string;
+  onResumeChange?: (resumeId: string) => void;
 }
 
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   initialContent = '',
   onSave,
-  onExport
+  onExport,
+  selectedResumeId,
+  onResumeChange
 }) => {
   const [activeTab, setActiveTab] = useState('edit');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -60,6 +67,7 @@ linkedin.com/in/yourprofile
 
   const { structuredData, convertMarkupToStructured, convertStructuredToMarkup } = useMarkupConverter();
   const { atsAnalysis, analyzeContent, isAnalyzing } = useATSAnalyzer();
+  const { resumes } = useResumeVersions();
 
   // Real-time conversion and analysis
   const processContent = useCallback(async () => {
@@ -115,9 +123,43 @@ linkedin.com/in/yourprofile
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Resume Editor</h1>
-        <p className="text-slate-600">Write naturally with markup, get AI-powered ATS optimization</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Resume Editor</h1>
+          <p className="text-slate-600">Write naturally with markup, get AI-powered ATS optimization</p>
+        </div>
+        
+        {/* Resume Selector */}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <FolderOpen className="w-4 h-4 text-slate-600" />
+            <span className="text-sm text-slate-600">Select Resume:</span>
+          </div>
+          <Select 
+            value={selectedResumeId || ''} 
+            onValueChange={onResumeChange}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Choose a resume to edit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">New Resume</SelectItem>
+              {resumes.map((resume) => (
+                <SelectItem key={resume.id} value={resume.id}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{resume.name}</span>
+                    <Badge 
+                      variant="secondary" 
+                      className="ml-2 text-xs"
+                    >
+                      {resume.atsScore}%
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
 

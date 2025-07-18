@@ -77,7 +77,6 @@ const ResumeContent: React.FC<{
       ) : (
         <ResumeVersions 
           onEditResume={(resumeId: string) => {
-            setIsEditingResume(true);
             setEditingResumeId(resumeId);
             handleTabChange('editor'); // Switch to editor tab
           }} 
@@ -89,7 +88,10 @@ const ResumeContent: React.FC<{
 };
 
 // Component to handle ResumeEditor with resume data
-const ResumeEditorContent: React.FC<{ editingResumeId?: string }> = ({ editingResumeId }) => {
+const ResumeEditorContent: React.FC<{ 
+  editingResumeId?: string;
+  setEditingResumeId: (id: string | undefined) => void;
+}> = ({ editingResumeId, setEditingResumeId }) => {
   const { 
     workExperience, 
     personalInfo, 
@@ -374,6 +376,8 @@ linkedin.com/in/yourprofile
       initialContent={initialMarkup}
       onSave={handleSave}
       onExport={handleExport}
+      selectedResumeId={editingResumeId}
+      onResumeChange={(resumeId) => setEditingResumeId(resumeId || undefined)}
     />
   );
 };
@@ -676,7 +680,10 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="editor">
-            <ResumeEditorContent editingResumeId={editingResumeId} />
+            <ResumeEditorContent 
+              editingResumeId={editingResumeId} 
+              setEditingResumeId={setEditingResumeId}
+            />
           </TabsContent>
 
         </Tabs>
