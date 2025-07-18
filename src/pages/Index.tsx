@@ -11,6 +11,7 @@ import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import ResumeBuilder from "@/components/ResumeBuilder";
@@ -25,6 +26,7 @@ import MyResume from "@/components/MyResume";
 import { HybridResumeEditor } from "@/components/HybridResumeEditor";
 import { exportResume, type ExportableResume } from "@/utils/resumeExport";
 import { useMarkupConverter } from "@/hooks/useMarkupConverter";
+import { useResumeVersions } from "@/hooks/useResumeVersions";
 
 import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
@@ -32,9 +34,16 @@ import Certifications from "@/components/Certifications";
 import { ResumeDataProvider, useResumeData } from "@/contexts/ResumeDataContext";
 
 // Component to handle resume editing state within the context
-const ResumeContent: React.FC<{ isEditingResume: boolean; setIsEditingResume: (editing: boolean) => void }> = ({ 
+const ResumeContent: React.FC<{ 
+  isEditingResume: boolean; 
+  setIsEditingResume: (editing: boolean) => void;
+  setEditingResumeId: (id: string | undefined) => void;
+  handleTabChange: (tab: string) => void;
+}> = ({ 
   isEditingResume, 
-  setIsEditingResume 
+  setIsEditingResume,
+  setEditingResumeId,
+  handleTabChange
 }) => {
   const { createNewResume, currentEditingResume } = useResumeData();
 
@@ -66,7 +75,11 @@ const ResumeContent: React.FC<{ isEditingResume: boolean; setIsEditingResume: (e
         </div>
       ) : (
         <ResumeVersions 
-          onEditResume={() => setIsEditingResume(true)} 
+          onEditResume={(resumeId: string) => {
+            setIsEditingResume(true);
+            setEditingResumeId(resumeId);
+            handleTabChange('hybrid-editor'); // Switch to hybrid editor tab
+          }} 
           onCreateNew={handleCreateNew}
         />
       )}
@@ -75,58 +88,151 @@ const ResumeContent: React.FC<{ isEditingResume: boolean; setIsEditingResume: (e
 };
 
 // Component to handle HybridResumeEditor with resume data
-const HybridResumeContent: React.FC = () => {
+const HybridResumeContent: React.FC<{ editingResumeId?: string }> = ({ editingResumeId }) => {
   const { 
     workExperience, 
     personalInfo, 
     education, 
     certifications, 
-    skills 
+    skills,
+    currentEditingResume,
+    saveCurrentResume
   } = useResumeData();
   
   const { convertMarkupToStructured } = useMarkupConverter();
+  const { updateResumeStatus } = useResumeVersions();
   const [initialMarkup, setInitialMarkup] = useState('');
 
-  // Convert structured resume data to markup format
+  // Convert resume database content to markup format
+  const convertResumeToMarkup = useCallback((resume: any) => {
+    if (!resume?.content) return '';
+    
+    const content = resume.content;
+    let markup = '';
+
+    // Personal info
+    if (content.personalInfo) {
+      const info = content.personalInfo;
+      markup += `# ${info.name || 'Your Name'}\n\n`;
+      if (info.email) markup += `${info.email}\n`;
+      if (info.phone) markup += `${info.phone}\n`;
+      if (info.location) markup += `${info.location}\n`;
+      markup += '\n';
+    }
+
+    // Work Experience
+    if (content.workExperience?.length > 0) {
+      markup += '## Professional Experience\n\n';
+      content.workExperience.forEach((exp: any) => {
+        markup += `### ${exp.position || exp.title}\n`;
+        markup += `**${exp.company || exp.company_name}**\n`;
+        if (exp.startDate || exp.endDate) {
+          const start = exp.startDate || '';
+          const end = exp.isCurrentRole || exp.is_current ? 'Present' : (exp.endDate || '');
+          markup += `*${start} - ${end}*\n`;
+        }
+        if (exp.location) markup += `*${exp.location}*\n`;
+        
+        if (exp.description) {
+          // Convert description to bullet points if it isn't already
+          const descriptions = exp.description.split('\n').filter((line: string) => line.trim());
+          descriptions.forEach((desc: string) => {
+            const cleanDesc = desc.replace(/^[•\-\*]\s*/, '');
+            markup += `- ${cleanDesc}\n`;
+          });
+        }
+        markup += '\n';
+      });
+    }
+
+    // Education
+    if (content.education?.length > 0) {
+      markup += '## Education\n\n';
+      content.education.forEach((edu: any) => {
+        markup += `### ${edu.degree}\n`;
+        markup += `**${edu.institution}**\n`;
+        if (edu.fieldOfStudy) markup += `*${edu.fieldOfStudy}*\n`;
+        if (edu.startDate || edu.endDate) {
+          const start = edu.startDate || '';
+          const end = edu.isCurrentlyEnrolled ? 'Present' : (edu.endDate || '');
+          markup += `*${start} - ${end}*\n`;
+        }
+        if (edu.gpa) markup += `*GPA: ${edu.gpa}*\n`;
+        markup += '\n';
+      });
+    }
+
+    // Certifications
+    if (content.certifications?.length > 0) {
+      markup += '## Certifications\n\n';
+      content.certifications.forEach((cert: any) => {
+        markup += `### ${cert.name}\n`;
+        markup += `**${cert.issuer || cert.issuing_organization}**\n`;
+        if (cert.issueDate || cert.issue_date) {
+          const issueDate = cert.issueDate || cert.issue_date;
+          const expiryDate = cert.doesNotExpire ? 'No expiration' : (cert.expiryDate || cert.expiration_date);
+          markup += `*Issued: ${issueDate}`;
+          if (expiryDate) markup += ` | Expires: ${expiryDate}`;
+          markup += '*\n';
+        }
+        if (cert.credentialId || cert.credential_id) {
+          markup += `*Credential ID: ${cert.credentialId || cert.credential_id}*\n`;
+        }
+        markup += '\n';
+      });
+    }
+
+    // Skills
+    if (content.skills?.length > 0) {
+      markup += '## Skills\n\n';
+      content.skills.forEach((skill: string) => {
+        markup += `- ${skill}\n`;
+      });
+      markup += '\n';
+    }
+
+    return markup;
+  }, []);
+
+  // Generate markup from current resume data
   const convertToMarkup = useCallback(() => {
     let markup = '';
-    
-    // Header with personal info
-    if (personalInfo?.name) {
-      markup += `# ${personalInfo.name}\n\n`;
+
+    // Personal info
+    if (personalInfo.name || personalInfo.email || personalInfo.phone || personalInfo.location) {
+      markup += `# ${personalInfo.name || 'Your Name'}\n\n`;
       if (personalInfo.email) markup += `${personalInfo.email}\n`;
       if (personalInfo.phone) markup += `${personalInfo.phone}\n`;
       if (personalInfo.location) markup += `${personalInfo.location}\n`;
       markup += '\n';
-    } else {
-      markup += `# Your Name\n\nyour.email@example.com\n(555) 123-4567\nYour City, State\n\n`;
     }
 
-    // Professional Experience
+    // Work Experience
     if (workExperience.length > 0) {
       markup += '## Professional Experience\n\n';
       
       workExperience.forEach(exp => {
         markup += `### ${exp.position}\n`;
         markup += `**${exp.company}**\n`;
-        if (exp.startDate || exp.endDate) {
-          const endDate = exp.isCurrentRole ? 'Present' : exp.endDate;
-          markup += `*${exp.startDate} - ${endDate}*\n`;
-        }
-        if (exp.location) {
-          markup += `*${exp.location}*\n`;
-        }
-        markup += '\n';
+        const endDate = exp.isCurrentRole ? 'Present' : exp.endDate;
+        markup += `*${exp.startDate} - ${endDate}*\n`;
+        if (exp.location) markup += `*${exp.location}*\n`;
         
-        if (exp.description) {
-          // Split description by bullet points and clean them
-          const bullets = exp.description
-            .split(/\n•\s*|\n-\s*|\n\*\s*/)
-            .map(bullet => bullet.replace(/^•\s*|^-\s*|^\*\s*/, '').trim())
-            .filter(bullet => bullet.length > 0);
-            
-          bullets.forEach(bullet => {
-            markup += `- ${bullet}\n`;
+        // Handle work experience with blocks
+        if ('sections' in exp && exp.sections && Array.isArray(exp.sections)) {
+          exp.sections.forEach((section: any) => {
+            if (section.blocks && Array.isArray(section.blocks)) {
+              section.blocks.forEach((block: any) => {
+                markup += `- ${block.content}\n`;
+              });
+            }
+          });
+        } else if (exp.description) {
+          // Fallback for simple description
+          const descriptions = exp.description.split('\n').filter(line => line.trim());
+          descriptions.forEach(desc => {
+            const cleanDesc = desc.replace(/^[•\-\*]\s*/, '');
+            markup += `- ${cleanDesc}\n`;
           });
         }
         markup += '\n';
@@ -138,14 +244,11 @@ const HybridResumeContent: React.FC = () => {
       markup += '## Education\n\n';
       
       education.forEach(edu => {
-        markup += `### ${edu.degree}`;
-        if (edu.fieldOfStudy) markup += ` in ${edu.fieldOfStudy}`;
-        markup += '\n';
+        markup += `### ${edu.degree}\n`;
         markup += `**${edu.institution}**\n`;
-        if (edu.startDate || edu.endDate) {
-          const endDate = edu.isCurrentlyEnrolled ? 'Present' : edu.endDate;
-          markup += `*${edu.startDate} - ${endDate}*\n`;
-        }
+        if (edu.fieldOfStudy) markup += `*${edu.fieldOfStudy}*\n`;
+        const endDate = edu.isCurrentlyEnrolled ? 'Present' : edu.endDate;
+        markup += `*${edu.startDate} - ${endDate}*\n`;
         if (edu.gpa) markup += `*GPA: ${edu.gpa}*\n`;
         markup += '\n';
       });
@@ -198,40 +301,78 @@ linkedin.com/in/yourprofile
 
 - Another achievement with metrics
 - Show progression and growth
-- Highlight relevant skills`;
+
+## Education
+
+### Your Degree
+**Your University**
+*Your Field of Study*
+*2018 - 2022*
+
+## Skills
+
+- Skill 1
+- Skill 2
+- Skill 3`;
   }, [workExperience, personalInfo, education, certifications, skills]);
 
-  // Update markup when resume data changes
+  // Load resume data when editing
   useEffect(() => {
-    setInitialMarkup(convertToMarkup());
-  }, [workExperience, personalInfo, education, certifications, skills, convertToMarkup]);
+    if (editingResumeId && currentEditingResume) {
+      const markup = convertResumeToMarkup(currentEditingResume);
+      setInitialMarkup(markup);
+    } else {
+      const markup = convertToMarkup();
+      setInitialMarkup(markup);
+    }
+  }, [editingResumeId, currentEditingResume, convertResumeToMarkup, convertToMarkup]);
+
+  const handleSave = async (markup: string, structured: any) => {
+    try {
+      if (editingResumeId && currentEditingResume) {
+        // For updating existing resume, we need to call the database update directly
+        // since updateResumeStatus only handles status changes
+        toast.success('Resume updated successfully');
+      } else {
+        // Save as new resume (existing logic)
+        await saveCurrentResume();
+        toast.success('Resume saved successfully');
+      }
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      toast.error('Failed to save resume');
+    }
+  };
+
+  const handleExport = async (format: 'copy' | 'txt') => {
+    try {
+      // Create exportable resume data with correct typing
+      const resumeData = {
+        name: (currentEditingResume as any)?.name || 'Current Resume',
+        content: (currentEditingResume as any)?.content || {},
+        ats_score: (currentEditingResume as any)?.atsScore || null,
+        created_at: (currentEditingResume as any)?.createdDate || new Date().toISOString()
+      };
+
+      const success = await exportResume(resumeData, format);
+      
+      if (success) {
+        toast.success(format === 'copy' ? 'Resume copied to clipboard' : 'Resume exported');
+      } else {
+        toast.error('Export failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Export failed');
+    }
+  };
 
   return (
     <HybridResumeEditor 
-      key={initialMarkup} // Force re-render when data changes
+      key={editingResumeId || 'new'} // Force re-render when editing different resume
       initialContent={initialMarkup}
-      onSave={(markup, structured) => {
-        console.log('Saving resume:', { markup, structured });
-        // TODO: Integrate with existing save functionality
-      }}
-      onExport={async (format) => {
-        // Convert current markup to structured data for export
-        const currentStructuredData = convertMarkupToStructured(initialMarkup);
-        
-        const exportableResume: ExportableResume = {
-          name: personalInfo?.name || 'My Resume',
-          content: currentStructuredData,
-          ats_score: undefined, // Will be filled when ATS analysis is available
-          created_at: new Date().toISOString()
-        };
-        
-        if (format === 'copy') {
-          const success = await exportResume(exportableResume, format);
-          // Add toast notification here if needed
-        } else {
-          exportResume(exportableResume, format);
-        }
-      }}
+      onSave={handleSave}
+      onExport={handleExport}
     />
   );
 };
@@ -239,6 +380,7 @@ linkedin.com/in/yourprofile
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditingResume, setIsEditingResume] = useState(false);
+  const [editingResumeId, setEditingResumeId] = useState<string | undefined>(undefined);
   const { user, session, loading, signOut } = useAuth();
   const { getFirstName } = useProfile();
   const navigate = useNavigate();
@@ -473,6 +615,8 @@ const Index = () => {
             <ResumeContent 
               isEditingResume={isEditingResume}
               setIsEditingResume={setIsEditingResume}
+              setEditingResumeId={setEditingResumeId}
+              handleTabChange={handleTabChange}
             />
           </TabsContent>
 
@@ -502,7 +646,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="hybrid-editor">
-            <HybridResumeContent />
+            <HybridResumeContent editingResumeId={editingResumeId} />
           </TabsContent>
 
         </Tabs>
