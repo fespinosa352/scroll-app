@@ -27,10 +27,10 @@ export const QuickSuggestions: React.FC<QuickSuggestionsProps> = ({ onInsert }) 
             key={idx}
             variant="outline" 
             size="sm" 
-            className="w-full text-left justify-start h-auto p-2 text-xs"
+            className="w-full text-left justify-start h-auto p-2 text-xs whitespace-normal break-words"
             onClick={() => onInsert(suggestion)}
           >
-            + {suggestion}
+            <span className="truncate">+ {suggestion}</span>
           </Button>
         ))}
       </CardContent>

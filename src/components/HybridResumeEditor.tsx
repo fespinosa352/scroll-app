@@ -157,7 +157,7 @@ linkedin.com/in/yourprofile
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="edit" className="flex items-center space-x-2">
             <Code className="h-4 w-4" />
             <span>Markup Editor</span>
@@ -165,14 +165,6 @@ linkedin.com/in/yourprofile
           <TabsTrigger value="preview" className="flex items-center space-x-2">
             <Eye className="h-4 w-4" />
             <span>Live Preview</span>
-          </TabsTrigger>
-          <TabsTrigger value="structured" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Structured Data</span>
-          </TabsTrigger>
-          <TabsTrigger value="optimize" className="flex items-center space-x-2">
-            <Zap className="h-4 w-4" />
-            <span>ATS Insights</span>
           </TabsTrigger>
         </TabsList>
 
