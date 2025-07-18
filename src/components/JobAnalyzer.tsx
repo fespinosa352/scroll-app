@@ -10,6 +10,7 @@ import { Upload, FileText, Target, AlertCircle, CheckCircle } from "lucide-react
 import { toast } from "sonner";
 import { useJobAnalysis, type JobAnalysis } from "@/hooks/useJobAnalysis";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
+import { useResumeData } from "@/contexts/ResumeDataContext";
 import AnalysisResults from "./AnalysisResults";
 
 const JobAnalyzer = () => {
@@ -22,6 +23,7 @@ const JobAnalyzer = () => {
   
   const { getUserSkillNames, saveJobAnalysis, loading } = useJobAnalysis();
   const { generateResumeFromAnalysis } = useResumeVersions();
+  const { workExperience, education, certifications, skills, personalInfo } = useResumeData();
 
   // Enhanced keyword extraction and analysis
   const extractKeywords = (text: string) => {
@@ -67,14 +69,55 @@ const JobAnalyzer = () => {
     return { foundSkills, foundRequirements, yearMatches, keyRequirements };
   };
 
+  // Check if user has sufficient resume data for analysis
+  const hassufficientData = () => {
+    const hasWorkExperience = workExperience && workExperience.length > 0;
+    const hasEducation = education && education.length > 0;
+    const hasSkills = skills && skills.length > 0;
+    const hasPersonalInfo = personalInfo && personalInfo.name;
+    
+    // Require at least work experience and skills, or education and skills
+    return (hasWorkExperience && hasSkills) || (hasEducation && hasSkills);
+  };
+
   const analyzeJobMatch = (jobDescription: string) => {
     const { foundSkills, keyRequirements } = extractKeywords(jobDescription);
     
-    // Get real user skills from database
+    // Check if we have sufficient data for meaningful analysis
+    if (!hassufficientData()) {
+      return {
+        job_title: jobTitle,
+        company: company,
+        job_description: jobDescription,
+        match_score: 0, // No score when insufficient data
+        matched_skills: [],
+        missing_skills: foundSkills.map(skill => 
+          skill.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')
+        ).slice(0, 8),
+        key_requirements: keyRequirements.length > 0 ? keyRequirements : [
+          'Review the full job description for specific requirements',
+          'Experience in relevant field',
+          'Strong communication and collaboration skills'
+        ],
+        recommendations: [
+          'Add your work experience to get personalized recommendations',
+          'Include your skills and certifications for better matching',
+          'Complete your education information if applicable',
+          'Upload or manually enter your professional background',
+          'The more data you provide, the better recommendations you\'ll receive'
+        ]
+      };
+    }
+    
+    // Get real user skills from database and resume context
     const userSkillNames = getUserSkillNames();
+    const resumeSkillNames = skills || [];
+    const allUserSkills = [...new Set([...userSkillNames, ...resumeSkillNames])];
 
     const matchedSkills = foundSkills.filter(skill => 
-      userSkillNames.some(userSkill => 
+      allUserSkills.some(userSkill => 
         userSkill.toLowerCase().includes(skill.toLowerCase()) ||
         skill.toLowerCase().includes(userSkill.toLowerCase())
       )
@@ -84,20 +127,37 @@ const JobAnalyzer = () => {
       !matchedSkills.includes(skill)
     ).slice(0, 6);
 
-    // Calculate match score based on skills overlap
-    const matchScore = Math.min(
-      Math.round((matchedSkills.length / Math.max(foundSkills.length, 1)) * 85) + 15,
-      95
-    );
+    // Calculate match score based on skills overlap and data completeness
+    const skillsMatchRatio = matchedSkills.length / Math.max(foundSkills.length, 1);
+    const baseScore = Math.round(skillsMatchRatio * 85) + 15;
+    
+    // Boost score based on available resume data
+    let dataCompletenessBonus = 0;
+    if (workExperience && workExperience.length > 0) dataCompletenessBonus += 5;
+    if (education && education.length > 0) dataCompletenessBonus += 3;
+    if (certifications && certifications.length > 0) dataCompletenessBonus += 2;
+    
+    const matchScore = Math.min(baseScore + dataCompletenessBonus, 95);
 
-    // Generate personalized recommendations
-    const recommendations = [
-      `Emphasize ${matchedSkills.slice(0, 2).join(' and ')} prominently in your resume summary`,
-      `Use specific metrics when describing your ${matchedSkills[0] || 'experience'} achievements`,
-      missingSkills.length > 0 ? `Consider highlighting any experience with ${missingSkills[0]} or related technologies` : 'Your skills align well with this role',
-      `Mirror the job's language - use "${foundSkills[0] || 'relevant keywords'}" instead of synonyms`,
-      'Quantify your achievements with specific numbers and percentages'
-    ].filter(Boolean);
+    // Generate personalized recommendations based on user's actual data
+    const recommendations = [];
+    
+    if (matchedSkills.length > 0) {
+      recommendations.push(`Emphasize ${matchedSkills.slice(0, 2).join(' and ')} prominently in your resume summary`);
+    }
+    
+    if (workExperience && workExperience.length > 0) {
+      recommendations.push(`Use specific metrics when describing your ${matchedSkills[0] || 'professional'} achievements`);
+    }
+    
+    if (missingSkills.length > 0) {
+      recommendations.push(`Consider highlighting any experience with ${missingSkills[0]} or related technologies`);
+    } else {
+      recommendations.push('Your skills align well with this role');
+    }
+    
+    recommendations.push(`Mirror the job's language - use "${foundSkills[0] || 'relevant keywords'}" instead of synonyms`);
+    recommendations.push('Quantify your achievements with specific numbers and percentages');
 
     return {
       job_title: jobTitle,
@@ -218,10 +278,27 @@ const JobAnalyzer = () => {
             />
           </div>
 
+          {!hassufficientData() && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 text-amber-800">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Insufficient Resume Data</span>
+              </div>
+              <p className="text-sm text-amber-700 mt-1">
+                Please add your work experience, education, and skills to get meaningful job analysis. 
+                Go to "My Resume" section to complete your profile.
+              </p>
+            </div>
+          )}
+
           <Button 
             onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+            disabled={isAnalyzing || !hassufficientData()}
+            className={`w-full ${
+              hassufficientData() 
+                ? "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700" 
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
             {isAnalyzing ? (
               <>
