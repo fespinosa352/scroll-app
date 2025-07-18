@@ -586,7 +586,7 @@ const Index = () => {
               <CardContent className="p-8">
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    Welcome back to your career growth hub! 👋
+                    Welcome to your career growth hub! 👋
                   </h2>
                   <p className="text-slate-700 leading-relaxed">
                     Your professional journey is unique, and we're here to help you showcase it brilliantly. Whether you're 
