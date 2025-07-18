@@ -162,6 +162,16 @@ export const useMarkupConverter = () => {
       
       // General section handling
       if (currentSection === 'section') {
+        // Special handling for Certifications section - convert ### to -
+        if (currentSectionTitle.toLowerCase().includes('certification')) {
+          if (trimmed.startsWith('### ')) {
+            // Convert certification header to bullet point
+            const certName = trimmed.substring(4);
+            currentSectionContent.push(`- ${certName}`);
+            return;
+          }
+        }
+        
         // Add ALL content to the section, preserving original formatting
         currentSectionContent.push(trimmed);
         return;
