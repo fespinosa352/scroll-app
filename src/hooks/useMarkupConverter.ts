@@ -128,9 +128,14 @@ export const useMarkupConverter = () => {
         }
       }
       
-      // Company info for experience
-      else if (trimmed.startsWith('**') && trimmed.endsWith('**') && currentExperience) {
-        currentExperience.company = trimmed.slice(2, -2);
+      // Company info for experience OR bold text for other sections
+      else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+        if (currentExperience) {
+          currentExperience.company = trimmed.slice(2, -2);
+        } else if (currentSection === 'section') {
+          // Add bold text as content for other sections
+          currentSectionContent.push(trimmed);
+        }
       }
       
       // Bullet points

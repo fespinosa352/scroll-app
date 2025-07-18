@@ -67,7 +67,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
               <div className="space-y-2">
                 {section.content.map((item, itemIdx) => (
                   <div key={itemIdx} className="text-slate-700">
-                    {item.startsWith('- ') ? (
+                    {item.startsWith('**') && item.endsWith('**') ? (
+                      <div className="font-semibold">{item.slice(2, -2)}</div>
+                    ) : item.startsWith('- ') ? (
                       <ul className="list-disc list-inside">
                         <li>{item.substring(2)}</li>
                       </ul>
