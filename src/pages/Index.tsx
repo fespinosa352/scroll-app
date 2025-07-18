@@ -439,27 +439,23 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Next Action Card - Primary Focus */}
+            {/* Quick Launch Tile - Analyze & Optimize */}
             <Card className="bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Target className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Your Next Recommended Action</h2>
-                    <p className="text-base md:text-lg text-slate-700 mb-6">
-                      Upload a job description to get your personalized ATS optimization score and tailored resume suggestions.
-                    </p>
-                    <Button 
-                      variant="primary-lg" 
-                      className="w-full md:w-auto"
-                      onClick={() => handleTabChange("jobs")}
-                    >
-                      <Search className="w-5 h-5 mr-2" />
-                      Analyze a Job Posting
-                    </Button>
+                    <h3 className="text-lg font-semibold text-slate-900">Analyze & Optimize</h3>
+                    <p className="text-sm text-slate-600">Get ATS optimization for your resume</p>
                   </div>
+                  <Button 
+                    variant="default" 
+                    onClick={() => handleTabChange("jobs")}
+                  >
+                    Launch
+                  </Button>
                 </div>
               </CardContent>
             </Card>
