@@ -108,12 +108,27 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
                           </h3>
                         );
                       } else if (item.startsWith('**') && item.endsWith('**')) {
-                        // Bold text (like institution names)
-                        return (
-                          <div key={groupIdx} className="font-semibold text-slate-800 mb-1">
-                            {item.slice(2, -2)}
-                          </div>
-                        );
+                        // Bold text (like institution names or company names)
+                        // Check if this is in certifications section and if the previous item was a bullet
+                        const isCertificationSection = section.title.toLowerCase().includes('certification');
+                        const prevGroup = groupedContent[groupIdx - 1];
+                        const isAfterBullet = prevGroup && prevGroup.type === 'bullets';
+                        
+                        if (isCertificationSection && isAfterBullet) {
+                          // Indent company name similar to Work Experience
+                          return (
+                            <div key={groupIdx} className="font-medium text-slate-700 mb-2 ml-6">
+                              {item.slice(2, -2)}
+                            </div>
+                          );
+                        } else {
+                          // Regular bold text (like institution names)
+                          return (
+                            <div key={groupIdx} className="font-semibold text-slate-800 mb-1">
+                              {item.slice(2, -2)}
+                            </div>
+                          );
+                        }
                       } else if (item.startsWith('*') && item.endsWith('*')) {
                         // Italic text (like dates)
                         return (
