@@ -23,6 +23,8 @@ import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
 import MyResume from "@/components/MyResume";
 import { HybridResumeEditor } from "@/components/HybridResumeEditor";
+import { exportResume, type ExportableResume } from "@/utils/resumeExport";
+import { useMarkupConverter } from "@/hooks/useMarkupConverter";
 
 import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
@@ -82,6 +84,7 @@ const HybridResumeContent: React.FC = () => {
     skills 
   } = useResumeData();
   
+  const { convertMarkupToStructured } = useMarkupConverter();
   const [initialMarkup, setInitialMarkup] = useState('');
 
   // Convert structured resume data to markup format
@@ -212,8 +215,16 @@ linkedin.com/in/yourprofile
         // TODO: Integrate with existing save functionality
       }}
       onExport={(format) => {
-        console.log('Exporting resume as:', format);
-        // TODO: Integrate with existing export functionality
+        // Convert current markup to structured data for export
+        const currentStructuredData = convertMarkupToStructured(initialMarkup);
+        
+        const exportableResume: ExportableResume = {
+          name: personalInfo?.name || 'My Resume',
+          content: currentStructuredData,
+          ats_score: undefined, // Will be filled when ATS analysis is available
+          created_at: new Date().toISOString()
+        };
+        exportResume(exportableResume, format);
       }}
     />
   );

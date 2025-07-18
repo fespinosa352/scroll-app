@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Plus, Calendar, User, Download, Edit3 } from "lucide-react";
+import { FileText, Plus, Calendar, User, Download, Edit3, Archive, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
 import { useResumeData } from "@/contexts/ResumeDataContext";
+import { exportResume, type ExportableResume } from "@/utils/resumeExport";
 
 interface ResumeVersionsProps {
   onEditResume?: (resumeId: string) => void;
@@ -14,7 +15,7 @@ interface ResumeVersionsProps {
 }
 
 const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateNew }) => {
-  const { resumes, duplicateResume } = useResumeVersions();
+  const { resumes, duplicateResume, deleteResume, updateResumeStatus } = useResumeVersions();
   const { loadResumeForEditing } = useResumeData();
 
   const getStatusColor = (status: string) => {
@@ -32,12 +33,50 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
     return "text-red-600";
   };
 
-  const handleDownload = (resumeId: string, format: string) => {
-    toast.success(`Resume downloaded as ${format.toUpperCase()}`);
+  const handleDownload = (resume: any, format: 'pdf' | 'docx' | 'txt') => {
+    try {
+      const exportableResume: ExportableResume = {
+        name: resume.name,
+        content: resume.content || {}, // Use empty object if no content
+        ats_score: resume.atsScore,
+        created_at: resume.createdDate
+      };
+      
+      exportResume(exportableResume, format);
+      toast.success(`Resume downloaded as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export resume as ${format.toUpperCase()}`);
+    }
   };
 
-  const handleDuplicate = (resumeId: string) => {
-    duplicateResume(resumeId);
+  const handleDuplicate = async (resumeId: string) => {
+    try {
+      await duplicateResume(resumeId);
+      toast.success('Resume duplicated successfully');
+    } catch (error) {
+      toast.error('Failed to duplicate resume');
+    }
+  };
+
+  const handleArchive = async (resumeId: string) => {
+    try {
+      await updateResumeStatus(resumeId, 'archived');
+      toast.success('Resume archived');
+    } catch (error) {
+      toast.error('Failed to archive resume');
+    }
+  };
+
+  const handleDelete = async (resumeId: string) => {
+    if (window.confirm('Are you sure you want to delete this resume? This action cannot be undone.')) {
+      try {
+        await deleteResume(resumeId);
+        toast.success('Resume deleted');
+      } catch (error) {
+        toast.error('Failed to delete resume');
+      }
+    }
   };
 
   const handleEdit = (resume: any) => {
@@ -76,20 +115,20 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg mb-2">{resume.name}</CardTitle>
-                  <CardDescription className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {resume.targetRole} at {resume.company}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Created {new Date(resume.createdDate).toLocaleDateString()}
-                    </div>
-                  </CardDescription>
+                   <CardDescription className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <User className="w-4 h-4" />
+                       {resume.targetRole} at {resume.company}
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <Calendar className="w-4 h-4" />
+                       Created {new Date(resume.createdDate).toLocaleDateString()}
+                     </div>
+                   </CardDescription>
                 </div>
-                <Badge className={getStatusColor(resume.status)}>
-                  {resume.status}
-                </Badge>
+                 <Badge className={getStatusColor(resume.status)}>
+                   {resume.status}
+                 </Badge>
               </div>
             </CardHeader>
             
@@ -98,41 +137,61 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">ATS Optimization Score</span>
-                  <span className={`text-sm font-bold ${getATSScoreColor(resume.atsScore)}`}>
-                    {resume.atsScore}%
-                  </span>
-                </div>
-                <Progress value={resume.atsScore} className="h-2" />
+                   <span className={`text-sm font-bold ${getATSScoreColor(resume.atsScore)}`}>
+                     {resume.atsScore}%
+                   </span>
+                 </div>
+                 <Progress value={resume.atsScore} className="h-2" />
               </div>
 
               {/* Matched Achievements */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                <span className="text-sm text-slate-600">Matched Achievements</span>
-                <Badge variant="secondary">{resume.matchedAchievements} items</Badge>
-              </div>
+               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                 <span className="text-sm text-slate-600">Matched Skills</span>
+                 <Badge variant="secondary">
+                   {resume.matchedAchievements} items
+                 </Badge>
+               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 pt-2">
-                <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
-                  Duplicate
-                </Button>
-                <Button variant="outline" size="touch" onClick={() => handleDownload(resume.id, 'pdf')}>
-                  <Download className="w-4 h-4 mr-1" />
-                  PDF
-                </Button>
-                <Button variant="outline" size="touch" onClick={() => handleDownload(resume.id, 'docx')}>
-                  <Download className="w-4 h-4 mr-1" />
-                  DOCX
-                </Button>
-                <Button 
-                  variant="primary" 
-                  size="touch"
-                  onClick={() => handleEdit(resume)}
-                >
-                  <Edit3 className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-              </div>
+               <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 pt-2">
+                 <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
+                   Duplicate
+                 </Button>
+                 <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'pdf')}>
+                   <Download className="w-4 h-4 mr-1" />
+                   PDF
+                 </Button>
+                 <Button variant="outline" size="touch" onClick={() => handleDownload(resume, 'docx')}>
+                   <Download className="w-4 h-4 mr-1" />
+                   DOCX
+                 </Button>
+                 <Button 
+                   variant="primary" 
+                   size="touch"
+                   onClick={() => handleEdit(resume)}
+                 >
+                   <Edit3 className="w-4 h-4 mr-1" />
+                   Edit
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   size="touch"
+                   onClick={() => handleArchive(resume.id)}
+                   className="text-orange-600 hover:text-orange-700"
+                 >
+                   <Archive className="w-4 h-4 mr-1" />
+                   Archive
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   size="touch"
+                   onClick={() => handleDelete(resume.id)}
+                   className="text-red-600 hover:text-red-700"
+                 >
+                   <Trash2 className="w-4 h-4 mr-1" />
+                   Delete
+                 </Button>
+               </div>
             </CardContent>
 
             {/* Status indicator line */}
