@@ -60,6 +60,25 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
               </div>
             </div>
           )}
+
+          {structuredData.sections?.map((section, idx) => (
+            <div key={idx} className="mt-6">
+              <h2 className="text-xl font-semibold mb-4 text-slate-800">{section.title}</h2>
+              <div className="space-y-2">
+                {section.content.map((item, itemIdx) => (
+                  <div key={itemIdx} className="text-slate-700">
+                    {item.startsWith('- ') ? (
+                      <ul className="list-disc list-inside">
+                        <li>{item.substring(2)}</li>
+                      </ul>
+                    ) : (
+                      <div>{item}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

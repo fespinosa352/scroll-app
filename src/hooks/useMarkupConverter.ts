@@ -14,9 +14,16 @@ export interface ExperienceBullet {
   keywordsUsed: string[];
 }
 
+export interface ResumeSection {
+  title: string;
+  content: string[];
+  type: 'experience' | 'general';
+}
+
 export interface StructuredResumeData {
   personalInfo: PersonalInfo;
   experienceBullets: ExperienceBullet[];
+  sections: ResumeSection[];
   skills: string[];
   keywordsFound: string[];
   atsOptimizations: string[];
@@ -44,25 +51,48 @@ export const useMarkupConverter = () => {
     const structured: StructuredResumeData = {
       personalInfo: {},
       experienceBullets: [],
+      sections: [],
       skills: [],
       keywordsFound: [],
       atsOptimizations: []
     };
 
     let currentSection = null;
+    let currentSectionTitle = '';
+    let currentSectionContent: string[] = [];
     let currentExperience: ExperienceBullet | null = null;
+
+    const saveCurrentSection = () => {
+      if (currentSectionTitle && currentSectionContent.length > 0) {
+        structured.sections.push({
+          title: currentSectionTitle,
+          content: [...currentSectionContent],
+          type: currentSectionTitle.toLowerCase().includes('experience') ? 'experience' : 'general'
+        });
+      }
+    };
 
     lines.forEach(line => {
       const trimmed = line.trim();
       
       // Section headers
       if (trimmed.startsWith('# ')) {
+        saveCurrentSection();
         currentSection = 'header';
+        currentSectionTitle = '';
+        currentSectionContent = [];
         const name = trimmed.substring(2);
         structured.personalInfo.name = name;
       } else if (trimmed.startsWith('## ')) {
-        currentSection = trimmed.substring(3).toLowerCase();
-        if (currentSection.includes('experience')) currentSection = 'experience';
+        saveCurrentSection();
+        currentSection = 'section';
+        currentSectionTitle = trimmed.substring(3);
+        currentSectionContent = [];
+        
+        // Handle experience section differently for backward compatibility
+        if (currentSectionTitle.toLowerCase().includes('experience')) {
+          currentSection = 'experience';
+        }
       }
       
       // Experience entries (but check if it's contact info first)
@@ -81,7 +111,7 @@ export const useMarkupConverter = () => {
           if (content.includes('(') || content.toLowerCase().includes('mobile') || content.toLowerCase().includes('phone')) {
             structured.personalInfo.phone = content.replace(/^(mobile|phone):\s*/i, '').trim();
           }
-        } else {
+        } else if (currentSection === 'experience') {
           // Handle as experience entry
           if (currentExperience) {
             structured.experienceBullets.push(currentExperience);
@@ -92,22 +122,29 @@ export const useMarkupConverter = () => {
             bullets: [],
             keywordsUsed: []
           };
+        } else if (currentSection === 'section') {
+          // Add as regular content for other sections
+          currentSectionContent.push(content);
         }
       }
       
-      // Company info
+      // Company info for experience
       else if (trimmed.startsWith('**') && trimmed.endsWith('**') && currentExperience) {
         currentExperience.company = trimmed.slice(2, -2);
       }
       
       // Bullet points
-      else if (trimmed.startsWith('- ') && currentExperience) {
+      else if (trimmed.startsWith('- ')) {
         const bullet = trimmed.substring(2);
-        currentExperience.bullets.push(bullet);
-        
-        // Extract keywords from bullets
-        const keywords = extractKeywords(bullet);
-        currentExperience.keywordsUsed.push(...keywords);
+        if (currentExperience && currentSection === 'experience') {
+          currentExperience.bullets.push(bullet);
+          
+          // Extract keywords from bullets
+          const keywords = extractKeywords(bullet);
+          currentExperience.keywordsUsed.push(...keywords);
+        } else if (currentSection === 'section') {
+          currentSectionContent.push(bullet);
+        }
       }
       
       // Contact info
@@ -116,9 +153,15 @@ export const useMarkupConverter = () => {
         if (trimmed.includes('(')) structured.personalInfo.phone = trimmed;
         if (trimmed.includes('linkedin')) structured.personalInfo.linkedin = trimmed;
       }
+      
+      // Regular content for sections
+      else if (currentSection === 'section' && trimmed) {
+        currentSectionContent.push(trimmed);
+      }
     });
 
-    // Add final experience
+    // Save final section and experience
+    saveCurrentSection();
     if (currentExperience) {
       structured.experienceBullets.push(currentExperience);
     }
