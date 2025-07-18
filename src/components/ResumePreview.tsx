@@ -64,20 +64,46 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ structuredData }) 
           {structuredData.sections?.map((section, idx) => (
             <div key={idx} className="mt-6">
               <h2 className="text-xl font-semibold mb-4 text-slate-800">{section.title}</h2>
-              <div className="space-y-2">
-                {section.content.map((item, itemIdx) => (
-                  <div key={itemIdx} className="text-slate-700">
-                    {item.startsWith('**') && item.endsWith('**') ? (
-                      <div className="font-semibold">{item.slice(2, -2)}</div>
-                    ) : item.startsWith('- ') ? (
-                      <ul className="list-disc list-inside">
-                        <li>{item.substring(2)}</li>
+              <div className="space-y-3">
+                {section.content.map((item, itemIdx) => {
+                  // Handle different content types
+                  if (item.startsWith('### ')) {
+                    // Sub-headings (like degree titles)
+                    return (
+                      <h3 key={itemIdx} className="font-semibold text-lg text-slate-900 mt-4 mb-1">
+                        {item.substring(4)}
+                      </h3>
+                    );
+                  } else if (item.startsWith('**') && item.endsWith('**')) {
+                    // Bold text (like institution names)
+                    return (
+                      <div key={itemIdx} className="font-semibold text-slate-800 mb-1">
+                        {item.slice(2, -2)}
+                      </div>
+                    );
+                  } else if (item.startsWith('*') && item.endsWith('*')) {
+                    // Italic text (like dates)
+                    return (
+                      <div key={itemIdx} className="italic text-slate-600 text-sm mb-2">
+                        {item.slice(1, -1)}
+                      </div>
+                    );
+                  } else if (item.startsWith('- ')) {
+                    // Bullet points
+                    return (
+                      <ul key={itemIdx} className="list-disc list-inside ml-4">
+                        <li className="text-slate-700">{item.substring(2)}</li>
                       </ul>
-                    ) : (
-                      <div>{item}</div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  } else {
+                    // Regular text
+                    return (
+                      <div key={itemIdx} className="text-slate-700">
+                        {item}
+                      </div>
+                    );
+                  }
+                })}
               </div>
             </div>
           ))}

@@ -75,6 +75,9 @@ export const useMarkupConverter = () => {
     lines.forEach(line => {
       const trimmed = line.trim();
       
+      // Skip empty lines
+      if (!trimmed) return;
+      
       // Section headers
       if (trimmed.startsWith('# ')) {
         saveCurrentSection();
@@ -83,7 +86,10 @@ export const useMarkupConverter = () => {
         currentSectionContent = [];
         const name = trimmed.substring(2);
         structured.personalInfo.name = name;
-      } else if (trimmed.startsWith('## ')) {
+        return;
+      } 
+      
+      if (trimmed.startsWith('## ')) {
         saveCurrentSection();
         currentSection = 'section';
         currentSectionTitle = trimmed.substring(3);
@@ -93,17 +99,16 @@ export const useMarkupConverter = () => {
         if (currentSectionTitle.toLowerCase().includes('experience')) {
           currentSection = 'experience';
         }
+        return;
       }
       
-      // Experience entries (but check if it's contact info first)
-      else if (trimmed.startsWith('### ')) {
+      // Contact info handling (### in header section)
+      if (currentSection === 'header' && trimmed.startsWith('### ')) {
         const content = trimmed.substring(4);
-        // Check if this is contact info instead of experience
-        if (currentSection === 'header' && 
-            (content.toLowerCase().includes('mobile') || 
-             content.toLowerCase().includes('phone') || 
-             content.toLowerCase().includes('email') ||
-             content.includes('@') || content.includes('('))) {
+        if (content.toLowerCase().includes('mobile') || 
+            content.toLowerCase().includes('phone') || 
+            content.toLowerCase().includes('email') ||
+            content.includes('@') || content.includes('(')) {
           // Handle as contact info
           if (content.includes('@') || content.toLowerCase().includes('email')) {
             structured.personalInfo.email = content.replace(/^email:\s*/i, '').trim();
@@ -111,57 +116,55 @@ export const useMarkupConverter = () => {
           if (content.includes('(') || content.toLowerCase().includes('mobile') || content.toLowerCase().includes('phone')) {
             structured.personalInfo.phone = content.replace(/^(mobile|phone):\s*/i, '').trim();
           }
-        } else if (currentSection === 'experience') {
-          // Handle as experience entry
+          return;
+        }
+      }
+      
+      // Contact info (direct email/phone/linkedin in header)
+      if (currentSection === 'header' && (trimmed.includes('@') || trimmed.includes('(') || trimmed.includes('linkedin'))) {
+        if (trimmed.includes('@')) structured.personalInfo.email = trimmed;
+        if (trimmed.includes('(')) structured.personalInfo.phone = trimmed;
+        if (trimmed.includes('linkedin')) structured.personalInfo.linkedin = trimmed;
+        return;
+      }
+      
+      // Experience section handling
+      if (currentSection === 'experience') {
+        if (trimmed.startsWith('### ')) {
+          // New experience entry
           if (currentExperience) {
             structured.experienceBullets.push(currentExperience);
           }
           currentExperience = {
-            position: content,
+            position: trimmed.substring(4),
             company: '',
             bullets: [],
             keywordsUsed: []
           };
-        } else if (currentSection === 'section') {
-          // Add as regular content for other sections
-          currentSectionContent.push(content);
+          return;
         }
-      }
-      
-      // Company info for experience OR bold text for other sections
-      else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
-        if (currentExperience) {
+        
+        if (trimmed.startsWith('**') && trimmed.endsWith('**') && currentExperience) {
           currentExperience.company = trimmed.slice(2, -2);
-        } else if (currentSection === 'section') {
-          // Add bold text as content for other sections
-          currentSectionContent.push(trimmed);
+          return;
         }
-      }
-      
-      // Bullet points
-      else if (trimmed.startsWith('- ')) {
-        const bullet = trimmed.substring(2);
-        if (currentExperience && currentSection === 'experience') {
+        
+        if (trimmed.startsWith('- ') && currentExperience) {
+          const bullet = trimmed.substring(2);
           currentExperience.bullets.push(bullet);
           
           // Extract keywords from bullets
           const keywords = extractKeywords(bullet);
           currentExperience.keywordsUsed.push(...keywords);
-        } else if (currentSection === 'section') {
-          currentSectionContent.push(bullet);
+          return;
         }
       }
       
-      // Contact info
-      else if (currentSection === 'header' && (trimmed.includes('@') || trimmed.includes('(') || trimmed.includes('linkedin'))) {
-        if (trimmed.includes('@')) structured.personalInfo.email = trimmed;
-        if (trimmed.includes('(')) structured.personalInfo.phone = trimmed;
-        if (trimmed.includes('linkedin')) structured.personalInfo.linkedin = trimmed;
-      }
-      
-      // Regular content for sections
-      else if (currentSection === 'section' && trimmed) {
+      // General section handling
+      if (currentSection === 'section') {
+        // Add ALL content to the section, preserving original formatting
         currentSectionContent.push(trimmed);
+        return;
       }
     });
 
