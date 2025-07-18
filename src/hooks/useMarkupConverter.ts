@@ -65,17 +65,34 @@ export const useMarkupConverter = () => {
         if (currentSection.includes('experience')) currentSection = 'experience';
       }
       
-      // Experience entries
+      // Experience entries (but check if it's contact info first)
       else if (trimmed.startsWith('### ')) {
-        if (currentExperience) {
-          structured.experienceBullets.push(currentExperience);
+        const content = trimmed.substring(4);
+        // Check if this is contact info instead of experience
+        if (currentSection === 'header' && 
+            (content.toLowerCase().includes('mobile') || 
+             content.toLowerCase().includes('phone') || 
+             content.toLowerCase().includes('email') ||
+             content.includes('@') || content.includes('('))) {
+          // Handle as contact info
+          if (content.includes('@') || content.toLowerCase().includes('email')) {
+            structured.personalInfo.email = content.replace(/^email:\s*/i, '').trim();
+          }
+          if (content.includes('(') || content.toLowerCase().includes('mobile') || content.toLowerCase().includes('phone')) {
+            structured.personalInfo.phone = content.replace(/^(mobile|phone):\s*/i, '').trim();
+          }
+        } else {
+          // Handle as experience entry
+          if (currentExperience) {
+            structured.experienceBullets.push(currentExperience);
+          }
+          currentExperience = {
+            position: content,
+            company: '',
+            bullets: [],
+            keywordsUsed: []
+          };
         }
-        currentExperience = {
-          position: trimmed.substring(4),
-          company: '',
-          bullets: [],
-          keywordsUsed: []
-        };
       }
       
       // Company info
