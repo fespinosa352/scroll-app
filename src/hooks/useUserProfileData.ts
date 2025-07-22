@@ -9,6 +9,8 @@ interface UserProfileData {
   display_name?: string;
   email?: string;
   phone?: string;
+  linkedin_url?: string;
+  bio?: string;
   location?: string;
   work_experiences: Array<{
     id: string;
@@ -80,8 +82,11 @@ export const useUserProfileData = () => {
             id,
             user_id,
             display_name,
-            avatar_url,
-            bio
+            email,
+            phone,
+            linkedin_url,
+            bio,
+            avatar_url
           `)
           .eq('user_id', user.id)
           .single();
@@ -98,8 +103,11 @@ export const useUserProfileData = () => {
               id,
               user_id,
               display_name,
-              avatar_url,
-              bio
+              email,
+              phone,
+              linkedin_url,
+              bio,
+              avatar_url
             `)
             .single();
 
@@ -314,12 +322,60 @@ export const useUserProfileData = () => {
     });
   };
 
+  const updateProfile = async (profileData: {
+    display_name?: string;
+    email?: string;
+    phone?: string;
+    linkedin_url?: string;
+    bio?: string;
+  }) => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('user_id', user.id)
+        .select(`
+          id,
+          user_id,
+          display_name,
+          email,
+          phone,
+          linkedin_url,
+          bio,
+          avatar_url
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Update cache
+      queryClient.setQueryData(['userProfileData', user?.id], (old: UserProfileData | null | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          ...data
+        };
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+      throw error;
+    }
+  };
+
   return {
     data,
     isLoading,
     error,
     refetch,
     invalidateUserData,
+    // Profile updates
+    updateProfile,
     // Work experience cache updates
     updateWorkExperience,
     addWorkExperience,

@@ -23,6 +23,8 @@ interface PersonalInfo {
   email: string;
   phone: string;
   location: string;
+  linkedinUrl?: string;
+  professionalSummary?: string;
 }
 
 interface Education {
@@ -60,6 +62,7 @@ interface ResumeDataContextType {
   setWorkExperience: (experience: WorkExperience[]) => void;
   setWorkExperienceBlocks: (experience: WorkExperienceWithBlocks[]) => void;
   setPersonalInfo: (info: PersonalInfo) => void;
+  savePersonalInfo: (info: PersonalInfo) => Promise<void>;
   setEducation: (education: Education[]) => void;
   setCertifications: (certifications: Certification[]) => void;
   setSkills: (skills: string[]) => void;
@@ -104,6 +107,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   const { 
     data: userProfileData, 
     isLoading: profileLoading,
+    updateProfile,
     updateWorkExperience: updateWorkExp,
     addWorkExperience: addWorkExp,
     removeWorkExperience: removeWorkExp,
@@ -196,7 +200,9 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
           name: userProfileData.display_name || '',
           email: userProfileData.email || '',
           phone: userProfileData.phone || '',
-          location: userProfileData.location || ''
+          location: userProfileData.location || '',
+          linkedinUrl: userProfileData.linkedin_url || '',
+          professionalSummary: userProfileData.bio || ''
         });
       } else {
         setPersonalInfo(null);
@@ -525,6 +531,29 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     }
   };
 
+  const savePersonalInfo = async (info: PersonalInfo) => {
+    if (!updateProfile) return;
+
+    try {
+      await updateProfile({
+        display_name: info.name,
+        email: info.email,
+        phone: info.phone,
+        linkedin_url: info.linkedinUrl,
+        bio: info.professionalSummary
+      });
+      
+      // Update local state
+      setPersonalInfo(info);
+      
+      toast.success('Personal information saved successfully!');
+    } catch (error) {
+      console.error('Error saving personal info:', error);
+      toast.error('Failed to save personal information');
+      throw error;
+    }
+  };
+
   const value = {
     workExperience,
     workExperienceBlocks,
@@ -538,6 +567,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     setWorkExperience,
     setWorkExperienceBlocks,
     setPersonalInfo,
+    savePersonalInfo,
     setEducation: setLocalEducation,
     setCertifications: setLocalCertifications,
     setSkills,
