@@ -114,7 +114,7 @@ export const useUserProfileData = () => {
           if (createError) throw createError;
           
           return {
-            ...newProfile,
+            ...(newProfile as any),
             work_experiences: [],
             education: [],
             certifications: [],
@@ -192,7 +192,7 @@ export const useUserProfileData = () => {
         ]);
 
         return {
-          ...profileData,
+          ...(profileData as any),
           work_experiences: workExpData.data || [],
           education: educationData.data || [],
           certifications: certificationsData.data || [],
@@ -355,8 +355,8 @@ export const useUserProfileData = () => {
         if (!old) return old;
         
         return {
-          ...old,
-          ...data
+          ...(old as any),
+          ...(data as any)
         };
       });
 

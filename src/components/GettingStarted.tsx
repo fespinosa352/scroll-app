@@ -66,7 +66,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
   const [currentStep, setCurrentStep] = useState<"about" | "work" | "education" | "certifications" | "speaking" | "skills" | "complete">("about");
   const [workExperiences, setWorkExperiences] = useState<WorkExperienceForm[]>([]);
   const [educations, setEducations] = useState<EducationForm[]>([]);
-  const [certifications, setCertifications] = useState<CertificationForm[]>([]);
+  const [certifications, setCertificationsLocal] = useState<CertificationForm[]>([]);
   const [speakingEngagements, setSpeakingEngagements] = useState<SpeakingEngagementForm[]>([]);
   const [skills, setSkillsLocal] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
@@ -194,7 +194,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
       return;
     }
 
-    setCertifications([...certifications, certificationForm]);
+    setCertificationsLocal([...certifications, certificationForm]);
     setCertificationForm({
       name: "",
       issuer: "",
