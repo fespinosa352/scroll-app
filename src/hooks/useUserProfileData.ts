@@ -82,9 +82,6 @@ export const useUserProfileData = () => {
             id,
             user_id,
             display_name,
-            email,
-            phone,
-            linkedin_url,
             bio,
             avatar_url
           `)
@@ -103,9 +100,6 @@ export const useUserProfileData = () => {
               id,
               user_id,
               display_name,
-              email,
-              phone,
-              linkedin_url,
               bio,
               avatar_url
             `)
@@ -340,9 +334,6 @@ export const useUserProfileData = () => {
           id,
           user_id,
           display_name,
-          email,
-          phone,
-          linkedin_url,
           bio,
           avatar_url
         `)
