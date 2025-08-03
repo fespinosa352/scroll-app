@@ -294,8 +294,8 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
   };
 
   const steps = [
-    { id: "about", title: "About You", icon: Contact },
-    { id: "work", title: "Work Experience", icon: Briefcase },
+    { id: "about", title: "About You", icon: User },
+    { id: "work", title: "Work Experience", icon: Building },
     { id: "education", title: "Education", icon: GraduationCap },
     { id: "certifications", title: "Certifications", icon: Award },
     { id: "speaking", title: "Speaking", icon: Mic },
