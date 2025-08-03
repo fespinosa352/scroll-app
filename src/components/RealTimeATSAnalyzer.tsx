@@ -44,6 +44,33 @@ interface OptimizationSuggestion {
   autoFixAvailable?: boolean;
 }
 
+interface ClaudeAnalysisResponse {
+  overallScore: number;
+  categoryScores: {
+    keyword: number;
+    content: number;
+    structure: number;
+    experience: number;
+  };
+  keywordAnalysis: Array<{
+    keyword: string;
+    found: boolean;
+    frequency: number;
+    importance: 'high' | 'medium' | 'low';
+    suggestions: string[];
+  }>;
+  suggestions: Array<{
+    type: 'critical' | 'important' | 'suggestion';
+    category: string;
+    title: string;
+    description: string;
+    impact: number;
+    autoFixAvailable: boolean;
+  }>;
+  strengths: string[];
+  improvements: string[];
+}
+
 interface KeywordAnalysis {
   keyword: string;
   frequency: number;
@@ -51,7 +78,6 @@ interface KeywordAnalysis {
   found: boolean;
   suggestions: string[];
 }
-
 const RealTimeATSAnalyzer: React.FC = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeContent, setResumeContent] = useState(`# Your Name
@@ -87,12 +113,133 @@ linkedin.com/in/yourprofile
   const [keywordAnalysis, setKeywordAnalysis] = useState<KeywordAnalysis[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('editor');
+  const [hasJobDescription, setHasJobDescription] = useState(false);
+  const [claudeAnalysis, setClaudeAnalysis] = useState<ClaudeAnalysisResponse | null>(null);
 
   const { convertMarkupToStructured } = useMarkupConverter();
   const { analyzeContent } = useATSAnalyzer();
   const { workExperience, personalInfo, skills } = useResumeData();
 
-  // Extract keywords from job description
+  // Call Claude API for comprehensive analysis
+  const analyzeWithClaude = useCallback(async (jobDesc: string, resume: string) => {
+    if (!jobDesc.trim() || !resume.trim()) return null;
+
+    try {
+      const response = await fetch('https://hwonitvnvhcepwjqeodj.supabase.co/functions/v1/claude-ats-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobDescription: jobDesc,
+          resumeContent: resume
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Claude analysis error:', error);
+      toast.error('Failed to analyze with Claude. Please try again.');
+      return null;
+    }
+  }, []);
+
+  // Real-time analysis
+  const performRealTimeAnalysis = useCallback(async () => {
+    const hasJob = jobDescription.trim().length > 0;
+    setHasJobDescription(hasJob);
+    
+    if (!hasJob) {
+      // Reset scores when no job description
+      setRealTimeScore({
+        overall: 0,
+        keyword: 0,
+        content: 0,
+        structure: 0,
+        experience: 0
+      });
+      setSuggestions([]);
+      setKeywordAnalysis([]);
+      setClaudeAnalysis(null);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    try {
+      // Get Claude analysis
+      const claudeResult = await analyzeWithClaude(jobDescription, resumeContent);
+      
+      if (claudeResult) {
+        setClaudeAnalysis(claudeResult);
+        
+        // Update real-time scores from Claude analysis
+        setRealTimeScore({
+          overall: claudeResult.overallScore,
+          keyword: claudeResult.categoryScores.keyword,
+          content: claudeResult.categoryScores.content,
+          structure: claudeResult.categoryScores.structure,
+          experience: claudeResult.categoryScores.experience
+        });
+
+        // Update suggestions from Claude
+        setSuggestions(claudeResult.suggestions || []);
+        
+        // Update keyword analysis from Claude
+        setKeywordAnalysis(claudeResult.keywordAnalysis || []);
+      } else {
+        // Fallback to local analysis if Claude fails
+        const structured = convertMarkupToStructured(resumeContent);
+        const atsAnalysis = await analyzeContent(structured);
+        
+        // Basic keyword extraction as fallback
+        const keywords = extractJobKeywords(jobDescription);
+        
+        const keywordScore = keywords.length > 0 ? 
+          (keywords.filter(k => k.found).length / keywords.length) * 100 : 50;
+        
+        const contentScore = Math.max(0, Math.min(100, 
+          (resumeContent.split('\n').filter(line => line.trim().startsWith('-')).length * 10) +
+          (resumeContent.match(/\d+%|\$\d+|\d+x|\d+\+/g)?.length || 0) * 15
+        ));
+        
+        const structureScore = Math.max(0, Math.min(100,
+          (resumeContent.includes('##') ? 30 : 0) +
+          (resumeContent.includes('###') ? 25 : 0) +
+          (resumeContent.includes('**') ? 20 : 0) +
+          (resumeContent.includes('*') && !resumeContent.includes('**') ? 25 : 0)
+        ));
+        
+        const experienceScore = Math.max(0, Math.min(100,
+          (structured.experienceBullets?.length || 0) * 20
+        ));
+        
+        const overall = Math.round((keywordScore + contentScore + structureScore + experienceScore) / 4);
+        
+        setRealTimeScore({
+          overall,
+          keyword: Math.round(keywordScore),
+          content: Math.round(contentScore),
+          structure: Math.round(structureScore),
+          experience: Math.round(experienceScore)
+        });
+
+        setKeywordAnalysis(keywords);
+      }
+      
+    } catch (error) {
+      console.error('Real-time analysis error:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [resumeContent, jobDescription, convertMarkupToStructured, analyzeContent, analyzeWithClaude]);
+
+  // Extract keywords from job description (fallback method)
   const extractJobKeywords = useCallback((description: string): KeywordAnalysis[] => {
     if (!description.trim()) return [];
 
@@ -126,91 +273,6 @@ linkedin.com/in/yourprofile
       };
     }).filter(k => k.frequency > 0).sort((a, b) => b.frequency - a.frequency);
   }, [resumeContent]);
-
-  // Real-time analysis
-  const performRealTimeAnalysis = useCallback(async () => {
-    setIsAnalyzing(true);
-    
-    try {
-      const structured = convertMarkupToStructured(resumeContent);
-      const atsAnalysis = await analyzeContent(structured);
-      const keywords = extractJobKeywords(jobDescription);
-      
-      // Calculate real-time scores
-      const keywordScore = keywords.length > 0 ? 
-        (keywords.filter(k => k.found).length / keywords.length) * 100 : 50;
-      
-      const contentScore = Math.max(0, Math.min(100, 
-        (resumeContent.split('\n').filter(line => line.trim().startsWith('-')).length * 10) +
-        (resumeContent.match(/\d+%|\$\d+|\d+x|\d+\+/g)?.length || 0) * 15
-      ));
-      
-      const structureScore = Math.max(0, Math.min(100,
-        (resumeContent.includes('##') ? 30 : 0) +
-        (resumeContent.includes('###') ? 25 : 0) +
-        (resumeContent.includes('**') ? 20 : 0) +
-        (resumeContent.includes('*') && !resumeContent.includes('**') ? 25 : 0)
-      ));
-      
-      const experienceScore = Math.max(0, Math.min(100,
-        (structured.experienceBullets?.length || 0) * 20
-      ));
-      
-      const overall = Math.round((keywordScore + contentScore + structureScore + experienceScore) / 4);
-      
-      setRealTimeScore({
-        overall,
-        keyword: Math.round(keywordScore),
-        content: Math.round(contentScore),
-        structure: Math.round(structureScore),
-        experience: Math.round(experienceScore)
-      });
-
-      // Generate suggestions
-      const newSuggestions: OptimizationSuggestion[] = [];
-      
-      if (keywordScore < 60) {
-        newSuggestions.push({
-          type: 'critical',
-          category: 'Keywords',
-          title: 'Low keyword density',
-          description: 'Your resume contains few job-relevant keywords',
-          impact: 25,
-          autoFixAvailable: true
-        });
-      }
-      
-      if (contentScore < 50) {
-        newSuggestions.push({
-          type: 'important',
-          category: 'Content',
-          title: 'Add quantified achievements',
-          description: 'Include metrics and numbers to show impact',
-          impact: 20,
-          autoFixAvailable: false
-        });
-      }
-      
-      if (structureScore < 70) {
-        newSuggestions.push({
-          type: 'suggestion',
-          category: 'Structure',
-          title: 'Improve formatting',
-          description: 'Use consistent headers and bullet points',
-          impact: 15,
-          autoFixAvailable: true
-        });
-      }
-
-      setSuggestions(newSuggestions);
-      setKeywordAnalysis(keywords);
-      
-    } catch (error) {
-      console.error('Real-time analysis error:', error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [resumeContent, jobDescription, convertMarkupToStructured, analyzeContent, extractJobKeywords]);
 
   // Debounced analysis
   useEffect(() => {
@@ -276,42 +338,64 @@ linkedin.com/in/yourprofile
         </p>
       </div>
 
-      {/* Real-time Score Overview */}
-      <Card className={`border-2 ${getScoreBg(realTimeScore.overall)}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Live ATS Score
-              {isAnalyzing && <Clock className="w-4 h-4 animate-spin" />}
-            </div>
-            <div className={`text-3xl font-bold ${getScoreColor(realTimeScore.overall)}`}>
-              {realTimeScore.overall}%
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Keywords', value: realTimeScore.keyword, icon: Target },
-              { label: 'Content', value: realTimeScore.content, icon: FileText },
-              { label: 'Structure', value: realTimeScore.structure, icon: Eye },
-              { label: 'Experience', value: realTimeScore.experience, icon: Star }
-            ].map((metric, index) => (
-              <div key={index} className="text-center space-y-2">
-                <div className="flex items-center justify-center gap-1 text-sm text-slate-600">
-                  <metric.icon className="w-3 h-3" />
-                  {metric.label}
-                </div>
-                <div className={`text-lg font-semibold ${getScoreColor(metric.value)}`}>
-                  {metric.value}%
-                </div>
-                <Progress value={metric.value} className="h-2" />
+      {/* Real-time Score Overview - Only show if job description exists */}
+      {hasJobDescription && (
+        <Card className={`border-2 ${getScoreBg(realTimeScore.overall)}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Live ATS Score
+                {isAnalyzing && <Clock className="w-4 h-4 animate-spin" />}
+                {claudeAnalysis && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    Powered by Claude
+                  </Badge>
+                )}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className={`text-3xl font-bold ${getScoreColor(realTimeScore.overall)}`}>
+                {realTimeScore.overall}%
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Keywords', value: realTimeScore.keyword, icon: Target },
+                { label: 'Content', value: realTimeScore.content, icon: FileText },
+                { label: 'Structure', value: realTimeScore.structure, icon: Eye },
+                { label: 'Experience', value: realTimeScore.experience, icon: Star }
+              ].map((metric, index) => (
+                <div key={index} className="text-center space-y-2">
+                  <div className="flex items-center justify-center gap-1 text-sm text-slate-600">
+                    <metric.icon className="w-3 h-3" />
+                    {metric.label}
+                  </div>
+                  <div className={`text-lg font-semibold ${getScoreColor(metric.value)}`}>
+                    {metric.value}%
+                  </div>
+                  <Progress value={metric.value} className="h-2" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Job Description Message */}
+      {!hasJobDescription && (
+        <Card className="border-2 border-slate-200">
+          <CardContent className="text-center py-8">
+            <Target className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Enter a Job Description to Start Analysis
+            </h3>
+            <p className="text-slate-600">
+              Paste a job description in the editor below to get real-time ATS optimization feedback powered by Claude AI.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
