@@ -13,7 +13,7 @@ import {
   Mic, 
   User,
   Calendar,
-  ArrowRight,
+  ChevronRight,
   CheckCircle,
   Briefcase,
   Contact
@@ -315,7 +315,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </div>
               <span className="hidden md:block">{step.title}</span>
             </div>
-            {index < steps.length - 1 && <ArrowRight className="w-4 h-4 text-slate-400 mx-2" />}
+            {index < steps.length - 1 && <ChevronRight className="w-4 h-4 text-slate-400 mx-2" />}
           </div>
         ))}
       </div>
@@ -498,7 +498,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
                 disabled={workExperiences.length === 0}
               >
                 Continue to Education
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -606,7 +606,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </Button>
               <Button onClick={() => setCurrentStep("certifications")}>
                 Continue to Certifications
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -696,7 +696,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </Button>
               <Button onClick={() => setCurrentStep("speaking")}>
                 Continue to Speaking
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -791,7 +791,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
               </Button>
               <Button onClick={() => setCurrentStep("skills")}>
                 Continue to Skills
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -892,7 +892,7 @@ const GettingStarted = ({ onComplete }: GettingStartedProps) => {
 
             <Button onClick={handleComplete} size="lg" className="w-full">
               Save Profile & Go to My Resume
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
           </CardContent>
         </Card>
