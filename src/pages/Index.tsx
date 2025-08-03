@@ -634,7 +634,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="getting-started">
-            <GettingStarted onComplete={() => handleTabChange("my-resume")} />
+            <GettingStarted />
           </TabsContent>
 
           <TabsContent value="achievements">

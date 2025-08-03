@@ -170,7 +170,6 @@ const GettingStarted = () => {
               {index < steps.length - 1 && (
                 <div className="mx-3">
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  {console.log('Rendering ChevronRight between steps')}
                 </div>
               )}
             </div>
