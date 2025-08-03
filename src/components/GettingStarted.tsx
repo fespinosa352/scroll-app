@@ -1,902 +1,267 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Plus, 
-  Building, 
-  GraduationCap, 
-  Award, 
-  Mic, 
-  User,
-  Calendar,
-  ChevronRight,
-  CheckCircle,
-  Briefcase,
-  Contact
-} from "lucide-react";
-import { toast } from "sonner";
-import { useResumeData } from "@/contexts/ResumeDataContext";
-import AboutYouStep, { type AboutYouForm } from "@/components/AboutYouStep";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle2, Circle, ChevronRight, ChevronLeft, User, Briefcase, GraduationCap, Award, Target, FileText, Calendar, MapPin, Building, Users } from 'lucide-react';
+import { useUserProfileData } from '@/hooks/useUserProfileData';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 
-interface GettingStartedProps {
-  onComplete?: () => void;
-}
-
-interface WorkExperienceForm {
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  isCurrentRole: boolean;
-  responsibilities: string[];
-  accomplishments: string[];
-}
-
-interface EducationForm {
-  institution: string;
-  degree: string;
-  fieldOfStudy: string;
-  startDate: string;
-  endDate: string;
-  isCurrentlyEnrolled: boolean;
-  gpa?: string;
-}
-
-interface CertificationForm {
-  name: string;
-  issuer: string;
-  issueDate: string;
-  expiryDate?: string;
-  doesNotExpire: boolean;
-}
-
-interface SpeakingEngagementForm {
+interface Task {
+  id: string;
   title: string;
-  event: string;
-  location: string;
-  date: string;
   description: string;
+  completed: boolean;
 }
 
-const GettingStarted = ({ onComplete }: GettingStartedProps) => {
-  const [currentStep, setCurrentStep] = useState<"about" | "work" | "education" | "certifications" | "speaking" | "skills" | "complete">("about");
-  const [workExperiences, setWorkExperiences] = useState<WorkExperienceForm[]>([]);
-  const [educations, setEducations] = useState<EducationForm[]>([]);
-  const [certifications, setCertificationsLocal] = useState<CertificationForm[]>([]);
-  const [speakingEngagements, setSpeakingEngagements] = useState<SpeakingEngagementForm[]>([]);
-  const [skills, setSkillsLocal] = useState<string[]>([]);
-  const [skillInput, setSkillInput] = useState("");
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  tasks: Task[];
+}
+
+const sampleProjects: Project[] = [
+  {
+    id: '1',
+    name: 'Website Redesign',
+    description: 'Revamp the company website for a modern look and improved user experience.',
+    tasks: [
+      { id: '1-1', title: 'Design Mockups', description: 'Create initial design concepts.', completed: true },
+      { id: '1-2', title: 'Develop Frontend', description: 'Implement the new design using React.', completed: false },
+      { id: '1-3', title: 'Backend Integration', description: 'Connect the frontend to the existing backend.', completed: false },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Mobile App Development',
+    description: 'Develop a mobile app for iOS and Android platforms.',
+    tasks: [
+      { id: '2-1', title: 'Plan App Features', description: 'Define the core features of the app.', completed: true },
+      { id: '2-2', title: 'Design UI/UX', description: 'Create wireframes and mockups for the app.', completed: true },
+      { id: '2-3', title: 'Develop iOS Version', description: 'Build the app for iOS devices.', completed: false },
+      { id: '2-4', title: 'Develop Android Version', description: 'Build the app for Android devices.', completed: false },
+    ],
+  },
+];
+
+const GettingStarted = () => {
+  console.log('GettingStarted component rendering');
+  console.log('ChevronRight import:', ChevronRight);
   
-  // About You form state
-  const [aboutYou, setAboutYou] = useState<AboutYouForm>({
-    name: "",
-    email: "",
-    phone: "",
-    linkedinUrl: "",
-    professionalSummary: ""
-  });
-  
-  const { setWorkExperience, setEducation, setCertifications, setSkills, setPersonalInfo, savePersonalInfo } = useResumeData();
+  const [activeStep, setActiveStep] = useState('about');
+  const { data, isLoading, error } = useUserProfileData();
+  const { user } = useAuth();
+  const [projects, setProjects] = useState(sampleProjects);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Work Experience Form
-  const [workForm, setWorkForm] = useState<WorkExperienceForm>({
-    company: "",
-    position: "",
-    startDate: "",
-    endDate: "",
-    isCurrentRole: false,
-    responsibilities: [],
-    accomplishments: []
-  });
-
-  const [responsibilityInput, setResponsibilityInput] = useState("");
-  const [accomplishmentInput, setAccomplishmentInput] = useState("");
-
-  // Education Form
-  const [educationForm, setEducationForm] = useState<EducationForm>({
-    institution: "",
-    degree: "",
-    fieldOfStudy: "",
-    startDate: "",
-    endDate: "",
-    isCurrentlyEnrolled: false,
-    gpa: ""
-  });
-
-  // Certification Form
-  const [certificationForm, setCertificationForm] = useState<CertificationForm>({
-    name: "",
-    issuer: "",
-    issueDate: "",
-    expiryDate: "",
-    doesNotExpire: false
-  });
-
-  // Speaking Engagement Form
-  const [speakingForm, setSpeakingForm] = useState<SpeakingEngagementForm>({
-    title: "",
-    event: "",
-    location: "",
-    date: "",
-    description: ""
-  });
-
-  const addWorkExperience = () => {
-    if (!workForm.company || !workForm.position || !workForm.startDate) {
-      toast.error("Please fill in company, position, and start date");
-      return;
-    }
-
-    const newExperience = { ...workForm };
-    setWorkExperiences([...workExperiences, newExperience]);
-    
-    // Reset form
-    setWorkForm({
-      company: "",
-      position: "",
-      startDate: "",
-      endDate: "",
-      isCurrentRole: false,
-      responsibilities: [],
-      accomplishments: []
-    });
-    
-    toast.success("Work experience added!");
-  };
-
-  const addResponsibility = () => {
-    if (responsibilityInput.trim()) {
-      setWorkForm({
-        ...workForm,
-        responsibilities: [...workForm.responsibilities, responsibilityInput.trim()]
-      });
-      setResponsibilityInput("");
-    }
-  };
-
-  const addAccomplishment = () => {
-    if (accomplishmentInput.trim()) {
-      setWorkForm({
-        ...workForm,
-        accomplishments: [...workForm.accomplishments, accomplishmentInput.trim()]
-      });
-      setAccomplishmentInput("");
-    }
-  };
-
-  const addEducation = () => {
-    if (!educationForm.institution || !educationForm.degree) {
-      toast.error("Please fill in institution and degree");
-      return;
-    }
-
-    setEducations([...educations, educationForm]);
-    setEducationForm({
-      institution: "",
-      degree: "",
-      fieldOfStudy: "",
-      startDate: "",
-      endDate: "",
-      isCurrentlyEnrolled: false,
-      gpa: ""
-    });
-    
-    toast.success("Education added!");
-  };
-
-  const addCertification = () => {
-    if (!certificationForm.name || !certificationForm.issuer) {
-      toast.error("Please fill in certification name and issuer");
-      return;
-    }
-
-    setCertificationsLocal([...certifications, certificationForm]);
-    setCertificationForm({
-      name: "",
-      issuer: "",
-      issueDate: "",
-      expiryDate: "",
-      doesNotExpire: false
-    });
-    
-    toast.success("Certification added!");
-  };
-
-  const addSpeakingEngagement = () => {
-    if (!speakingForm.title || !speakingForm.event) {
-      toast.error("Please fill in title and event");
-      return;
-    }
-
-    setSpeakingEngagements([...speakingEngagements, speakingForm]);
-    setSpeakingForm({
-      title: "",
-      event: "",
-      location: "",
-      date: "",
-      description: ""
-    });
-    
-    toast.success("Speaking engagement added!");
-  };
-
-  const addSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      setSkillsLocal([...skills, skillInput.trim()]);
-      setSkillInput("");
-    }
-  };
-
-  const handleComplete = async () => {
-    // Save all data to context
-    const workExpData = workExperiences.map((exp, index) => ({
-      id: `work-${index}`,
-      company: exp.company,
-      position: exp.position,
-      startDate: exp.startDate,
-      endDate: exp.isCurrentRole ? "" : exp.endDate,
-      isCurrentRole: exp.isCurrentRole,
-      description: [...exp.responsibilities, ...exp.accomplishments].join('\n'),
-      location: "",
-      skills: []
-    }));
-
-    const educationData = educations.map((edu, index) => ({
-      id: `edu-${index}`,
-      institution: edu.institution,
-      degree: edu.degree,
-      fieldOfStudy: edu.fieldOfStudy,
-      startDate: edu.startDate,
-      endDate: edu.isCurrentlyEnrolled ? "" : edu.endDate,
-      isCurrentlyEnrolled: edu.isCurrentlyEnrolled,
-      gpa: edu.gpa || undefined
-    }));
-
-    const certificationData = certifications.map((cert, index) => ({
-      id: `cert-${index}`,
-      name: cert.name,
-      issuer: cert.issuer,
-      issueDate: cert.issueDate,
-      expiryDate: cert.doesNotExpire ? undefined : cert.expiryDate,
-      doesNotExpire: cert.doesNotExpire
-    }));
-
-    // Save personal info from About You
-    const personalInfo = {
-      name: aboutYou.name,
-      email: aboutYou.email,
-      phone: aboutYou.phone,
-      location: "", // Can be added later if needed
-      linkedinUrl: aboutYou.linkedinUrl,
-      professionalSummary: aboutYou.professionalSummary
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+        setIsDrawerOpen(false);
+      }
     };
 
-    try {
-      // Save personal info to database first
-      await savePersonalInfo(personalInfo);
-      
-      // Update context with other data
-      setWorkExperience(workExpData);
-      setEducation(educationData);
-      setCertifications(certificationData);
-      setSkills(skills);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-      toast.success("Professional profile created successfully!");
-      onComplete?.();
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast.error("Failed to save profile. Please try again.");
-    }
+  const toggleDrawer = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+  };
+
+  const handleTaskToggle = (projectId: string, taskId: string) => {
+    setProjects(projects.map(project => {
+      if (project.id === projectId) {
+        return {
+          ...project,
+          tasks: project.tasks.map(task => {
+            if (task.id === taskId) {
+              return { ...task, completed: !task.completed };
+            }
+            return task;
+          })
+        };
+      }
+      return project;
+    }));
   };
 
   const steps = [
-    { id: "about", title: "About You", icon: User },
-    { id: "work", title: "Work Experience", icon: Building },
-    { id: "education", title: "Education", icon: GraduationCap },
-    { id: "certifications", title: "Certifications", icon: Award },
-    { id: "speaking", title: "Speaking", icon: Mic },
-    { id: "skills", title: "Skills", icon: User },
-    { id: "complete", title: "Complete", icon: CheckCircle }
+    { 
+      id: 'about', 
+      title: 'About You', 
+      icon: User, 
+      completed: !!data?.display_name && !!data?.bio,
+      description: 'Tell us about yourself'
+    },
+    { 
+      id: 'work', 
+      title: 'Work Experience', 
+      icon: Briefcase, 
+      completed: (data?.work_experiences?.length || 0) > 0,
+      description: 'Add your professional background'
+    },
+    { 
+      id: 'education', 
+      title: 'Education', 
+      icon: GraduationCap, 
+      completed: (data?.education?.length || 0) > 0,
+      description: 'Share your educational background'
+    },
+    { 
+      id: 'certifications', 
+      title: 'Certifications', 
+      icon: Award, 
+      completed: (data?.certifications?.length || 0) > 0,
+      description: 'List your professional certifications'
+    },
+    { 
+      id: 'skills', 
+      title: 'Skills', 
+      icon: Target, 
+      completed: (data?.user_skills?.length || 0) > 0,
+      description: 'Highlight your key competencies'
+    }
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Getting Started</h1>
+        <p className="text-muted-foreground">Complete your professional profile to unlock powerful resume tools</p>
+      </div>
+
       {/* Progress Steps */}
-      <div className="flex items-center justify-center space-x-4 mb-8">
-        {steps.map((step, index) => (
-          <div key={step.id} className="flex items-center">
-            <div className={`flex items-center space-x-2 ${currentStep === step.id ? "text-blue-600 font-semibold" : "text-slate-400"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentStep === step.id ? "bg-blue-600 text-white" : "bg-slate-200"}`}>
-                <step.icon className="w-4 h-4" />
-              </div>
-              <span className="hidden md:block">{step.title}</span>
-            </div>
-            {index < steps.length - 1 && <ChevronRight className="w-4 h-4 text-slate-400 mx-3" />}
-          </div>
-        ))}
-      </div>
-
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-slate-900 mb-4">Build Your Professional Profile</h1>
-        <p className="text-xl text-slate-600 mb-8">Create your comprehensive career database by adding your experience manually</p>
-      </div>
-
-      {/* About You Step */}
-      {currentStep === "about" && (
-        <AboutYouStep
-          form={aboutYou}
-          onChange={setAboutYou}
-          onContinue={() => setCurrentStep("work")}
-        />
-      )}
-
-      {/* Work Experience Step */}
-      {currentStep === "work" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5" />
-              Work Experience
-            </CardTitle>
-            <CardDescription>
-              Add your work experience. You can add responsibilities and accomplishments after creating the basic entry.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Basic Work Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="company">Company Name *</Label>
-                <Input
-                  id="company"
-                  value={workForm.company}
-                  onChange={(e) => setWorkForm({...workForm, company: e.target.value})}
-                  placeholder="Company Name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="position">Job Title *</Label>
-                <Input
-                  id="position"
-                  value={workForm.position}
-                  onChange={(e) => setWorkForm({...workForm, position: e.target.value})}
-                  placeholder="Job Title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="startDate">Start Date *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={workForm.startDate}
-                  onChange={(e) => setWorkForm({...workForm, startDate: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={workForm.endDate}
-                  onChange={(e) => setWorkForm({...workForm, endDate: e.target.value})}
-                  disabled={workForm.isCurrentRole}
-                />
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox
-                    id="currentRole"
-                    checked={workForm.isCurrentRole}
-                    onCheckedChange={(checked) => setWorkForm({...workForm, isCurrentRole: checked as boolean})}
-                  />
-                  <Label htmlFor="currentRole" className="text-sm">This is my current role</Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Responsibilities */}
-            <div>
-              <Label>Responsibilities</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  value={responsibilityInput}
-                  onChange={(e) => setResponsibilityInput(e.target.value)}
-                  placeholder="Add a responsibility..."
-                  onKeyPress={(e) => e.key === 'Enter' && addResponsibility()}
-                />
-                <Button onClick={addResponsibility} variant="outline">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              {workForm.responsibilities.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {workForm.responsibilities.map((resp, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                      <span className="text-sm">{resp}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setWorkForm({
-                          ...workForm,
-                          responsibilities: workForm.responsibilities.filter((_, i) => i !== index)
-                        })}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Accomplishments */}
-            <div>
-              <Label>Accomplishments</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  value={accomplishmentInput}
-                  onChange={(e) => setAccomplishmentInput(e.target.value)}
-                  placeholder="Add an accomplishment..."
-                  onKeyPress={(e) => e.key === 'Enter' && addAccomplishment()}
-                />
-                <Button onClick={addAccomplishment} variant="outline">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              {workForm.accomplishments.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {workForm.accomplishments.map((acc, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                      <span className="text-sm">{acc}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setWorkForm({
-                          ...workForm,
-                          accomplishments: workForm.accomplishments.filter((_, i) => i !== index)
-                        })}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Added Work Experiences */}
-            {workExperiences.length > 0 && (
-              <div>
-                <Label>Added Work Experiences</Label>
-                <div className="space-y-2 mt-2">
-                  {workExperiences.map((exp, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="font-medium">{exp.position} at {exp.company}</div>
-                      <div className="text-sm text-slate-600">
-                        {exp.startDate} - {exp.isCurrentRole ? "Present" : exp.endDate}
-                      </div>
-                      <div className="text-sm text-slate-500 mt-1">
-                        {exp.responsibilities.length + exp.accomplishments.length} items added
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button onClick={addWorkExperience} className="flex-1">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Work Experience
-              </Button>
-              <Button 
-                onClick={() => setCurrentStep("education")} 
-                variant="outline"
-                disabled={workExperiences.length === 0}
+      <div className="flex items-center justify-center mb-8 overflow-x-auto pb-2">
+        {steps.map((step, index) => {
+          console.log(`Rendering step ${index}: ${step.title}`);
+          return (
+            <div key={step.id} className="flex items-center flex-shrink-0">
+              <div 
+                className={`flex items-center space-x-3 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                  activeStep === step.id 
+                    ? 'bg-primary/10 text-primary' 
+                    : step.completed 
+                      ? 'text-green-600' 
+                      : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => setActiveStep(step.id)}
               >
-                Continue to Education
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Education Step */}
-      {currentStep === "education" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GraduationCap className="w-5 h-5" />
-              Education
-            </CardTitle>
-            <CardDescription>
-              Add your educational background.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="institution">Institution *</Label>
-                <Input
-                  id="institution"
-                  value={educationForm.institution}
-                  onChange={(e) => setEducationForm({...educationForm, institution: e.target.value})}
-                  placeholder="University/College Name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="degree">Degree *</Label>
-                <Input
-                  id="degree"
-                  value={educationForm.degree}
-                  onChange={(e) => setEducationForm({...educationForm, degree: e.target.value})}
-                  placeholder="Bachelor's, Master's, etc."
-                />
-              </div>
-              <div>
-                <Label htmlFor="fieldOfStudy">Field of Study</Label>
-                <Input
-                  id="fieldOfStudy"
-                  value={educationForm.fieldOfStudy}
-                  onChange={(e) => setEducationForm({...educationForm, fieldOfStudy: e.target.value})}
-                  placeholder="Computer Science, Business, etc."
-                />
-              </div>
-              <div>
-                <Label htmlFor="gpa">GPA (Optional)</Label>
-                <Input
-                  id="gpa"
-                  value={educationForm.gpa}
-                  onChange={(e) => setEducationForm({...educationForm, gpa: e.target.value})}
-                  placeholder="3.8"
-                />
-              </div>
-              <div>
-                <Label htmlFor="eduStartDate">Start Date</Label>
-                <Input
-                  id="eduStartDate"
-                  type="date"
-                  value={educationForm.startDate}
-                  onChange={(e) => setEducationForm({...educationForm, startDate: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="eduEndDate">End Date</Label>
-                <Input
-                  id="eduEndDate"
-                  type="date"
-                  value={educationForm.endDate}
-                  onChange={(e) => setEducationForm({...educationForm, endDate: e.target.value})}
-                  disabled={educationForm.isCurrentlyEnrolled}
-                />
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox
-                    id="currentlyEnrolled"
-                    checked={educationForm.isCurrentlyEnrolled}
-                    onCheckedChange={(checked) => setEducationForm({...educationForm, isCurrentlyEnrolled: checked as boolean})}
-                  />
-                  <Label htmlFor="currentlyEnrolled" className="text-sm">Currently enrolled</Label>
+                <div className="flex items-center justify-center">
+                  {step.completed ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <Circle className="w-5 h-5" />
+                  )}
                 </div>
+                <span className="hidden md:block">{step.title}</span>
               </div>
+              {index < steps.length - 1 && (
+                <div className="mx-3">
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  {console.log('Rendering ChevronRight between steps')}
+                </div>
+              )}
             </div>
+          );
+        })}
+      </div>
 
-            {/* Added Education */}
-            {educations.length > 0 && (
-              <div>
-                <Label>Added Education</Label>
-                <div className="space-y-2 mt-2">
-                  {educations.map((edu, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="font-medium">{edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}</div>
-                      <div className="text-sm text-slate-600">{edu.institution}</div>
-                    </div>
+      {/* Content Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{steps.find(step => step.id === activeStep)?.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activeStep === 'about' && (
+            <div className="space-y-4">
+              <p>Welcome! Let's start with some basic information about you.</p>
+              <p>Display Name: {data?.display_name || 'Not set'}</p>
+              <p>Bio: {data?.bio || 'Not set'}</p>
+              <Button>Edit Profile</Button>
+            </div>
+          )}
+          {activeStep === 'work' && (
+            <div className="space-y-4">
+              <p>Share your work experience to showcase your professional background.</p>
+              {data?.work_experiences?.length > 0 ? (
+                <ul>
+                  {data.work_experiences.map(exp => (
+                    <li key={exp.id}>
+                      {exp.title} at {exp.company_name} ({format(new Date(exp.start_date), 'MMM yyyy')} - {exp.is_current ? 'Present' : format(new Date(exp.end_date || exp.start_date), 'MMM yyyy')})
+                    </li>
                   ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button onClick={addEducation} variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Education
-              </Button>
-              <Button onClick={() => setCurrentStep("certifications")}>
-                Continue to Certifications
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+                </ul>
+              ) : (
+                <p>No work experience added yet.</p>
+              )}
+              <Button>Add Work Experience</Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Certifications Step */}
-      {currentStep === "certifications" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5" />
-              Certifications
-            </CardTitle>
-            <CardDescription>
-              Add your professional certifications.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="certName">Certification Name *</Label>
-                <Input
-                  id="certName"
-                  value={certificationForm.name}
-                  onChange={(e) => setCertificationForm({...certificationForm, name: e.target.value})}
-                  placeholder="AWS Certified Solutions Architect"
-                />
-              </div>
-              <div>
-                <Label htmlFor="issuer">Issuing Organization *</Label>
-                <Input
-                  id="issuer"
-                  value={certificationForm.issuer}
-                  onChange={(e) => setCertificationForm({...certificationForm, issuer: e.target.value})}
-                  placeholder="Amazon Web Services"
-                />
-              </div>
-              <div>
-                <Label htmlFor="issueDate">Issue Date</Label>
-                <Input
-                  id="issueDate"
-                  type="date"
-                  value={certificationForm.issueDate}
-                  onChange={(e) => setCertificationForm({...certificationForm, issueDate: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input
-                  id="expiryDate"
-                  type="date"
-                  value={certificationForm.expiryDate}
-                  onChange={(e) => setCertificationForm({...certificationForm, expiryDate: e.target.value})}
-                  disabled={certificationForm.doesNotExpire}
-                />
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox
-                    id="doesNotExpire"
-                    checked={certificationForm.doesNotExpire}
-                    onCheckedChange={(checked) => setCertificationForm({...certificationForm, doesNotExpire: checked as boolean})}
-                  />
-                  <Label htmlFor="doesNotExpire" className="text-sm">Does not expire</Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Added Certifications */}
-            {certifications.length > 0 && (
-              <div>
-                <Label>Added Certifications</Label>
-                <div className="space-y-2 mt-2">
-                  {certifications.map((cert, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="font-medium">{cert.name}</div>
-                      <div className="text-sm text-slate-600">{cert.issuer}</div>
-                    </div>
+          )}
+          {activeStep === 'education' && (
+            <div className="space-y-4">
+              <p>Add your educational background to highlight your academic achievements.</p>
+              {data?.education?.length > 0 ? (
+                <ul>
+                  {data.education.map(edu => (
+                    <li key={edu.id}>
+                      {edu.degree} in {edu.field_of_study} from {edu.institution}
+                    </li>
                   ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button onClick={addCertification} variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Certification
-              </Button>
-              <Button onClick={() => setCurrentStep("speaking")}>
-                Continue to Speaking
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+                </ul>
+              ) : (
+                <p>No education added yet.</p>
+              )}
+              <Button>Add Education</Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Speaking Engagements Step */}
-      {currentStep === "speaking" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5" />
-              Speaking Engagements
-            </CardTitle>
-            <CardDescription>
-              Add your speaking engagements, conferences, and presentations.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="speakingTitle">Presentation Title *</Label>
-                <Input
-                  id="speakingTitle"
-                  value={speakingForm.title}
-                  onChange={(e) => setSpeakingForm({...speakingForm, title: e.target.value})}
-                  placeholder="How to Build Scalable APIs"
-                />
-              </div>
-              <div>
-                <Label htmlFor="event">Event/Conference *</Label>
-                <Input
-                  id="event"
-                  value={speakingForm.event}
-                  onChange={(e) => setSpeakingForm({...speakingForm, event: e.target.value})}
-                  placeholder="Tech Conference 2024"
-                />
-              </div>
-              <div>
-                <Label htmlFor="speakingLocation">Location</Label>
-                <Input
-                  id="speakingLocation"
-                  value={speakingForm.location}
-                  onChange={(e) => setSpeakingForm({...speakingForm, location: e.target.value})}
-                  placeholder="San Francisco, CA"
-                />
-              </div>
-              <div>
-                <Label htmlFor="speakingDate">Date</Label>
-                <Input
-                  id="speakingDate"
-                  type="date"
-                  value={speakingForm.date}
-                  onChange={(e) => setSpeakingForm({...speakingForm, date: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="speakingDescription">Description</Label>
-              <Textarea
-                id="speakingDescription"
-                value={speakingForm.description}
-                onChange={(e) => setSpeakingForm({...speakingForm, description: e.target.value})}
-                placeholder="Brief description of your presentation..."
-                rows={3}
-              />
-            </div>
-
-            {/* Added Speaking Engagements */}
-            {speakingEngagements.length > 0 && (
-              <div>
-                <Label>Added Speaking Engagements</Label>
-                <div className="space-y-2 mt-2">
-                  {speakingEngagements.map((speaking, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="font-medium">{speaking.title}</div>
-                      <div className="text-sm text-slate-600">{speaking.event}</div>
-                      {speaking.location && (
-                        <div className="text-sm text-slate-500">{speaking.location}</div>
-                      )}
-                    </div>
+          )}
+          {activeStep === 'certifications' && (
+            <div className="space-y-4">
+              <p>List your professional certifications to demonstrate your expertise.</p>
+              {data?.certifications?.length > 0 ? (
+                <ul>
+                  {data.certifications.map(cert => (
+                    <li key={cert.id}>
+                      {cert.name} from {cert.issuing_organization}
+                    </li>
                   ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button onClick={addSpeakingEngagement} variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Speaking Engagement
-              </Button>
-              <Button onClick={() => setCurrentStep("skills")}>
-                Continue to Skills
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+                </ul>
+              ) : (
+                <p>No certifications added yet.</p>
+              )}
+              <Button>Add Certification</Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Skills Step */}
-      {currentStep === "skills" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Skills
-            </CardTitle>
-            <CardDescription>
-              Add your technical and professional skills.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex gap-2">
-              <Input
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Add a skill..."
-                onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-              />
-              <Button onClick={addSkill} variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {skills.length > 0 && (
-              <div>
-                <Label>Added Skills</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {skills.map((skill, index) => (
-                    <div key={index} className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {skill}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 hover:bg-blue-200"
-                        onClick={() => setSkillsLocal(skills.filter((_, i) => i !== index))}
-                      >
-                        ×
-                      </Button>
-                    </div>
+          )}
+          {activeStep === 'skills' && (
+            <div className="space-y-4">
+              <p>Highlight your key competencies and skills.</p>
+              {data?.user_skills?.length > 0 ? (
+                <ul>
+                  {data.user_skills.map(skill => (
+                    <li key={skill.id}>
+                      {skill.skill_name} ({skill.proficiency_level})
+                    </li>
                   ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button onClick={() => setCurrentStep("complete")} className="flex-1">
-                Complete Profile Setup
-                <CheckCircle className="w-4 h-4 ml-2" />
-              </Button>
+                </ul>
+              ) : (
+                <p>No skills added yet.</p>
+              )}
+              <Button>Add Skill</Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Complete Step */}
-      {currentStep === "complete" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Profile Complete!
-            </CardTitle>
-            <CardDescription>
-              Review your professional profile before saving.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-6 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{workExperiences.length}</div>
-                <div className="text-sm text-slate-600">Work Experiences</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-emerald-600">{educations.length}</div>
-                <div className="text-sm text-slate-600">Education</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{certifications.length}</div>
-                <div className="text-sm text-slate-600">Certifications</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-pink-600">{speakingEngagements.length}</div>
-                <div className="text-sm text-slate-600">Speaking</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">{skills.length}</div>
-                <div className="text-sm text-slate-600">Skills</div>
-              </div>
-            </div>
-
-            <Button onClick={handleComplete} size="lg" className="w-full">
-              Save Profile & Go to My Resume
-              <ChevronRight className="w-5 h-5 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
