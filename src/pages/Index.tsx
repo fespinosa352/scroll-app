@@ -6,7 +6,36 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, User, BookOpen, Target, TrendingUp, Search, PlayCircle, Briefcase, Calendar, Activity, LogOut, Settings, GraduationCap, Award, Trophy, ChevronDown, Zap, Download, Copy } from "lucide-react";
+import { 
+  FileText, 
+  User, 
+  BookOpen, 
+  Target, 
+  TrendingUp, 
+  Search, 
+  PlayCircle, 
+  Briefcase, 
+  Calendar, 
+  Activity, 
+  LogOut, 
+  Settings, 
+  GraduationCap, 
+  Award, 
+  Trophy, 
+  ChevronDown, 
+  Zap, 
+  Download, 
+  Copy,
+  Brain,
+  BarChart3,
+  Lightbulb,
+  Rocket,
+  Users,
+  Home,
+  Edit,
+  Eye,
+  Star
+} from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,10 +45,10 @@ import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import ResumeBuilder from "@/components/ResumeBuilder";
 import JobAnalyzer from "@/components/JobAnalyzer";
-import ATSExpertAnalyzer from "@/components/ATSExpertAnalyzer";
+
 import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
-import ATSOptimizer from "@/components/ATSOptimizer";
+import RealTimeATSAnalyzer from "@/components/RealTimeATSAnalyzer";
 import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
@@ -506,33 +535,29 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Target className="w-4 h-4" />
+              <Home className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
             </TabsTrigger>
             <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <PlayCircle className="w-4 h-4" />
+              <Rocket className="w-4 h-4" />
               <span className="text-xs md:text-sm">Get Started</span>
             </TabsTrigger>
-            <TabsTrigger value="my-resume" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <User className="w-4 h-4" />
-              <span className="text-xs md:text-sm">My Resume</span>
+            <TabsTrigger value="real-time-ats" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <Zap className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Live ATS</span>
             </TabsTrigger>
             <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Job Analysis</span>
-            </TabsTrigger>
-            <TabsTrigger value="ats-expert" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-xs md:text-sm">ATS Expert</span>
+              <span className="text-xs md:text-sm">Job Match</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Resume Vault</span>
+              <span className="text-xs md:text-sm">Resumes</span>
             </TabsTrigger>
             <TabsTrigger value="editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Zap className="w-4 h-4" />
+              <Edit className="w-4 h-4" />
               <span className="text-xs md:text-sm">Editor</span>
             </TabsTrigger>
           </TabsList>
@@ -589,10 +614,10 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
-                    onClick={() => handleTabChange("ats-expert")}
+                    onClick={() => handleTabChange("real-time-ats")}
                   >
-                    <TrendingUp className="w-6 h-6 text-blue-600" />
-                    <span className="text-sm text-blue-700">ATS Expert</span>
+                    <Zap className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm text-blue-700">Live ATS</span>
                   </Button>
                 </div>
               </CardContent>
@@ -637,6 +662,10 @@ const Index = () => {
             <GettingStarted />
           </TabsContent>
 
+          <TabsContent value="real-time-ats">
+            <RealTimeATSAnalyzer />
+          </TabsContent>
+
           <TabsContent value="achievements">
             <AchievementLogger />
           </TabsContent>
@@ -654,9 +683,6 @@ const Index = () => {
             <JobAnalyzer />
           </TabsContent>
 
-          <TabsContent value="ats-expert">
-            <ATSExpertAnalyzer />
-          </TabsContent>
 
 
           <TabsContent value="experience">

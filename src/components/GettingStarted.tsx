@@ -49,8 +49,6 @@ const sampleProjects: Project[] = [
 ];
 
 const GettingStarted = () => {
-  console.log('GettingStarted component rendering');
-  console.log('ChevronRight import:', ChevronRight);
   
   const [activeStep, setActiveStep] = useState('about');
   const { data, isLoading, error } = useUserProfileData();
@@ -145,7 +143,6 @@ const GettingStarted = () => {
       {/* Progress Steps */}
       <div className="flex items-center justify-center mb-8 overflow-x-auto pb-2">
         {steps.map((step, index) => {
-          console.log(`Rendering step ${index}: ${step.title}`);
           return (
             <div key={step.id} className="flex items-center flex-shrink-0">
               <div 
