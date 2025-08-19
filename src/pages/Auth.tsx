@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Activity } from "lucide-react";
 import chameleonLogo from "@/assets/chameleon-logo.png";
 import { Link, useNavigate } from 'react-router-dom';
+import { isRegistrationEnabled } from '@/config/features';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -105,16 +106,92 @@ const Auth = () => {
           <Card>
             <CardHeader>
               <CardTitle>Welcome</CardTitle>
-              <CardDescription>Sign in to your account or create a new one</CardDescription>
+              <CardDescription>
+                {/* FEATURE FLAG: Registration temporarily disabled */}
+                {isRegistrationEnabled() 
+                  ? "Sign in to your account or create a new one"
+                  : "Sign in to your account or try the demo"
+                }
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
+              {/* FEATURE FLAG: Show tabs only when registration is enabled */}
+              {isRegistrationEnabled() ? (
+                <Tabs defaultValue="signin" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
                 
-                <TabsContent value="signin">
+                  <TabsContent value="signin">
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email</Label>
+                        <Input
+                          id="signin-email"
+                          name="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <Input
+                          id="signin-password"
+                          name="password"
+                          type="password"
+                          placeholder="Enter your password"
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? "Signing in..." : "Sign In"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                
+                  {/* FEATURE FLAG: Sign Up tab - temporarily disabled */}
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-displayName">Display Name</Label>
+                        <Input
+                          id="signup-displayName"
+                          name="displayName"
+                          type="text"
+                          placeholder="Enter your display name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input
+                          id="signup-email"
+                          name="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <Input
+                          id="signup-password"
+                          name="password"
+                          type="password"
+                          placeholder="Create a password"
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? "Creating account..." : "Sign Up"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                /* FEATURE FLAG: When registration is disabled, show only sign in form */
+                <div className="space-y-4">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email</Label>
@@ -140,45 +217,8 @@ const Auth = () => {
                       {isLoading ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
-                </TabsContent>
-                
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-displayName">Display Name</Label>
-                      <Input
-                        id="signup-displayName"
-                        name="displayName"
-                        type="text"
-                        placeholder="Enter your display name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input
-                        id="signup-email"
-                        name="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        name="password"
-                        type="password"
-                        placeholder="Create a password"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Creating account..." : "Sign Up"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                </div>
+              )}
               
               <div className="mt-6 pt-6 border-t border-slate-200">
                 <Button 
