@@ -6,8 +6,10 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isGuest: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInAsGuest: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -17,11 +19,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
+    // Check for existing guest session first
+    const guestSession = localStorage.getItem('guestSession');
+    if (guestSession) {
+      const guestData = JSON.parse(guestSession);
+      setIsGuest(true);
+      setUser(guestData);
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsGuest(false);
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -60,8 +76,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
+  const signInAsGuest = () => {
+    const guestUser = {
+      id: 'guest-' + Date.now(),
+      email: 'guest@demo.com',
+      user_metadata: { display_name: 'Guest User' },
+      created_at: new Date().toISOString()
+    };
+    
+    localStorage.setItem('guestSession', JSON.stringify(guestUser));
+    setIsGuest(true);
+    setUser(guestUser as any);
+    setLoading(false);
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isGuest) {
+      localStorage.removeItem('guestSession');
+      setIsGuest(false);
+      setUser(null);
+    } else {
+      await supabase.auth.signOut();
+    }
   };
 
   return (
@@ -69,8 +105,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user,
       session,
       loading,
+      isGuest,
       signUp,
       signIn,
+      signInAsGuest,
       signOut,
     }}>
       {children}

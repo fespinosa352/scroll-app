@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInAsGuest } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -69,6 +69,15 @@ const Auth = () => {
     }
 
     setIsLoading(false);
+  };
+
+  const handleGuestSignIn = () => {
+    signInAsGuest();
+    toast({
+      title: "Welcome, Guest!",
+      description: "You're now using demo mode. Your data won't be saved.",
+    });
+    navigate('/');
   };
 
   return (
@@ -170,6 +179,20 @@ const Auth = () => {
                   </form>
                 </TabsContent>
               </Tabs>
+              
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <Button 
+                  variant="outline" 
+                  onClick={handleGuestSignIn}
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  Continue as Guest (Demo Mode)
+                </Button>
+                <p className="text-xs text-slate-500 mt-2 text-center">
+                  No registration required • Data won't be saved
+                </p>
+              </div>
             </CardContent>
           </Card>
 

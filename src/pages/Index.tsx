@@ -62,6 +62,7 @@ import SocialProof from "@/components/SocialProof";
 import Education from "@/components/Education";
 import Certifications from "@/components/Certifications";
 import { ResumeDataProvider, useResumeData } from "@/contexts/ResumeDataContext";
+import { GuestWarningBanner } from "@/components/GuestWarningBanner";
 
 // Component to handle resume editing state within the context
 const ResumeContent: React.FC<{ 
@@ -481,6 +482,7 @@ const Index = () => {
   return (
     <ResumeDataProvider>
       <div className="min-h-screen bg-slate-50">
+        <GuestWarningBanner />
         {/* Header */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
           <div className="container mx-auto px-6 py-3">
