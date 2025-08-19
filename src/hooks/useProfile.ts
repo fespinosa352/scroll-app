@@ -11,7 +11,7 @@ export const useProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, loading: authLoading } = useAuth();
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -110,10 +110,10 @@ export const useProfile = () => {
 
   // Load profile on mount and user change
   useEffect(() => {
-    if (user?.id && !isGuest) {
+    if (!authLoading && user?.id && !isGuest) {
       fetchProfile();
     }
-  }, [user?.id, isGuest]);
+  }, [user?.id, isGuest, authLoading]);
 
   return {
     profile,
