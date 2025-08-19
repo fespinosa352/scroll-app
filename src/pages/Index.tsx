@@ -232,7 +232,7 @@ const ResumeEditorContent: React.FC<{
     let markup = '';
 
     // Personal info
-    if (personalInfo.name || personalInfo.email || personalInfo.phone || personalInfo.location) {
+    if (personalInfo && (personalInfo.name || personalInfo.email || personalInfo.phone || personalInfo.location)) {
       markup += `# ${personalInfo.name || 'Your Name'}\n\n`;
       if (personalInfo.email) markup += `${personalInfo.email}\n`;
       if (personalInfo.phone) markup += `${personalInfo.phone}\n`;
