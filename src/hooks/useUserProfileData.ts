@@ -61,7 +61,7 @@ interface UserProfileData {
 }
 
 export const useUserProfileData = () => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const queryClient = useQueryClient();
 
   const {
@@ -72,7 +72,7 @@ export const useUserProfileData = () => {
   } = useQuery({
     queryKey: ['userProfileData', user?.id],
     queryFn: async (): Promise<UserProfileData | null> => {
-      if (!user?.id) return null;
+      if (!user?.id || isGuest) return null;
 
       try {
         // First get the profile
@@ -199,7 +199,7 @@ export const useUserProfileData = () => {
         throw error;
       }
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isGuest,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     retry: 2,
@@ -323,7 +323,7 @@ export const useUserProfileData = () => {
     linkedin_url?: string;
     bio?: string;
   }) => {
-    if (!user?.id) return;
+    if (!user?.id || isGuest) return;
 
     try {
       const { data, error } = await supabase
