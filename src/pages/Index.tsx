@@ -416,7 +416,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditingResume, setIsEditingResume] = useState(false);
   const [editingResumeId, setEditingResumeId] = useState<string | undefined>(undefined);
-  const { user, session, loading, signOut } = useAuth();
+  const { user, session, loading, signOut, isGuest } = useAuth();
   const { getFirstName } = useProfile();
   const navigate = useNavigate();
 
@@ -434,10 +434,10 @@ const Index = () => {
   };
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (!loading && !session && !isGuest) {
       navigate('/auth');
     }
-  }, [loading, session, navigate]);
+  }, [loading, session, isGuest, navigate]);
 
   // Listen for navigation events from components
   useEffect(() => {
@@ -467,7 +467,7 @@ const Index = () => {
     );
   }
 
-  if (!session) {
+  if (!session && !isGuest) {
     return null; // Will redirect to auth
   }
 
