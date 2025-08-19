@@ -13,7 +13,7 @@ export const GuestWarningBanner = () => {
       <Info className="h-4 w-4 text-amber-600" />
       <AlertDescription className="flex items-center justify-between text-amber-800">
         <span>
-          <strong>Demo Mode:</strong> You're using a guest account. All data entered is temporary and will be deleted when you sign out.
+          <strong>Demo Mode:</strong> You're using a guest account. Data is temporary and some features may show errors due to limited demo functionality.
         </span>
         <Button 
           variant="outline" 
