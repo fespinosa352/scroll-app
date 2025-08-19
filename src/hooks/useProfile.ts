@@ -11,11 +11,11 @@ export const useProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
 
   // Fetch user profile
   const fetchProfile = async () => {
-    if (!user?.id) return;
+    if (!user?.id || isGuest) return;
 
     setLoading(true);
     try {
@@ -40,8 +40,8 @@ export const useProfile = () => {
 
   // Update profile
   const updateProfile = async (updates: ProfileUpdate): Promise<Profile | null> => {
-    if (!user?.id) {
-      toast.error('Please log in to update your profile');
+    if (!user?.id || isGuest) {
+      toast.error('Profile updates are not available in demo mode');
       return null;
     }
 
@@ -70,7 +70,7 @@ export const useProfile = () => {
 
   // Create profile if it doesn't exist
   const createProfile = async (profileData: Omit<ProfileUpdate, 'id' | 'created_at' | 'updated_at'>): Promise<Profile | null> => {
-    if (!user?.id) return null;
+    if (!user?.id || isGuest) return null;
 
     try {
       const { data, error } = await supabase
@@ -110,10 +110,10 @@ export const useProfile = () => {
 
   // Load profile on mount and user change
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !isGuest) {
       fetchProfile();
     }
-  }, [user?.id]);
+  }, [user?.id, isGuest]);
 
   return {
     profile,
