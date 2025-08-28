@@ -248,6 +248,126 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          category: string | null
+          company_name: string
+          created_at: string
+          description_text: string
+          employment_type: string | null
+          experience_min_years: number | null
+          id: string
+          locations: string[] | null
+          processed_at: string | null
+          raw_job_description: string | null
+          requirements_summary: string | null
+          skills: string[] | null
+          source_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          workplace_type: string | null
+        }
+        Insert: {
+          category?: string | null
+          company_name: string
+          created_at?: string
+          description_text: string
+          employment_type?: string | null
+          experience_min_years?: number | null
+          id?: string
+          locations?: string[] | null
+          processed_at?: string | null
+          raw_job_description?: string | null
+          requirements_summary?: string | null
+          skills?: string[] | null
+          source_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          workplace_type?: string | null
+        }
+        Update: {
+          category?: string | null
+          company_name?: string
+          created_at?: string
+          description_text?: string
+          employment_type?: string | null
+          experience_min_years?: number | null
+          id?: string
+          locations?: string[] | null
+          processed_at?: string | null
+          raw_job_description?: string | null
+          requirements_summary?: string | null
+          skills?: string[] | null
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workplace_type?: string | null
+        }
+        Relationships: []
+      }
+      job_user_interactions: {
+        Row: {
+          created_at: string
+          generated_resume_id: string | null
+          id: string
+          interaction_type: string
+          job_id: string
+          match_score: number | null
+          matched_skills: string[] | null
+          missing_skills: string[] | null
+          notes: string | null
+          recommendations: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_resume_id?: string | null
+          id?: string
+          interaction_type: string
+          job_id: string
+          match_score?: number | null
+          matched_skills?: string[] | null
+          missing_skills?: string[] | null
+          notes?: string | null
+          recommendations?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_resume_id?: string | null
+          id?: string
+          interaction_type?: string
+          job_id?: string
+          match_score?: number | null
+          matched_skills?: string[] | null
+          missing_skills?: string[] | null
+          notes?: string | null
+          recommendations?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_user_interactions_generated_resume_id_fkey"
+            columns: ["generated_resume_id"]
+            isOneToOne: false
+            referencedRelation: "generated_resumes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_user_interactions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -45,6 +45,7 @@ import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import ResumeBuilder from "@/components/ResumeBuilder";
 import JobAnalyzer from "@/components/JobAnalyzer";
+import JobSearch from "@/components/JobSearch";
 
 import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
@@ -442,12 +443,21 @@ const Index = () => {
   // Listen for navigation events from components
   useEffect(() => {
     const handleNavigateToResumeVault = () => {
-      setActiveTab('resume-vault');
+      setActiveTab('resumes');
+    };
+
+    const handleNavigateToEditor = (event: CustomEvent) => {
+      const { resumeId } = event.detail;
+      setEditingResumeId(resumeId);
+      setActiveTab('editor');
     };
 
     window.addEventListener('navigateToResumeVault', handleNavigateToResumeVault);
+    window.addEventListener('navigateToEditor', handleNavigateToEditor as EventListener);
+    
     return () => {
       window.removeEventListener('navigateToResumeVault', handleNavigateToResumeVault);
+      window.removeEventListener('navigateToEditor', handleNavigateToEditor as EventListener);
     };
   }, []);
 
@@ -471,13 +481,6 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  // Mock data for demonstration
-  const weeklyStats = {
-    achievementsLogged: 7,
-    resumesGenerated: 2,
-    skillsImproved: 3,
-    atsScore: 85
-  };
 
   return (
     <ResumeDataProvider>
@@ -537,7 +540,7 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Home className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
@@ -550,8 +553,12 @@ const Index = () => {
               <Zap className="w-4 h-4" />
               <span className="text-xs md:text-sm">Live ATS</span>
             </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+            <TabsTrigger value="job-search" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
+              <span className="text-xs md:text-sm">Job Search</span>
+            </TabsTrigger>
+            <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+              <Target className="w-4 h-4" />
               <span className="text-xs md:text-sm">Job Match</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
@@ -679,6 +686,10 @@ const Index = () => {
               setEditingResumeId={setEditingResumeId}
               handleTabChange={handleTabChange}
             />
+          </TabsContent>
+
+          <TabsContent value="job-search">
+            <JobSearch />
           </TabsContent>
 
           <TabsContent value="jobs">

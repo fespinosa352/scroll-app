@@ -88,6 +88,39 @@ export const useResumeVersions = () => {
     }
   };
 
+  const generateResumeFromJobData = async (jobData: any, jobMatch: any, resumeName: string) => {
+    const resumeData = {
+      name: resumeName,
+      content: {
+        targetRole: jobData.title,
+        company: jobData.company_name,
+        matchedAchievements: jobMatch.matched_skills.length,
+        jobData: jobData,
+        jobMatch: jobMatch
+      },
+      ats_score: jobMatch.match_score,
+      imported_from: 'Job Search'
+    };
+
+    try {
+      const newResume = await saveResume(resumeData);
+      
+      if (newResume) {
+        toast.success(`Optimized resume created!`, {
+          description: `${resumeData.name} • Match Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
+        });
+        
+        return newResume;
+      } else {
+        throw new Error('Failed to create resume');
+      }
+    } catch (error) {
+      console.error('Error creating resume:', error);
+      toast.error('Failed to create optimized resume');
+      return null;
+    }
+  };
+
   const duplicateResume = async (resumeId: string) => {
     const success = await dbDuplicateResume(resumeId);
     return success;
@@ -111,6 +144,7 @@ export const useResumeVersions = () => {
   return {
     resumes,
     generateResumeFromAnalysis,
+    generateResumeFromJobData,
     duplicateResume,
     deleteResume,
     updateResumeStatus
