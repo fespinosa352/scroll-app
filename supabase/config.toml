@@ -1,4 +1,13 @@
 project_id = "hwonitvnvhcepwjqeodj"
 
+[functions.claude-ats-analysis]
+verify_jwt = false
+
+[functions.generate-resume-suggestions]
+verify_jwt = false
+
+[functions.process-job-description]
+verify_jwt = false
+
 [functions.search-jobs-with-claude]
 verify_jwt = false
