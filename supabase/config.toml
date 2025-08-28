@@ -1,1 +1,4 @@
 project_id = "hwonitvnvhcepwjqeodj"
+
+[functions.search-jobs-with-claude]
+verify_jwt = false
