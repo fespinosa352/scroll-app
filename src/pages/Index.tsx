@@ -44,12 +44,10 @@ import { toast } from "sonner";
 import AchievementLogger from "@/components/AchievementLogger";
 import ResumeVersions from "@/components/ResumeVersions";
 import ResumeBuilder from "@/components/ResumeBuilder";
-import JobAnalyzer from "@/components/JobAnalyzer";
 import JobSearch from "@/components/JobSearch";
 
 import UserSkills from "@/components/UserSkills";
 import SkillsAssessment from "@/components/SkillsAssessment";
-import RealTimeATSAnalyzer from "@/components/RealTimeATSAnalyzer";
 import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
@@ -672,7 +670,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="real-time-ats">
-            <RealTimeATSAnalyzer />
+            <JobSearch />
           </TabsContent>
 
           <TabsContent value="achievements">
@@ -693,7 +691,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="jobs">
-            <JobAnalyzer />
+            <JobSearch />
           </TabsContent>
 
 

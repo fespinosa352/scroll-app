@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
+import JobMatchAnalyzer from "./JobMatchAnalyzer";
 
 interface ProcessedJob {
   job_id?: string;
@@ -76,7 +77,7 @@ interface JobMatch {
 }
 
 const JobSearch = () => {
-  const [activeTab, setActiveTab] = useState("browse");
+  const [activeTab, setActiveTab] = useState("match");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -334,7 +335,7 @@ const JobSearch = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="browse" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             <span>Browse Jobs</span>
@@ -343,17 +344,13 @@ const JobSearch = () => {
             <Search className="w-4 h-4" />
             <span>Search Jobs</span>
           </TabsTrigger>
-          <TabsTrigger value="paste" className="flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            <span>Paste Job</span>
+          <TabsTrigger value="match" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            <span>Job Match</span>
           </TabsTrigger>
           <TabsTrigger value="analysis" disabled={!processedJob && !selectedWebJob} className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             <span>Analysis</span>
-          </TabsTrigger>
-          <TabsTrigger value="optimize" disabled={!jobMatch} className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            <span>Optimize</span>
           </TabsTrigger>
         </TabsList>
 
@@ -380,7 +377,7 @@ const JobSearch = () => {
                       <li>Browse jobs in the embedded HiringCafe below</li>
                       <li>Click on any job to view its full description</li>
                       <li>Copy the job description text</li>
-                      <li>Switch to the "Paste Job" tab and paste the description</li>
+                      <li>Switch to the "Job Match" tab and paste the description</li>
                       <li>Analyze the job match with your resume</li>
                     </ol>
                   </div>
@@ -397,12 +394,12 @@ const JobSearch = () => {
                   Open in New Tab
                 </Button>
                 <Button 
-                  onClick={() => setActiveTab('paste')}
+                  onClick={() => setActiveTab('match')}
                   variant="default"
                   className="flex items-center gap-2"
                 >
-                  <Upload className="w-4 h-4" />
-                  Go to Paste Job
+                  <Target className="w-4 h-4" />
+                  Go to Job Match
                 </Button>
               </div>
 
@@ -586,67 +583,8 @@ const JobSearch = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="paste" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5" />
-                Job Information
-              </CardTitle>
-              <CardDescription>
-                Paste a job description to get AI-powered analysis and resume optimization
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Job Title</label>
-                  <Input
-                    placeholder="e.g., Senior Product Manager"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Company</label>
-                  <Input
-                    placeholder="e.g., Google, Microsoft"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Job Description</label>
-                <Textarea
-                  placeholder="Paste the complete job description here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  rows={12}
-                  className="min-h-[300px]"
-                />
-              </div>
-
-              <Button 
-                onClick={processJobDescription}
-                disabled={isProcessing || !jobDescription.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                    Processing with AI...
-                  </>
-                ) : (
-                  <>
-                    <Target className="w-4 h-4 mr-2" />
-                    Process Job Description
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+        <TabsContent value="match" className="space-y-4">
+          <JobMatchAnalyzer />
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-6">
