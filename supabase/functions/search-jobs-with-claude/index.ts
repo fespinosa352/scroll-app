@@ -36,6 +36,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Search jobs function called');
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
     
     if (!anthropicApiKey) {
