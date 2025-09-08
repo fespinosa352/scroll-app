@@ -77,7 +77,7 @@ interface JobMatch {
 }
 
 const JobSearch = () => {
-  const [activeTab, setActiveTab] = useState("match");
+  const [activeTab, setActiveTab] = useState("browse");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
