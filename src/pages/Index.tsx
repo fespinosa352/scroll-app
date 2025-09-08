@@ -538,7 +538,7 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-6 md:py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1 lg:w-auto h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Home className="w-4 h-4" />
               <span className="text-xs md:text-sm">Dashboard</span>
@@ -547,17 +547,9 @@ const Index = () => {
               <Rocket className="w-4 h-4" />
               <span className="text-xs md:text-sm">Get Started</span>
             </TabsTrigger>
-            <TabsTrigger value="real-time-ats" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Zap className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Live ATS</span>
-            </TabsTrigger>
             <TabsTrigger value="job-search" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <Search className="w-4 h-4" />
               <span className="text-xs md:text-sm">Job Search</span>
-            </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Target className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Job Match</span>
             </TabsTrigger>
             <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
               <FileText className="w-4 h-4" />
@@ -621,10 +613,10 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
-                    onClick={() => handleTabChange("real-time-ats")}
+                    onClick={() => handleTabChange("job-search")}
                   >
-                    <Zap className="w-6 h-6 text-blue-600" />
-                    <span className="text-sm text-blue-700">Live ATS</span>
+                    <Search className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm text-blue-700">Job Search</span>
                   </Button>
                 </div>
               </CardContent>
@@ -669,10 +661,6 @@ const Index = () => {
             <GettingStarted />
           </TabsContent>
 
-          <TabsContent value="real-time-ats">
-            <JobSearch />
-          </TabsContent>
-
           <TabsContent value="achievements">
             <AchievementLogger />
           </TabsContent>
@@ -687,10 +675,6 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="job-search">
-            <JobSearch />
-          </TabsContent>
-
-          <TabsContent value="jobs">
             <JobSearch />
           </TabsContent>
 

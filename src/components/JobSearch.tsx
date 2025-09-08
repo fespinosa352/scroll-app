@@ -335,22 +335,14 @@ const JobSearch = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="browse" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             <span>Browse Jobs</span>
           </TabsTrigger>
-          <TabsTrigger value="search" className="flex items-center gap-2">
-            <Search className="w-4 h-4" />
-            <span>Search Jobs</span>
-          </TabsTrigger>
           <TabsTrigger value="match" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             <span>Job Match</span>
-          </TabsTrigger>
-          <TabsTrigger value="analysis" disabled={!processedJob && !selectedWebJob} className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            <span>Analysis</span>
           </TabsTrigger>
         </TabsList>
 
@@ -413,174 +405,6 @@ const JobSearch = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="search" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="w-5 h-5" />
-                Find Jobs with AI
-              </CardTitle>
-              <CardDescription>
-                Let Claude search the web for job opportunities that match your criteria
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Job Title</label>
-                  <Input
-                    placeholder="e.g., Product Manager, Software Engineer"
-                    value={searchParams.jobTitle}
-                    onChange={(e) => setSearchParams({...searchParams, jobTitle: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Location</label>
-                  <Input
-                    placeholder="e.g., San Francisco, Remote, New York"
-                    value={searchParams.location}
-                    onChange={(e) => setSearchParams({...searchParams, location: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Experience Level</label>
-                  <select 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-md"
-                    value={searchParams.experienceLevel}
-                    onChange={(e) => setSearchParams({...searchParams, experienceLevel: e.target.value})}
-                  >
-                    <option value="Entry-level">Entry Level</option>
-                    <option value="Mid-level">Mid Level</option>
-                    <option value="Senior">Senior</option>
-                    <option value="Lead">Lead</option>
-                    <option value="Executive">Executive</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Skills (comma-separated)</label>
-                  <Input
-                    placeholder="e.g., React, Python, Product Management"
-                    value={searchParams.skills?.join(', ') || ''}
-                    onChange={(e) => setSearchParams({
-                      ...searchParams, 
-                      skills: e.target.value.split(',').map(s => s.trim()).filter(s => s)
-                    })}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="checkbox" 
-                  id="remote"
-                  checked={searchParams.remoteWork}
-                  onChange={(e) => setSearchParams({...searchParams, remoteWork: e.target.checked})}
-                />
-                <label htmlFor="remote" className="text-sm">Include remote opportunities</label>
-              </div>
-
-              <Button 
-                onClick={searchJobsWithClaude}
-                disabled={isSearching || !searchParams.jobTitle.trim()}
-                className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
-              >
-                {isSearching ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                    Searching with Claude AI...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    Search Jobs with AI
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {webJobs.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Found {webJobs.length} Job Opportunities
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {webJobs.map((job, index) => (
-                  <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => selectWebJob(job)}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{job.title}</CardTitle>
-                          <CardDescription className="flex items-center gap-2 mt-1">
-                            <Building className="w-4 h-4" />
-                            {job.company}
-                          </CardDescription>
-                        </div>
-                        <Badge variant="outline" className="ml-2">{job.source}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center gap-4 text-sm text-slate-600">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {job.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {job.posted}
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-slate-700 line-clamp-2">{job.description}</p>
-                      
-                      <div>
-                        <p className="text-xs font-medium text-slate-600 mb-1">Key Skills:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 4).map((skill, skillIndex) => (
-                            <Badge key={skillIndex} variant="secondary" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.skills.length > 4 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{job.skills.length - 4} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <Badge className={
-                          job.experienceLevel.toLowerCase().includes('senior') ? 'bg-blue-100 text-blue-800' :
-                          job.experienceLevel.toLowerCase().includes('junior') ? 'bg-green-100 text-green-800' :
-                          'bg-slate-100 text-slate-800'
-                        }>
-                          {job.experienceLevel}
-                        </Badge>
-                        {job.salaryRange && (
-                          <span className="text-xs text-slate-600">{job.salaryRange}</span>
-                        )}
-                      </div>
-
-                      <Button 
-                        className="w-full mt-3" 
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          selectWebJob(job);
-                        }}
-                      >
-                        Analyze This Job
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="match" className="space-y-4">
