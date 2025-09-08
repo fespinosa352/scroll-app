@@ -20,7 +20,8 @@ import {
   TrendingUp,
   FileText,
   Sparkles,
-  Clock
+  Clock,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,7 +76,7 @@ interface JobMatch {
 }
 
 const JobSearch = () => {
-  const [activeTab, setActiveTab] = useState("search");
+  const [activeTab, setActiveTab] = useState("browse");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -333,7 +334,11 @@ const JobSearch = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="browse" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            <span>Browse Jobs</span>
+          </TabsTrigger>
           <TabsTrigger value="search" className="flex items-center gap-2">
             <Search className="w-4 h-4" />
             <span>Search Jobs</span>
@@ -351,6 +356,67 @@ const JobSearch = () => {
             <span>Optimize</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="browse" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Browse Jobs on HiringCafe
+              </CardTitle>
+              <CardDescription>
+                Explore thousands of job opportunities and easily copy job descriptions for analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 dark:bg-blue-800 rounded-full p-2 flex-shrink-0">
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">How to use:</h4>
+                    <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 ml-4 list-decimal">
+                      <li>Browse jobs in the embedded HiringCafe below</li>
+                      <li>Click on any job to view its full description</li>
+                      <li>Copy the job description text</li>
+                      <li>Switch to the "Paste Job" tab and paste the description</li>
+                      <li>Analyze the job match with your resume</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <Button 
+                  onClick={() => window.open('https://hiring.cafe', '_blank')}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Globe className="w-4 h-4" />
+                  Open in New Tab
+                </Button>
+                <Button 
+                  onClick={() => setActiveTab('paste')}
+                  variant="default"
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Go to Paste Job
+                </Button>
+              </div>
+
+              <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                <iframe
+                  src="https://hiring.cafe"
+                  className="w-full h-[800px] border-0"
+                  title="HiringCafe Job Browser"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="search" className="space-y-4">
           <Card>
