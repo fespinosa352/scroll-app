@@ -141,6 +141,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
 
   // Convert optimized user profile data to legacy format
   useEffect(() => {
+    console.log('UserProfileData received:', userProfileData);
     if (userProfileData) {
       // Convert work experiences
       if (userProfileData.work_experiences && userProfileData.work_experiences.length > 0) {
@@ -196,15 +197,18 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
 
       // Convert personal info from profile
       if (userProfileData.display_name || userProfileData.email) {
-        setPersonalInfo({
+        const personalInfoData = {
           name: userProfileData.display_name || '',
           email: userProfileData.email || '',
           phone: userProfileData.phone || '',
           location: userProfileData.location || '',
           linkedinUrl: userProfileData.linkedin_url || '',
           professionalSummary: userProfileData.bio || ''
-        });
+        };
+        console.log('Setting personal info:', personalInfoData);
+        setPersonalInfo(personalInfoData);
       } else {
+        console.log('No personal info data found, setting to null');
         setPersonalInfo(null);
       }
 

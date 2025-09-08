@@ -333,6 +333,14 @@ const JobMatchAnalyzer = () => {
     const hasSkills = skills && skills.length > 0;
     const hasPersonalInfo = personalInfo && personalInfo.name;
     
+    console.log('Data check:', {
+      workExperience: workExperience?.length || 0,
+      education: education?.length || 0,
+      skills: skills?.length || 0,
+      personalInfo: personalInfo,
+      hasPersonalInfo
+    });
+    
     return (hasWorkExperience && hasSkills) || (hasEducation && hasSkills);
   };
 
