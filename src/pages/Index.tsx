@@ -376,22 +376,42 @@ linkedin.com/in/yourprofile
     }
   };
 
-  const handleExport = async (format: 'copy' | 'txt') => {
+  const handleExport = async (format: 'copy' | 'txt', content?: string) => {
     try {
-      // Create exportable resume data with correct typing
-      const resumeData = {
-        name: (currentEditingResume as any)?.name || 'Current Resume',
-        content: (currentEditingResume as any)?.content || {},
-        ats_score: (currentEditingResume as any)?.atsScore || null,
-        created_at: (currentEditingResume as any)?.createdDate || new Date().toISOString()
-      };
-
-      const success = await exportResume(resumeData, format);
-      
-      if (success) {
-        toast.success(format === 'copy' ? 'Resume copied to clipboard' : 'Resume exported');
+      if (format === 'copy' && content) {
+        // For copy, directly copy the markdown content
+        await navigator.clipboard.writeText(content);
+        toast.success('Resume content copied to clipboard');
+      } else if (format === 'txt' && content) {
+        // For txt download, create a simple text file
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `resume_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Resume downloaded as text file');
       } else {
-        toast.error('Export failed');
+        // Fallback to old method if no content provided
+        const resumeData = {
+          name: (currentEditingResume as any)?.name || 'Current Resume',
+          content: (currentEditingResume as any)?.content || {},
+          ats_score: (currentEditingResume as any)?.atsScore || null,
+          created_at: (currentEditingResume as any)?.createdDate || new Date().toISOString()
+        };
+
+        const success = await exportResume(resumeData, format);
+        
+        if (success) {
+          toast.success(format === 'copy' ? 'Resume copied to clipboard' : 'Resume exported');
+        } else {
+          toast.error('Export failed');
+        }
       }
     } catch (error) {
       console.error('Export error:', error);

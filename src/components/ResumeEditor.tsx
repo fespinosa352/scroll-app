@@ -30,7 +30,7 @@ import { ATSInsights } from './ATSInsights';
 interface ResumeEditorProps {
   initialContent?: string;
   onSave?: (markup: string, structured: any) => void;
-  onExport?: (format: 'copy' | 'txt') => void;
+  onExport?: (format: 'copy' | 'txt', content?: string) => void;
   selectedResumeId?: string;
   onResumeChange?: (resumeId: string) => void;
 }
@@ -163,7 +163,7 @@ linkedin.com/in/yourprofile
 
   const handleExport = (format: 'copy' | 'txt') => {
     if (onExport) {
-      onExport(format);
+      onExport(format, markupContent);
     }
   };
 

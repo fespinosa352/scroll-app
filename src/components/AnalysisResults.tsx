@@ -6,10 +6,15 @@ import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Plus } from "lucide-react";
 import { type JobAnalysis, useJobAnalysis } from "@/hooks/useJobAnalysis";
+
+// Extend JobAnalysis type to include critical_areas
+interface ExtendedJobAnalysis extends JobAnalysis {
+  critical_areas?: string[];
+}
 import { toast } from "sonner";
 
 interface AnalysisResultsProps {
-  analysis: JobAnalysis;
+  analysis: ExtendedJobAnalysis;
   onGenerateResume: () => void;
   onNavigateToVault?: () => void;
   recentlyCreatedResumeId?: string;
@@ -24,37 +29,50 @@ const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recent
   const getCriticalIssues = () => {
     const issues = [];
     
-    if (analysis.match_score < 60) {
-      issues.push({
-        title: "Low Skills Match",
-        description: "Your profile matches only a few required skills for this role",
-        severity: "high"
+    // Use critical_areas from analysis if available
+    if (analysis.critical_areas && analysis.critical_areas.length > 0) {
+      // Convert critical areas to issue format
+      analysis.critical_areas.forEach((area, index) => {
+        issues.push({
+          title: `Critical Area ${index + 1}`,
+          description: area,
+          severity: index === 0 ? "high" : "medium"
+        });
       });
-    }
-    
-    if (analysis.missing_skills.length > 3) {
-      issues.push({
-        title: "Missing Key Technologies",
-        description: `You're missing ${analysis.missing_skills.length} important skills mentioned in the job`,
-        severity: "medium"
-      });
-    }
-    
-    if (analysis.matched_skills.length < 3) {
-      issues.push({
-        title: "Weak Keyword Presence",
-        description: "Your resume may not pass initial ATS screening due to few matching keywords",
-        severity: "high"
-      });
-    }
+    } else {
+      // Fallback to original logic if no critical areas
+      if (analysis.match_score < 60) {
+        issues.push({
+          title: "Low Skills Match",
+          description: "Your profile matches only a few required skills for this role",
+          severity: "high"
+        });
+      }
+      
+      if (analysis.missing_skills.length > 3) {
+        issues.push({
+          title: "Missing Key Technologies",
+          description: `You're missing ${analysis.missing_skills.length} important skills mentioned in the job`,
+          severity: "medium"
+        });
+      }
+      
+      if (analysis.matched_skills.length < 3) {
+        issues.push({
+          title: "Weak Keyword Presence",
+          description: "Your resume may not pass initial ATS screening due to few matching keywords",
+          severity: "high"
+        });
+      }
 
-    // Always show at least one improvement opportunity
-    if (issues.length === 0) {
-      issues.push({
-        title: "Resume Enhancement Available",
-        description: "We can optimize your resume language to better match this specific role",
-        severity: "low"
-      });
+      // Always show at least one improvement opportunity
+      if (issues.length === 0) {
+        issues.push({
+          title: "Resume Enhancement Available",
+          description: "We can optimize your resume language to better match this specific role",
+          severity: "low"
+        });
+      }
     }
 
     return issues.slice(0, 3); // Top 3 issues
