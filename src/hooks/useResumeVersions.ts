@@ -50,6 +50,7 @@ export const useResumeVersions = () => {
 
   // Convert database resumes to ResumeVersion format
   useEffect(() => {
+    console.log('useResumeVersions: dbResumes changed, converting...', dbResumes.length);
     const convertedResumes = dbResumes.map(convertToResumeVersion);
     setResumes(convertedResumes);
   }, [dbResumes]);
@@ -143,6 +144,7 @@ export const useResumeVersions = () => {
   };
 
   const regenerateResumeWithLatestData = async (resumeId: string) => {
+    console.log('regenerateResumeWithLatestData called for:', resumeId);
     try {
       // Find the resume to regenerate
       const resumeToRefresh = dbResumes.find(r => r.id === resumeId);
@@ -157,19 +159,15 @@ export const useResumeVersions = () => {
         throw new Error('Resume missing original analysis data for regeneration');
       }
 
-      // Re-run the analysis with current profile data
-      // This will use the stored job description but current user profile
-      const updatedAnalysis = content.analysis;
-      
-      // Create updated resume content with same job targeting but fresh profile data
+      // Simply update the timestamp to indicate refresh
+      // The actual profile data will be pulled fresh when the resume is viewed/edited
       const updatedContent = {
         ...content,
-        analysis: updatedAnalysis,
-        regeneratedAt: new Date().toISOString(),
-        note: 'Refreshed with latest profile data'
+        lastRefreshed: new Date().toISOString(),
+        refreshNote: 'Resume refreshed - latest profile data will be used when editing'
       };
 
-      // Update the resume with refreshed content
+      // Update the resume with minimal change to avoid triggering unnecessary re-renders
       await updateResume(resumeId, {
         content: updatedContent,
         updated_at: new Date().toISOString()

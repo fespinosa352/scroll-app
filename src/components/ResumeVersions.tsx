@@ -78,6 +78,7 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
   };
 
   const handleRefreshResume = async (resumeId: string) => {
+    console.log('Refresh button clicked for resume:', resumeId);
     try {
       toast.loading('Refreshing resume with latest profile data...');
       await regenerateResumeWithLatestData(resumeId);
