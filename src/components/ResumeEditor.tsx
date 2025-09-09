@@ -21,6 +21,7 @@ import {
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
 import { useATSAnalyzer } from '@/hooks/useATSAnalyzer';
 import { useResumeVersions } from '@/hooks/useResumeVersions';
+import { useResumes } from '@/hooks/useResumes';
 import { QuickSuggestions } from './QuickSuggestions';
 import { MarkupGuide } from './MarkupGuide';
 import { ResumePreview } from './ResumePreview';
@@ -68,6 +69,62 @@ linkedin.com/in/yourprofile
   const { structuredData, convertMarkupToStructured, convertStructuredToMarkup } = useMarkupConverter();
   const { atsAnalysis, analyzeContent, isAnalyzing } = useATSAnalyzer();
   const { resumes } = useResumeVersions();
+  const { resumes: dbResumes } = useResumes(); // Get actual database resumes
+
+  // Load resume content when selectedResumeId changes
+  useEffect(() => {
+    if (selectedResumeId && dbResumes.length > 0) {
+      const selectedDbResume = dbResumes.find(r => r.id === selectedResumeId);
+      if (selectedDbResume && selectedDbResume.content) {
+        // Extract resume content from the database content object
+        const content = selectedDbResume.content as any;
+        let resumeContent = '';
+        
+        // Check if there's resumeContent in the content object
+        if (content.resumeContent && typeof content.resumeContent === 'string') {
+          resumeContent = content.resumeContent;
+        } else {
+          // Fallback: construct from structured data if available
+          resumeContent = `# Resume for ${content.targetRole || 'Position'}\n\n`;
+          if (content.company) {
+            resumeContent += `Target Company: ${content.company}\n\n`;
+          }
+          if (content.analysis?.match_score) {
+            resumeContent += `Match Score: ${content.analysis.match_score}%\n\n`;
+          }
+          if (content.analysis?.matched_skills) {
+            resumeContent += `Matched Skills: ${content.analysis.matched_skills.join(', ')}\n\n`;
+          }
+          resumeContent += `Please customize this resume with your specific experience and achievements...`;
+        }
+        
+        setMarkupContent(resumeContent);
+      }
+    } else if (!selectedResumeId) {
+      // Reset to default template when no resume is selected
+      setMarkupContent(initialContent || `# Your Name
+
+your.email@example.com
+(555) 123-4567
+linkedin.com/in/yourprofile
+
+## Professional Experience
+
+### Your Current Job Title
+**Your Company Name**
+
+- Add your key achievements here
+- Use action verbs and quantify results
+- Focus on impact and outcomes
+
+### Previous Position
+**Previous Company**
+
+- Another achievement with metrics
+- Show progression and growth
+- Highlight relevant skills`);
+    }
+  }, [selectedResumeId, dbResumes, initialContent]);
 
   // Real-time conversion and analysis
   const processContent = useCallback(async () => {

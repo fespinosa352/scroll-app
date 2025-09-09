@@ -259,14 +259,20 @@ const JobMatchAnalyzer = () => {
     ).slice(0, 6);
 
     const skillsMatchRatio = matchedSkills.length / Math.max(extractedKeywords.length, 1);
-    const baseScore = Math.round(skillsMatchRatio * 85) + 15;
+    const baseScore = Math.round(skillsMatchRatio * 70) + 10; // More realistic base scoring
     
     let dataCompletenessBonus = 0;
-    if (workExperience?.length > 0) dataCompletenessBonus += 5;
-    if (education?.length > 0) dataCompletenessBonus += 3;
-    if (certifications?.length > 0) dataCompletenessBonus += 2;
+    if (workExperience?.length > 0) dataCompletenessBonus += 8;
+    if (education?.length > 0) dataCompletenessBonus += 5;
+    if (certifications?.length > 0) dataCompletenessBonus += 3;
     
-    const matchScore = Math.min(baseScore + dataCompletenessBonus, 95);
+    // Experience bonus based on years and relevance
+    let experienceBonus = 0;
+    if (workExperience?.length > 0) {
+      experienceBonus += Math.min(workExperience.length * 2, 10); // Up to 10 points for multiple roles
+    }
+    
+    const matchScore = Math.min(baseScore + dataCompletenessBonus + experienceBonus, 100); // Allow up to 100%
 
     const recommendations = [
       `Emphasize ${matchedSkills.slice(0, 2).join(' and ')} prominently in your resume`,
