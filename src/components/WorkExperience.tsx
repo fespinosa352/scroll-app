@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Briefcase, Calendar, Building, Edit2, Trash2 } from "lucide-react";
+import { Plus, Briefcase, Calendar, Building, Edit2, Trash2, Target, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { WorkExperienceModal, WorkExperienceFormData } from "./WorkExperienceModal";
@@ -216,6 +216,35 @@ const WorkExperience = () => {
           ))
         )}
       </div>
+      
+      {/* Navigation Helper - Only show if user has experiences */}
+      {experiences.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Target className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-blue-900">Ready to optimize your resume?</h3>
+                  <p className="text-sm text-blue-700">
+                    Use your updated work experience to get better job matches in Resume Optimization.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => window.dispatchEvent(new CustomEvent('navigateToJobAnalysis'))}
+                className="bg-blue-600 hover:bg-blue-700"
+                size="sm"
+              >
+                Go to Resume Optimization
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

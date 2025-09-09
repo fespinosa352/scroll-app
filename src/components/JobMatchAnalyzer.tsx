@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +13,12 @@ import {
   Brain,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  RefreshCw,
+  Bell,
+  TrendingUp,
+  History,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useJobAnalysis, type JobAnalysis } from '@/hooks/useJobAnalysis';
@@ -82,10 +87,18 @@ const JobMatchAnalyzer = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recentlyCreatedResumeId, setRecentlyCreatedResumeId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('analysis');
+  const [previousAnalysis, setPreviousAnalysis] = useState<JobAnalysis | null>(null);
+  const [analysisTimestamp, setAnalysisTimestamp] = useState<string | null>(null);
+  const [profileUpdateDetected, setProfileUpdateDetected] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   
   const { getUserSkillNames, saveJobAnalysis } = useJobAnalysis();
   const { generateResumeFromAnalysis } = useResumeVersions();
   const { workExperience, education, certifications, skills, personalInfo } = useResumeData();
+  
+  // Track profile data for change detection
+  const profileDataRef = useRef({ workExperience, education, certifications, skills, personalInfo });
+  const [profileDataHash, setProfileDataHash] = useState('');
   const { convertMarkupToStructured } = useMarkupConverter();
 
   // Generate resume content from user data
@@ -217,9 +230,12 @@ const JobMatchAnalyzer = () => {
       const jobAnalysisResult = await performTraditionalAnalysis();
       setAnalysis(jobAnalysisResult);
       
-      // Save to database
+      // Save to database and update timestamps
       const savedAnalysis = await saveJobAnalysis(jobAnalysisResult);
       if (savedAnalysis) {
+        setAnalysisTimestamp(new Date().toISOString());
+        setProfileUpdateDetected(false);
+        updateProfileDataHash();
         toast.success("Job match analysis complete!");
       }
       
@@ -549,23 +565,143 @@ const JobMatchAnalyzer = () => {
       </Card>
 
 
+      {/* Profile Update Notification */}
+      {profileUpdateDetected && analysis && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-blue-900">Profile Updated</h3>
+                  <p className="text-sm text-blue-700">
+                    Your work experience or skills have been updated. Refresh analysis to see improved results.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleRefreshAnalysis}
+                disabled={isAnalyzing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isAnalyzing ? (
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Refresh Analysis
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Analysis Results */}
       {analysis && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
-          </TabsList>
+        <div className="space-y-4">
+          {/* Analysis Header with Refresh Button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold">Analysis Results</h2>
+              {analysisTimestamp && (
+                <Badge variant="secondary" className="text-xs">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Updated {getTimestampDisplay()}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {showComparison && previousAnalysis && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowComparison(!showComparison)}
+                >
+                  <History className="w-4 h-4 mr-2" />
+                  {showComparison ? 'Hide' : 'Show'} Comparison
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshAnalysis}
+                disabled={isAnalyzing || !jobDescription.trim()}
+              >
+                {isAnalyzing ? (
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Refresh
+              </Button>
+            </div>
+          </div>
 
-          <TabsContent value="analysis">
-            <AnalysisResults 
-              analysis={analysis} 
-              onGenerateResume={handleGenerateResume}
-              onNavigateToVault={handleNavigateToVault}
-              recentlyCreatedResumeId={recentlyCreatedResumeId}
-            />
-          </TabsContent>
+          {/* Comparison View */}
+          {showComparison && previousAnalysis && (
+            <Card className="border-green-200 bg-green-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <TrendingUp className="w-5 h-5" />
+                  Score Comparison
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-2">Previous Score</p>
+                    <div className="text-3xl font-bold text-slate-700">
+                      {previousAnalysis.match_score}%
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-2">Current Score</p>
+                    <div className="text-3xl font-bold text-green-600">
+                      {analysis.match_score}%
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  {analysis.match_score > previousAnalysis.match_score ? (
+                    <div className="flex items-center justify-center gap-2 text-green-600">
+                      <TrendingUp className="w-4 h-4" />
+                      <span className="font-medium">
+                        +{analysis.match_score - previousAnalysis.match_score} point improvement!
+                      </span>
+                    </div>
+                  ) : analysis.match_score < previousAnalysis.match_score ? (
+                    <div className="text-orange-600">
+                      <span className="font-medium">
+                        {analysis.match_score - previousAnalysis.match_score} point change
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-slate-600">
+                      <span className="font-medium">No score change</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        </Tabs>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="analysis">
+              <AnalysisResults 
+                analysis={analysis} 
+                onGenerateResume={handleGenerateResume}
+                onNavigateToVault={handleNavigateToVault}
+                recentlyCreatedResumeId={recentlyCreatedResumeId}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       )}
     </div>
   );
