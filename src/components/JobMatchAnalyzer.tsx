@@ -259,20 +259,33 @@ const JobMatchAnalyzer = () => {
     ).slice(0, 6);
 
     const skillsMatchRatio = matchedSkills.length / Math.max(extractedKeywords.length, 1);
-    const baseScore = Math.round(skillsMatchRatio * 70) + 10; // More realistic base scoring
     
-    let dataCompletenessBonus = 0;
-    if (workExperience?.length > 0) dataCompletenessBonus += 8;
-    if (education?.length > 0) dataCompletenessBonus += 5;
-    if (certifications?.length > 0) dataCompletenessBonus += 3;
+    // More realistic scoring that heavily weights skill match
+    let baseScore = Math.round(skillsMatchRatio * 100); // Base score purely on skill match (0-100%)
     
-    // Experience bonus based on years and relevance
-    let experienceBonus = 0;
-    if (workExperience?.length > 0) {
-      experienceBonus += Math.min(workExperience.length * 2, 10); // Up to 10 points for multiple roles
+    // Only give bonuses if there are actual skill matches
+    let relevancyBonus = 0;
+    if (skillsMatchRatio > 0.3) { // Only if 30%+ skill match
+      if (workExperience?.length > 0) relevancyBonus += 5;
+      if (education?.length > 0) relevancyBonus += 3;
+      if (certifications?.length > 0) relevancyBonus += 2;
     }
     
-    const matchScore = Math.min(baseScore + dataCompletenessBonus + experienceBonus, 100); // Allow up to 100%
+    // Experience relevancy - check if work experience titles/descriptions match job keywords
+    let experienceRelevancyBonus = 0;
+    if (workExperience?.length > 0 && skillsMatchRatio > 0.2) {
+      const experienceText = workExperience.map(exp => 
+        `${exp.position} ${exp.description}`.toLowerCase()
+      ).join(' ');
+      
+      const relevantKeywords = extractedKeywords.filter(keyword => 
+        experienceText.includes(keyword.toLowerCase())
+      );
+      
+      experienceRelevancyBonus = Math.min(relevantKeywords.length * 2, 8); // Max 8 points
+    }
+    
+    const matchScore = Math.min(baseScore + relevancyBonus + experienceRelevancyBonus, 100);
 
     const recommendations = [
       `Emphasize ${matchedSkills.slice(0, 2).join(' and ')} prominently in your resume`,
@@ -359,16 +372,36 @@ const JobMatchAnalyzer = () => {
   }, [jobDescription, performJobMatch]);
 
   const handleGenerateResume = async () => {
+    console.log('Generate resume clicked, analysis:', analysis);
+    
     if (!analysis) {
       toast.error("Please analyze a job first before generating a resume");
       return;
     }
+
+    if (!jobTitle.trim()) {
+      toast.error("Please enter a job title");
+      return;
+    }
     
-    // Generate the actual resume content with user's personal data
-    const resumeContent = generateResumeContent();
-    const newResume = await generateResumeFromAnalysis(analysis, resumeContent);
-    if (newResume) {
-      setRecentlyCreatedResumeId(newResume.id);
+    try {
+      // Generate the actual resume content with user's personal data
+      const resumeContent = generateResumeContent();
+      console.log('Generated resume content length:', resumeContent.length);
+      
+      toast.loading("Generating optimized resume...");
+      
+      const newResume = await generateResumeFromAnalysis(analysis, resumeContent);
+      
+      if (newResume) {
+        setRecentlyCreatedResumeId(newResume.id);
+        console.log('Resume generated successfully:', newResume.id);
+      } else {
+        throw new Error('Resume generation returned null');
+      }
+    } catch (error) {
+      console.error('Resume generation error:', error);
+      toast.error(`Failed to generate resume: ${error.message}`);
     }
   };
 
