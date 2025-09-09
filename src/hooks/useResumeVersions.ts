@@ -54,7 +54,7 @@ export const useResumeVersions = () => {
     setResumes(convertedResumes);
   }, [dbResumes]);
 
-  const generateResumeFromAnalysis = async (analysis: JobAnalysis) => {
+  const generateResumeFromAnalysis = async (analysis: JobAnalysis, resumeContent?: string) => {
     const resumeData = {
       name: `${analysis.job_title}${analysis.company ? ` - ${analysis.company}` : ''}`,
       content: {
@@ -62,7 +62,8 @@ export const useResumeVersions = () => {
         company: analysis.company || 'Unknown Company',
         matchedAchievements: analysis.matched_skills.length,
         jobAnalysisId: analysis.id,
-        analysis: analysis
+        analysis: analysis,
+        resumeContent: resumeContent || '' // Include the actual resume content
       },
       ats_score: analysis.match_score,
       imported_from: 'Job Analysis'

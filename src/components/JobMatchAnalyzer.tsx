@@ -358,7 +358,9 @@ const JobMatchAnalyzer = () => {
       return;
     }
     
-    const newResume = await generateResumeFromAnalysis(analysis);
+    // Generate the actual resume content with user's personal data
+    const resumeContent = generateResumeContent();
+    const newResume = await generateResumeFromAnalysis(analysis, resumeContent);
     if (newResume) {
       setRecentlyCreatedResumeId(newResume.id);
     }
