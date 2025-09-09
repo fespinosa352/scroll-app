@@ -102,6 +102,11 @@ const JobSearch = () => {
   const { workExperience, education, certifications, skills, personalInfo } = useResumeData();
   const { generateResumeFromJobData } = useResumeVersions();
 
+  // Detect if user is on Chrome
+  const isChrome = () => {
+    return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  };
+
   // Check if user has sufficient resume data for analysis
   const hasSufficientData = () => {
     const hasWorkExperience = workExperience && workExperience.length > 0;
@@ -375,19 +380,37 @@ const JobSearch = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Chrome-specific warning */}
+              {isChrome() && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-amber-100 dark:bg-amber-800 rounded-full p-2 flex-shrink-0">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-amber-900 dark:text-amber-100">Chrome Users Notice:</h4>
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        Due to Chrome's security policies, the "Copy Job Description" button may not work in the embedded view below. 
+                        For the best experience, we recommend opening HiringCafe in a new tab or manually selecting and copying text (Ctrl+C).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="flex items-center gap-2 mb-4">
                 <Button 
                   onClick={() => window.open('https://hiring.cafe', '_blank')}
-                  variant="outline"
+                  variant={isChrome() ? "default" : "outline"}
                   className="flex items-center gap-2"
                 >
                   <Globe className="w-4 h-4" />
-                  Open in New Tab
+                  {isChrome() ? "Open in New Tab (Recommended for Chrome)" : "Open in New Tab"}
                 </Button>
                 <Button 
                   onClick={() => setActiveTab('match')}
-                  variant="default"
+                  variant={isChrome() ? "outline" : "default"}
                   className="flex items-center gap-2"
                 >
                   <Target className="w-4 h-4" />
