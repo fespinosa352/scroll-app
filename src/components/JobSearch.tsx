@@ -400,7 +400,8 @@ const JobSearch = () => {
                   src="https://hiring.cafe"
                   className="w-full h-[800px] border-0"
                   title="HiringCafe Job Browser"
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-popups-to-escape-sandbox"
+                  allow="clipboard-read; clipboard-write"
                 />
               </div>
             </CardContent>
