@@ -41,7 +41,8 @@ export const useResumes = () => {
       setResumes(data || []);
     } catch (error) {
       console.error('Error fetching resumes:', error);
-      toast.error('Failed to load resumes');
+      console.error('Detailed error info:', { message: error.message, code: error.code, details: error.details });
+      toast.error(`Failed to load resumes: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
