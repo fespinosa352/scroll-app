@@ -454,6 +454,27 @@ const JobMatchAnalyzer = () => {
     }
   }, [jobDescription, performJobMatch]);
 
+  // Simple, direct refresh that always works
+  const handleRefreshAnalysis = useCallback(async () => {
+    if (!jobDescription.trim()) {
+      toast.error("Please enter a job description first");
+      return;
+    }
+    
+    console.log('Refreshing analysis with current data...');
+    
+    // Store previous for comparison
+    if (analysis) {
+      setPreviousAnalysis(analysis);
+      setShowComparison(true);
+    }
+    
+    // Simply re-run the job match analysis
+    await performJobMatch();
+    
+    toast.success("Analysis refreshed with latest profile data!");
+  }, [jobDescription, analysis, performJobMatch]);
+
   const handleGenerateResume = async () => {
     console.log('Generate resume clicked, analysis:', analysis);
     
@@ -565,33 +586,33 @@ const JobMatchAnalyzer = () => {
       </Card>
 
 
-      {/* Profile Update Notification */}
-      {profileUpdateDetected && analysis && (
-        <Card className="border-blue-200 bg-blue-50">
+      {/* Refresh Helper Card - Always visible when analysis exists */}
+      {analysis && (
+        <Card className="border-green-200 bg-green-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-blue-900">Profile Updated</h3>
-                  <p className="text-sm text-blue-700">
-                    Your work experience or skills have been updated. Refresh analysis to see improved results.
+                  <h3 className="font-medium text-green-900">Update Analysis</h3>
+                  <p className="text-sm text-green-700">
+                    Added new work experience or skills? Refresh to get an updated match score.
                   </p>
                 </div>
               </div>
               <Button 
                 onClick={handleRefreshAnalysis}
                 disabled={isAnalyzing}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-green-600 hover:bg-green-700"
               >
                 {isAnalyzing ? (
                   <Clock className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                Refresh Analysis
+                Refresh Now
               </Button>
             </div>
           </CardContent>
@@ -627,14 +648,15 @@ const JobMatchAnalyzer = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleRefreshAnalysis}
-                disabled={isAnalyzing || !jobDescription.trim()}
+                disabled={isAnalyzing}
+                className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
               >
                 {isAnalyzing ? (
                   <Clock className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                Refresh
+                Refresh Analysis
               </Button>
             </div>
           </div>
