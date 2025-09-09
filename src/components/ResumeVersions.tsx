@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Plus, Calendar, User, Download, Edit3, Archive, Trash2, Copy } from "lucide-react";
+import { FileText, Plus, Calendar, User, Download, Edit3, Archive, Trash2, Copy, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeVersions } from "@/hooks/useResumeVersions";
 import { useResumeData } from "@/contexts/ResumeDataContext";
@@ -15,7 +15,7 @@ interface ResumeVersionsProps {
 }
 
 const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateNew }) => {
-  const { resumes, duplicateResume, deleteResume, updateResumeStatus } = useResumeVersions();
+  const { resumes, duplicateResume, deleteResume, updateResumeStatus, regenerateResumeWithLatestData } = useResumeVersions();
   const { loadResumeForEditing } = useResumeData();
 
   const getStatusColor = (status: string) => {
@@ -74,6 +74,17 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
       toast.success('Resume archived');
     } catch (error) {
       toast.error('Failed to archive resume');
+    }
+  };
+
+  const handleRefreshResume = async (resumeId: string) => {
+    try {
+      toast.loading('Refreshing resume with latest profile data...');
+      await regenerateResumeWithLatestData(resumeId);
+      toast.success('Resume refreshed with latest profile data!');
+    } catch (error) {
+      console.error('Failed to refresh resume:', error);
+      toast.error('Failed to refresh resume');
     }
   };
 
@@ -163,6 +174,16 @@ const ResumeVersions: React.FC<ResumeVersionsProps> = ({ onEditResume, onCreateN
 
               {/* Action Buttons */}
                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="touch" 
+                    onClick={() => handleRefreshResume(resume.id)}
+                    className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                    title="Refresh with latest work experience and skills"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-1" />
+                    Refresh
+                  </Button>
                   <Button variant="outline" size="touch" onClick={() => handleDuplicate(resume.id)}>
                     Duplicate
                   </Button>

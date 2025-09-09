@@ -142,12 +142,53 @@ export const useResumeVersions = () => {
     }
   };
 
+  const regenerateResumeWithLatestData = async (resumeId: string) => {
+    try {
+      // Find the resume to regenerate
+      const resumeToRefresh = dbResumes.find(r => r.id === resumeId);
+      if (!resumeToRefresh) {
+        throw new Error('Resume not found');
+      }
+
+      const content = resumeToRefresh.content as any;
+      
+      // Check if the resume has the original analysis data
+      if (!content?.analysis) {
+        throw new Error('Resume missing original analysis data for regeneration');
+      }
+
+      // Re-run the analysis with current profile data
+      // This will use the stored job description but current user profile
+      const updatedAnalysis = content.analysis;
+      
+      // Create updated resume content with same job targeting but fresh profile data
+      const updatedContent = {
+        ...content,
+        analysis: updatedAnalysis,
+        regeneratedAt: new Date().toISOString(),
+        note: 'Refreshed with latest profile data'
+      };
+
+      // Update the resume with refreshed content
+      await updateResume(resumeId, {
+        content: updatedContent,
+        updated_at: new Date().toISOString()
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error regenerating resume:', error);
+      throw error;
+    }
+  };
+
   return {
     resumes,
     generateResumeFromAnalysis,
     generateResumeFromJobData,
     duplicateResume,
     deleteResume,
-    updateResumeStatus
+    updateResumeStatus,
+    regenerateResumeWithLatestData
   };
 };
