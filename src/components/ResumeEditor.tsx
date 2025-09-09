@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   FileText, 
   Eye, 
@@ -16,7 +17,9 @@ import {
   RefreshCw,
   Maximize,
   Minimize,
-  FolderOpen
+  FolderOpen,
+  ChevronDown,
+  Copy
 } from 'lucide-react';
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
 import { useATSAnalyzer } from '@/hooks/useATSAnalyzer';
@@ -26,6 +29,8 @@ import { QuickSuggestions } from './QuickSuggestions';
 import { MarkupGuide } from './MarkupGuide';
 import { ResumePreview } from './ResumePreview';
 import { ATSInsights } from './ATSInsights';
+import { copyToClipboardWithFormat } from '@/utils/formatters';
+import { toast } from 'sonner';
 
 interface ResumeEditorProps {
   initialContent?: string;
@@ -34,6 +39,8 @@ interface ResumeEditorProps {
   selectedResumeId?: string;
   onResumeChange?: (resumeId: string) => void;
 }
+
+type CopyFormat = 'plain' | 'rtf' | 'html';
 
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   initialContent = '',
@@ -164,6 +171,29 @@ linkedin.com/in/yourprofile
   const handleExport = (format: 'copy' | 'txt') => {
     if (onExport) {
       onExport(format, markupContent);
+    }
+  };
+
+  const handleCopyWithFormat = async (copyFormat: CopyFormat) => {
+    try {
+      const success = await copyToClipboardWithFormat(markupContent, copyFormat, {
+        includeContactInfo: true,
+        spacing: 'single'
+      });
+      
+      if (success) {
+        const formatName = {
+          plain: 'Plain Text',
+          rtf: 'Rich Text (RTF)',
+          html: 'Word Format (HTML)'
+        }[copyFormat];
+        toast.success(`Resume copied as ${formatName}`);
+      } else {
+        toast.error('Failed to copy resume');
+      }
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast.error('Failed to copy resume');
     }
   };
 
@@ -330,9 +360,34 @@ linkedin.com/in/yourprofile
         <Button size="lg" className="px-8" onClick={handleSave}>
           Save Resume
         </Button>
-        <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('copy')}>
-          Copy to Clipboard
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="lg" variant="outline" className="px-8">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to Clipboard
+              <ChevronDown className="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => handleCopyWithFormat('plain')}>
+              <FileText className="w-4 h-4 mr-2" />
+              Plain Text
+              <span className="ml-auto text-xs text-slate-500">Basic formatting</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleCopyWithFormat('rtf')}>
+              <FileText className="w-4 h-4 mr-2" />
+              Rich Text (RTF)
+              <span className="ml-auto text-xs text-slate-500">Word compatible</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleCopyWithFormat('html')}>
+              <FileText className="w-4 h-4 mr-2" />
+              Word Format
+              <span className="ml-auto text-xs text-slate-500">Best for Word</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         <Button size="lg" variant="outline" className="px-8" onClick={() => handleExport('txt')}>
           Download TXT
         </Button>

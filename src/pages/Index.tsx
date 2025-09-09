@@ -378,11 +378,7 @@ linkedin.com/in/yourprofile
 
   const handleExport = async (format: 'copy' | 'txt', content?: string) => {
     try {
-      if (format === 'copy' && content) {
-        // For copy, directly copy the markdown content
-        await navigator.clipboard.writeText(content);
-        toast.success('Resume content copied to clipboard');
-      } else if (format === 'txt' && content) {
+      if (format === 'txt' && content) {
         // For txt download, create a simple text file
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
