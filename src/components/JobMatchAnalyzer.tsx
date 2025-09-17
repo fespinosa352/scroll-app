@@ -99,6 +99,7 @@ const JobMatchAnalyzer = () => {
   // Track profile data for change detection
   const profileDataRef = useRef({ workExperience, education, certifications, skills, personalInfo });
   const [profileDataHash, setProfileDataHash] = useState('');
+  const lastAnalyzedJobDescription = useRef<string>('');
   const { convertMarkupToStructured } = useMarkupConverter();
 
   // Generate optimized resume content from user data and job analysis
@@ -222,8 +223,15 @@ const JobMatchAnalyzer = () => {
 
   const performJobMatch = useCallback(async () => {
     if (!jobDescription.trim()) return;
+    
+    // Prevent multiple concurrent analyses
+    if (isAnalyzing) return;
+    
+    // Prevent duplicate analysis of the same job description
+    if (lastAnalyzedJobDescription.current === jobDescription.trim()) return;
 
     setIsAnalyzing(true);
+    lastAnalyzedJobDescription.current = jobDescription.trim();
     
     try {
       const resumeContent = generateResumeContent();
@@ -496,11 +504,18 @@ const JobMatchAnalyzer = () => {
 
   // Auto-analyze when job description changes
   useEffect(() => {
+    // Reset the last analyzed description when job description actually changes
+    if (lastAnalyzedJobDescription.current !== jobDescription.trim()) {
+      lastAnalyzedJobDescription.current = '';
+    }
+    
     if (jobDescription.trim() && hasSufficientData()) {
-      const timer = setTimeout(performJobMatch, 1000);
+      const timer = setTimeout(() => {
+        performJobMatch();
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [jobDescription, performJobMatch]);
+  }, [jobDescription]); // Remove performJobMatch from dependencies to prevent infinite loop
 
 
   // Helper function to update profile data hash for change detection
