@@ -341,10 +341,20 @@ const JobMatchAnalyzer = () => {
         recommendations.unshift(`Emphasize ${allMatches.slice(0, 2).join(' and ')} prominently in your resume`);
       }
 
+      // Sanitize job description to prevent encoding errors
+      const sanitizeText = (text: string) => {
+        return text
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+          .replace(/↵/g, '\n') // Replace special line break symbols with normal line breaks
+          .replace(/[^\x20-\x7E\n\r\t]/g, '') // Keep only printable ASCII characters and basic whitespace
+          .substring(0, 10000) // Limit length to prevent database issues
+          .trim();
+      };
+
       const analysisResult = {
-        job_title: jobTitle,
-        company: company,
-        job_description: jobDescription,
+        job_title: jobTitle.substring(0, 255), // Limit job title length
+        company: company.substring(0, 255), // Limit company length
+        job_description: sanitizeText(jobDescription),
         match_score: matchScore,
         matched_skills: allMatches.map(skill => 
           skill.split(' ').map(word => 
