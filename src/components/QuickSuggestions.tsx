@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useResumeData } from '@/contexts/ResumeDataContext';
 
 interface QuickSuggestionsProps {
   onInsert: (suggestion: string) => void;
@@ -20,6 +22,8 @@ export const QuickSuggestions: React.FC<QuickSuggestionsProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { workExperience, education, skills, certifications } = useResumeData();
 
   // Fallback static suggestions
   const fallbackSuggestions = [
@@ -32,14 +36,51 @@ export const QuickSuggestions: React.FC<QuickSuggestionsProps> = ({
   ];
 
   const generatePersonalizedSuggestions = async () => {
+    if (!user) {
+      setSuggestions(fallbackSuggestions);
+      setError('Please sign in to get personalized suggestions');
+      return;
+    }
+
+    // Check if we have sufficient resume data
+    if (!workExperience?.length && !skills?.length) {
+      setSuggestions(fallbackSuggestions);
+      setError('Add your work experience and skills to get personalized suggestions');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
+      // Prepare user's resume data for AI analysis
+      const resumeData = {
+        workExperience: workExperience?.map(exp => ({
+          position: exp.position,
+          company: exp.company,
+          description: exp.description,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          isCurrentRole: exp.isCurrentRole
+        })) || [],
+        skills: skills || [],
+        education: education?.map(edu => ({
+          degree: edu.degree,
+          institution: edu.institution,
+          fieldOfStudy: edu.fieldOfStudy
+        })) || [],
+        certifications: certifications?.map(cert => ({
+          name: cert.name,
+          issuer: cert.issuer
+        })) || []
+      };
+
       const { data, error } = await supabase.functions.invoke('generate-resume-suggestions', {
         body: {
           targetRole: targetRole || 'Software Engineer',
-          jobDescription: jobDescription || ''
+          jobDescription: jobDescription || '',
+          resumeData: resumeData,
+          userId: user.id
         }
       });
 
@@ -50,16 +91,17 @@ export const QuickSuggestions: React.FC<QuickSuggestionsProps> = ({
 
       if (data?.suggestions && data.suggestions.length > 0) {
         setSuggestions(data.suggestions);
-        toast.success('Generated personalized suggestions based on your profile!');
+        setError(null);
+        toast.success(`Generated ${data.suggestions.length} personalized suggestions based on your ${targetRole || 'role'} profile!`);
       } else {
-        throw new Error('No suggestions returned');
+        throw new Error('No suggestions returned from AI');
       }
     } catch (error) {
-      console.error('Error generating suggestions:', error);
-      setError(error.message);
+      console.error('Error generating personalized suggestions:', error);
+      setError('Using default suggestions - AI optimization temporarily unavailable');
       // Fall back to static suggestions
       setSuggestions(fallbackSuggestions);
-      toast.error('Using default suggestions. Try again for personalized ones.');
+      toast.error('Using default suggestions. Your resume data is available but AI optimization failed.');
     } finally {
       setIsLoading(false);
     }
