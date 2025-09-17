@@ -101,8 +101,22 @@ const JobMatchAnalyzer = () => {
   const [profileDataHash, setProfileDataHash] = useState('');
   const { convertMarkupToStructured } = useMarkupConverter();
 
-  // Generate resume content from user data
-  const generateResumeContent = useCallback(() => {
+  // Generate optimized resume content from user data and job analysis
+  const generateResumeContent = useCallback((jobAnalysis?: JobAnalysis) => {
+    // If we have job analysis, use the optimizer for targeted content
+    if (jobAnalysis) {
+      const { ResumeOptimizer } = require('@/services/resumeOptimizer');
+      const optimizedContent = ResumeOptimizer.optimizeResumeForJob(jobAnalysis, {
+        personalInfo,
+        workExperience,
+        education,
+        certifications,
+        skills
+      });
+      return ResumeOptimizer.generateResumeContent(optimizedContent);
+    }
+    
+    // Fallback to original logic for backward compatibility
     let content = '';
     
     // Personal Info
@@ -114,10 +128,10 @@ const JobMatchAnalyzer = () => {
       content += '\n';
     }
 
-    // Work Experience
+    // Work Experience (limited to most recent for fallback)
     if (workExperience?.length > 0) {
       content += '## Professional Experience\n\n';
-      workExperience.forEach(exp => {
+      workExperience.slice(0, 3).forEach(exp => {
         content += `### ${exp.position}\n`;
         content += `**${exp.company}**\n`;
         if (exp.startDate || exp.endDate) {
@@ -136,10 +150,10 @@ const JobMatchAnalyzer = () => {
       });
     }
 
-    // Education
+    // Education (limited for fallback)
     if (education?.length > 0) {
       content += '## Education\n\n';
-      education.forEach(edu => {
+      education.slice(0, 2).forEach(edu => {
         content += `### ${edu.degree}\n`;
         content += `**${edu.institution}**\n`;
         if (edu.fieldOfStudy) content += `${edu.fieldOfStudy}\n`;
@@ -152,19 +166,19 @@ const JobMatchAnalyzer = () => {
       });
     }
 
-    // Skills
+    // Skills (limited for fallback)
     if (skills?.length > 0) {
       content += '## Skills\n\n';
-      skills.forEach(skill => {
+      skills.slice(0, 10).forEach(skill => {
         content += `- ${skill}\n`;
       });
       content += '\n';
     }
 
-    // Certifications
+    // Certifications (limited for fallback)
     if (certifications?.length > 0) {
       content += '## Certifications\n\n';
-      certifications.forEach(cert => {
+      certifications.slice(0, 3).forEach(cert => {
         content += `### ${cert.name}\n`;
         content += `**${cert.issuer}**\n`;
         if (cert.issueDate) {
@@ -455,8 +469,31 @@ const JobMatchAnalyzer = () => {
   }, [jobDescription, performJobMatch]);
 
 
+  // Helper function to update profile data hash for change detection
+  const updateProfileDataHash = () => {
+    const currentData = JSON.stringify({ workExperience, education, certifications, skills, personalInfo });
+    const hash = btoa(currentData).slice(0, 10); // Simple hash
+    setProfileDataHash(hash);
+  };
+
+  // Helper function to format timestamp display
+  const getTimestampDisplay = () => {
+    if (!analysisTimestamp) return '';
+    const date = new Date(analysisTimestamp);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
   const handleGenerateResume = async () => {
-    console.log('Generate resume clicked, analysis:', analysis);
     
     if (!analysis) {
       toast.error("Please analyze a job first before generating a resume");
@@ -470,7 +507,7 @@ const JobMatchAnalyzer = () => {
     
     try {
       // Generate the actual resume content with user's personal data
-      const resumeContent = generateResumeContent();
+      const resumeContent = generateResumeContent(analysis);
       console.log('Generated resume content length:', resumeContent.length);
       
       toast.loading("Generating optimized resume...");

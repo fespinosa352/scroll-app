@@ -164,7 +164,7 @@ export const useResumeVersions = () => {
 
       // Get fresh user profile data from the database
       const { data: freshWorkExperience } = await supabase
-        .from('work_experience')
+        .from('work_experiences')
         .select('*')
         .eq('user_id', user?.id)
         .order('start_date', { ascending: false });
@@ -186,68 +186,60 @@ export const useResumeVersions = () => {
         .eq('user_id', user?.id)
         .order('issue_date', { ascending: false });
 
-      // Generate updated resume content with fresh data
+      // Generate updated resume content with fresh data using optimizer if analysis exists
       let updatedResumeContent = '';
       
-      // Add work experience
-      if (freshWorkExperience && freshWorkExperience.length > 0) {
-        updatedResumeContent += '## Professional Experience\n\n';
-        freshWorkExperience.forEach(exp => {
-          updatedResumeContent += `### ${exp.position}\n`;
-          updatedResumeContent += `**${exp.company}**\n`;
-          if (exp.start_date || exp.end_date) {
-            const start = exp.start_date ? new Date(exp.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
-            const end = exp.is_current_role ? 'Present' : (exp.end_date ? new Date(exp.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '');
-            updatedResumeContent += `${start} - ${end}\n\n`;
-          }
-          if (exp.description) {
-            const bullets = exp.description.split('\n').filter(line => line.trim());
-            bullets.forEach(bullet => {
-              const cleanBullet = bullet.replace(/^[•\-*]\s*/, '');
-              updatedResumeContent += `- ${cleanBullet}\n`;
-            });
-          }
-          updatedResumeContent += '\n';
-        });
-      }
-
-      // Add education
-      if (freshEducation && freshEducation.length > 0) {
-        updatedResumeContent += '## Education\n\n';
-        freshEducation.forEach(edu => {
-          updatedResumeContent += `### ${edu.degree}\n`;
-          updatedResumeContent += `**${edu.institution}**\n`;
-          if (edu.field_of_study) updatedResumeContent += `${edu.field_of_study}\n`;
-          if (edu.start_date) {
-            const year = new Date(edu.start_date).getFullYear();
-            updatedResumeContent += `${year}\n`;
-          }
-          if (edu.gpa) updatedResumeContent += `GPA: ${edu.gpa}\n`;
-          updatedResumeContent += '\n';
-        });
-      }
-
-      // Add skills
-      if (freshSkills && freshSkills.length > 0) {
-        updatedResumeContent += '## Skills\n\n';
-        freshSkills.forEach(skill => {
-          updatedResumeContent += `- ${skill.skill_name}\n`;
-        });
-        updatedResumeContent += '\n';
-      }
-
-      // Add certifications
-      if (freshCertifications && freshCertifications.length > 0) {
-        updatedResumeContent += '## Certifications\n\n';
-        freshCertifications.forEach(cert => {
-          updatedResumeContent += `### ${cert.name}\n`;
-          updatedResumeContent += `**${cert.issuer}**\n`;
-          if (cert.issue_date) {
-            const year = new Date(cert.issue_date).getFullYear();
-            updatedResumeContent += `${year}\n`;
-          }
-          updatedResumeContent += '\n';
-        });
+      if (content?.analysis) {
+        // Use the optimizer for job-targeted content
+        try {
+          const { ResumeOptimizer } = require('@/services/resumeOptimizer');
+          
+          // Convert database format to optimizer format
+          const userData = {
+            workExperience: freshWorkExperience?.map(exp => ({
+              position: exp.title,
+              company: exp.company_name,
+              startDate: exp.start_date,
+              endDate: exp.end_date,
+              isCurrentRole: exp.is_current,
+              description: exp.description
+            })),
+            education: freshEducation?.map(edu => ({
+              degree: edu.degree,
+              institution: edu.institution,
+              fieldOfStudy: edu.field_of_study,
+              startDate: edu.start_date,
+              gpa: edu.gpa
+            })),
+            skills: freshSkills?.map(skill => skill.skill_name),
+            certifications: freshCertifications?.map(cert => ({
+              name: cert.name,
+              issuer: cert.issuing_organization,
+              issueDate: cert.issue_date
+            }))
+          };
+          
+          const optimizedContent = ResumeOptimizer.optimizeResumeForJob(content.analysis, userData);
+          updatedResumeContent = ResumeOptimizer.generateResumeContent(optimizedContent);
+          
+        } catch (error) {
+          console.error('Error using optimizer, falling back to standard generation:', error);
+          // Fall back to standard generation if optimizer fails
+          updatedResumeContent = generateStandardResumeContent(
+            freshWorkExperience || [], 
+            freshEducation || [], 
+            freshSkills || [], 
+            freshCertifications || []
+          );
+        }
+      } else {
+        // Standard generation for resumes without analysis
+        updatedResumeContent = generateStandardResumeContent(
+          freshWorkExperience || [], 
+          freshEducation || [], 
+          freshSkills || [], 
+          freshCertifications || []
+        );
       }
 
       // Update the resume content with fresh data
@@ -271,6 +263,79 @@ export const useResumeVersions = () => {
       console.error('Error regenerating resume:', error);
       throw error;
     }
+  };
+
+  // Helper method for standard resume generation (fallback)
+  const generateStandardResumeContent = (
+    freshWorkExperience: any[], 
+    freshEducation: any[], 
+    freshSkills: any[], 
+    freshCertifications: any[]
+  ): string => {
+    let content = '';
+    
+    // Add work experience
+    if (freshWorkExperience && freshWorkExperience.length > 0) {
+      content += '## Professional Experience\n\n';
+      freshWorkExperience.forEach(exp => {
+        content += `### ${exp.title}\n`;
+        content += `**${exp.company_name || 'Unknown Company'}**\n`;
+        if (exp.start_date || exp.end_date) {
+          const start = exp.start_date ? new Date(exp.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+          const end = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '');
+          content += `${start} - ${end}\n\n`;
+        }
+        if (exp.description) {
+          const bullets = exp.description.split('\n').filter((line: string) => line.trim());
+          bullets.forEach((bullet: string) => {
+            const cleanBullet = bullet.replace(/^[•\-*]\s*/, '');
+            content += `- ${cleanBullet}\n`;
+          });
+        }
+        content += '\n';
+      });
+    }
+
+    // Add education
+    if (freshEducation && freshEducation.length > 0) {
+      content += '## Education\n\n';
+      freshEducation.forEach(edu => {
+        content += `### ${edu.degree}\n`;
+        content += `**${edu.institution}**\n`;
+        if (edu.field_of_study) content += `${edu.field_of_study}\n`;
+        if (edu.start_date) {
+          const year = new Date(edu.start_date).getFullYear();
+          content += `${year}\n`;
+        }
+        if (edu.gpa) content += `GPA: ${edu.gpa}\n`;
+        content += '\n';
+      });
+    }
+
+    // Add skills
+    if (freshSkills && freshSkills.length > 0) {
+      content += '## Skills\n\n';
+      freshSkills.forEach(skill => {
+        content += `- ${skill.skill_name}\n`;
+      });
+      content += '\n';
+    }
+
+    // Add certifications
+    if (freshCertifications && freshCertifications.length > 0) {
+      content += '## Certifications\n\n';
+      freshCertifications.forEach(cert => {
+        content += `### ${cert.name}\n`;
+        content += `**${cert.issuing_organization}**\n`;
+        if (cert.issue_date) {
+          const year = new Date(cert.issue_date).getFullYear();
+          content += `${year}\n`;
+        }
+        content += '\n';
+      });
+    }
+
+    return content;
   };
 
   return {
