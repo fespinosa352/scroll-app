@@ -21,25 +21,27 @@ serve(async (req) => {
       throw new Error('ANTHROPIC_API_KEY is not set');
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with authorization header
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Set the auth header for the supabase client
-    supabase.auth.setSession({
-      access_token: authHeader.replace('Bearer ', ''),
-      refresh_token: '',
+    // Create supabase client with the auth token
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        }
+      }
     });
 
     // Get user from auth header
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
     if (userError || !user) {
       console.error('Auth error:', userError);
       throw new Error('Unauthorized');
