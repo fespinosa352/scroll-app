@@ -219,7 +219,7 @@ export const useResumeVersions = () => {
             }))
           };
           
-          const optimizedContent = ResumeOptimizer.optimizeResumeForJob(content.analysis, userData);
+          const optimizedContent = await ResumeOptimizer.optimizeResumeForJob(content.analysis, userData);
           updatedResumeContent = ResumeOptimizer.generateResumeContent(optimizedContent);
           
         } catch (error) {

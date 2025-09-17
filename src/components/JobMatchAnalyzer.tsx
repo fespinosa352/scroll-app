@@ -104,11 +104,11 @@ const JobMatchAnalyzer = () => {
   const { convertMarkupToStructured } = useMarkupConverter();
 
   // Generate optimized resume content from user data and job analysis
-  const generateResumeContent = useCallback((jobAnalysis?: JobAnalysis) => {
+  const generateResumeContent = useCallback(async (jobAnalysis?: JobAnalysis) => {
     // If we have job analysis, use the optimizer for targeted content
     if (jobAnalysis) {
       try {
-        const optimizedContent = ResumeOptimizer.optimizeResumeForJob(jobAnalysis, {
+        const optimizedContent = await ResumeOptimizer.optimizeResumeForJob(jobAnalysis, {
           personalInfo,
           workExperience,
           education,
@@ -239,7 +239,7 @@ const JobMatchAnalyzer = () => {
     lastAnalyzedJobDescription.current = jobDescription.trim();
     
     try {
-      const resumeContent = generateResumeContent();
+      const resumeContent = await generateResumeContent();
       
       // Remove Claude analysis for enhanced scoring
       setClaudeAnalysis(null);
@@ -575,7 +575,7 @@ const JobMatchAnalyzer = () => {
     
     try {
       // Generate the actual resume content with user's personal data
-      const resumeContent = generateResumeContent(analysis);
+      const resumeContent = await generateResumeContent(analysis);
       console.log('Generated resume content length:', resumeContent.length);
       
       toast.loading("Generating optimized resume...");

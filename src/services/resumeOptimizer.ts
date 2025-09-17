@@ -17,7 +17,7 @@ export class ResumeOptimizer {
   /**
    * Generate optimized resume content based on job analysis and user data
    */
-  static optimizeResumeForJob(
+  static async optimizeResumeForJob(
     jobAnalysis: JobAnalysisData,
     userData: {
       personalInfo?: any;
@@ -26,7 +26,7 @@ export class ResumeOptimizer {
       certifications?: any[];
       skills?: string[];
     }
-  ): OptimizedResumeContent {
+  ): Promise<OptimizedResumeContent> {
     
     // Optimize work experiences
     const optimizedWorkExperiences = this.optimizeWorkExperiences(
@@ -52,13 +52,16 @@ export class ResumeOptimizer {
       jobAnalysis
     );
     
+    // Generate AI-optimized summary
+    const optimizedSummary = await this.generateOptimizedSummary(userData, jobAnalysis);
+    
     return {
       personalInfo: userData.personalInfo,
       workExperiences: optimizedWorkExperiences,
       skills: optimizedSkills,
       education: optimizedEducation,
       certifications: optimizedCertifications,
-      summary: this.generateOptimizedSummary(userData.personalInfo, jobAnalysis)
+      summary: optimizedSummary
     };
   }
   
@@ -148,15 +151,62 @@ export class ResumeOptimizer {
   /**
    * Generate optimized professional summary
    */
-  private static generateOptimizedSummary(
-    personalInfo: any, 
+  /**
+   * Generate AI-optimized professional summary based on job requirements and user data
+   */
+  static async generateOptimizedSummary(
+    userData: {
+      personalInfo?: any;
+      workExperience?: any[];
+      education?: any[];
+      certifications?: any[];
+      skills?: string[];
+    },
+    jobAnalysis: JobAnalysisData
+  ): Promise<string> {
+    try {
+      // Import supabase here to avoid circular dependencies
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('generate-optimized-summary', {
+        body: {
+          userData,
+          jobAnalysis,
+          targetRole: jobAnalysis.job_title,
+          jobDescription: jobAnalysis.job_description
+        }
+      });
+
+      if (error) {
+        console.error('Summary optimization error:', error);
+        // Fallback to existing summary or generate basic one
+        return this.generateFallbackSummary(userData, jobAnalysis);
+      }
+
+      return data?.optimizedSummary || this.generateFallbackSummary(userData, jobAnalysis);
+    } catch (error) {
+      console.error('Error generating optimized summary:', error);
+      return this.generateFallbackSummary(userData, jobAnalysis);
+    }
+  }
+
+  /**
+   * Generate fallback summary when AI optimization fails
+   */
+  private static generateFallbackSummary(
+    userData: any,
     jobAnalysis: JobAnalysisData
   ): string {
-    if (!personalInfo?.professionalSummary) return '';
+    if (userData.personalInfo?.professionalSummary) {
+      return userData.personalInfo.professionalSummary;
+    }
     
-    // For now, return the existing summary
-    // This could be enhanced with AI-powered optimization later
-    return personalInfo.professionalSummary;
+    // Generate basic summary from user data if no existing summary
+    const totalExperience = userData.workExperience?.length || 0;
+    const topSkills = userData.skills?.slice(0, 3).join(', ') || 'various technologies';
+    const targetRole = jobAnalysis.job_title || 'professional';
+    
+    return `Experienced ${targetRole.toLowerCase()} with ${totalExperience}+ years of experience in ${topSkills}. Proven track record of delivering results and driving organizational success.`;
   }
   
   /**
