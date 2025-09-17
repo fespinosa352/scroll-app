@@ -277,18 +277,7 @@ const JobSearch = () => {
 
       setJobMatch(match);
 
-      // Save interaction to database
-      if (processedJob.job_id) {
-        await supabase.from('job_user_interactions').insert({
-          user_id: user?.id,
-          job_id: processedJob.job_id,
-          interaction_type: 'analyzed',
-          match_score: match.match_score,
-          matched_skills: match.matched_skills,
-          missing_skills: match.missing_skills,
-          recommendations: match.recommendations
-        });
-      }
+      console.log('Job analysis complete for:', processedJob.title);
 
       toast.success("Job analysis complete!");
     } catch (error) {
@@ -311,16 +300,6 @@ const JobSearch = () => {
       const newResume = await generateResumeFromJobData(processedJob, jobMatch, resumeName);
       
       if (newResume) {
-        // Save interaction
-        if (processedJob.job_id) {
-          await supabase.from('job_user_interactions').insert({
-            user_id: user?.id,
-            job_id: processedJob.job_id,
-            interaction_type: 'resume_generated',
-            generated_resume_id: newResume.id
-          });
-        }
-        
         toast.success("Optimized resume generated!");
         // Navigate to editor or resume vault
         window.dispatchEvent(new CustomEvent('navigateToEditor', { detail: { resumeId: newResume.id } }));

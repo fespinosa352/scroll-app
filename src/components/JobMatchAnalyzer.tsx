@@ -220,7 +220,6 @@ const JobMatchAnalyzer = () => {
     }
   }, []);
 
-  // Enhanced job matching logic
   const performJobMatch = useCallback(async () => {
     if (!jobDescription.trim()) return;
 
@@ -263,87 +262,112 @@ const JobMatchAnalyzer = () => {
 
   // Enhanced analysis with proper keyword matching
   const performTraditionalAnalysis = useCallback(async () => {
-    const jobKeywords = extractJobKeywords(jobDescription);
-    const workHistoryText = getWorkHistoryText();
-    
-    // Direct keyword matches in work history
-    const directMatches = findDirectMatches(jobKeywords, workHistoryText);
-    const userSkillNames = getUserSkillNames();
-    const resumeSkillNames = skills || [];
-    const allUserSkills = [...new Set([...userSkillNames, ...resumeSkillNames])];
-    
-    // Skill matches from user's skills list
-    const skillMatches = jobKeywords.filter(keyword => 
-      allUserSkills.some(userSkill => 
-        userSkill.toLowerCase().includes(keyword.toLowerCase()) ||
-        keyword.toLowerCase().includes(userSkill.toLowerCase())
-      )
-    );
-    
-    const allMatches = [...new Set([...directMatches, ...skillMatches])];
-    const missingKeywords = jobKeywords.filter(keyword => !allMatches.includes(keyword));
-    
-    let matchScore = 0;
-    let criticalAreas: string[] = [];
-    
-    if (allMatches.length > 0) {
-      // Calculate score based on matches found
-      const matchRatio = allMatches.length / jobKeywords.length;
-      matchScore = Math.round(matchRatio * 85); // Base score from matches
+    try {
+      console.log('Starting traditional analysis...');
+      console.log('Job description length:', jobDescription.length);
+      console.log('Job title:', jobTitle);
+      console.log('Company:', company);
       
-      // Bonus for data completeness
-      if (workExperience?.length > 0) matchScore += 5;
-      if (education?.length > 0) matchScore += 3;
-      if (certifications?.length > 0) matchScore += 2;
+      const jobKeywords = extractJobKeywords(jobDescription);
+      console.log('Extracted job keywords:', jobKeywords);
       
-      matchScore = Math.min(matchScore, 95); // Cap at 95% for keyword-based matching
-    } else {
-      // No direct matches - use AI fallback
-      matchScore = await performAIFallbackAnalysis(jobDescription, workHistoryText);
-      criticalAreas.push(
-        'No direct keyword matches found between job description and work history.',
-        'Consider using AI analysis to identify transferable skills and experience.',
-        'Review job requirements and align your experience descriptions accordingly.'
+      const workHistoryText = getWorkHistoryText();
+      console.log('Work history text length:', workHistoryText.length);
+      
+      // Direct keyword matches in work history
+      const directMatches = findDirectMatches(jobKeywords, workHistoryText);
+      console.log('Direct matches found:', directMatches);
+      
+      const userSkillNames = getUserSkillNames();
+      const resumeSkillNames = skills || [];
+      const allUserSkills = [...new Set([...userSkillNames, ...resumeSkillNames])];
+      console.log('All user skills:', allUserSkills.length, 'skills');
+      
+      // Skill matches from user's skills list
+      const skillMatches = jobKeywords.filter(keyword => 
+        allUserSkills.some(userSkill => 
+          userSkill.toLowerCase().includes(keyword.toLowerCase()) ||
+          keyword.toLowerCase().includes(userSkill.toLowerCase())
+        )
       );
-    }
-    
-    // Add critical areas for missing important keywords
-    if (missingKeywords.length > 0) {
-      criticalAreas.push(
-        `Missing keywords: ${missingKeywords.slice(0, 5).join(', ')}`,
-        'Consider adding relevant experience or training in these areas.'
-      );
-    }
+      console.log('Skill matches found:', skillMatches);
+      
+      const allMatches = [...new Set([...directMatches, ...skillMatches])];
+      const missingKeywords = jobKeywords.filter(keyword => !allMatches.includes(keyword));
+      console.log('Total matches:', allMatches.length, 'Missing:', missingKeywords.length);
+      
+      let matchScore = 0;
+      let criticalAreas: string[] = [];
+      
+      if (allMatches.length > 0) {
+        // Calculate score based on matches found
+        const matchRatio = allMatches.length / jobKeywords.length;
+        matchScore = Math.round(matchRatio * 85); // Base score from matches
+        
+        // Bonus for data completeness
+        if (workExperience?.length > 0) matchScore += 5;
+        if (education?.length > 0) matchScore += 3;
+        if (certifications?.length > 0) matchScore += 2;
+        
+        matchScore = Math.min(matchScore, 95); // Cap at 95% for keyword-based matching
+        console.log('Calculated match score:', matchScore);
+      } else {
+        // No direct matches - use AI fallback
+        console.log('No matches found, using AI fallback...');
+        matchScore = await performAIFallbackAnalysis(jobDescription, workHistoryText);
+        criticalAreas.push(
+          'No direct keyword matches found between job description and work history.',
+          'Consider using AI analysis to identify transferable skills and experience.',
+          'Review job requirements and align your experience descriptions accordingly.'
+        );
+        console.log('Fallback analysis score:', matchScore);
+      }
+      
+      // Add critical areas for missing important keywords
+      if (missingKeywords.length > 0) {
+        criticalAreas.push(
+          `Missing keywords: ${missingKeywords.slice(0, 5).join(', ')}`,
+          'Consider adding relevant experience or training in these areas.'
+        );
+      }
 
-    const recommendations = [
-      'Use specific metrics when describing your achievements',
-      'Mirror the job\'s language and terminology',
-      'Quantify your achievements with numbers and percentages'
-    ];
+      const recommendations = [
+        'Use specific metrics when describing your achievements',
+        'Mirror the job\'s language and terminology',
+        'Quantify your achievements with numbers and percentages'
+      ];
 
-    if (allMatches.length > 0) {
-      recommendations.unshift(`Emphasize ${allMatches.slice(0, 2).join(' and ')} prominently in your resume`);
+      if (allMatches.length > 0) {
+        recommendations.unshift(`Emphasize ${allMatches.slice(0, 2).join(' and ')} prominently in your resume`);
+      }
+
+      const analysisResult = {
+        job_title: jobTitle,
+        company: company,
+        job_description: jobDescription,
+        match_score: matchScore,
+        matched_skills: allMatches.map(skill => 
+          skill.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')
+        ).slice(0, 8),
+        missing_skills: missingKeywords.map(skill => 
+          skill.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')
+        ).slice(0, 6),
+        key_requirements: extractKeyRequirements(jobDescription),
+        recommendations,
+        critical_areas: criticalAreas
+      };
+      
+      console.log('Analysis result created:', analysisResult);
+      return analysisResult;
+      
+    } catch (error) {
+      console.error('Error in performTraditionalAnalysis:', error);
+      throw new Error(`Traditional analysis failed: ${error.message}`);
     }
-
-    return {
-      job_title: jobTitle,
-      company: company,
-      job_description: jobDescription,
-      match_score: matchScore,
-      matched_skills: allMatches.map(skill => 
-        skill.split(' ').map(word => 
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ')
-      ).slice(0, 8),
-      missing_skills: missingKeywords.map(skill => 
-        skill.split(' ').map(word => 
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ')
-      ).slice(0, 6),
-      key_requirements: extractKeyRequirements(jobDescription),
-      recommendations,
-      critical_areas: criticalAreas
-    };
   }, [jobDescription, jobTitle, company, getUserSkillNames, skills, workExperience, education, certifications]);
 
   // Get work history as searchable text
