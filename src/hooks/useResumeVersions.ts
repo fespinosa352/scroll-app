@@ -5,6 +5,7 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { JobAnalysis } from './useJobAnalysis';
 import type { Database } from '@/integrations/supabase/types';
+import { ResumeOptimizer } from '@/services/resumeOptimizer';
 
 type Resume = Database['public']['Tables']['resumes']['Row'];
 
@@ -192,7 +193,6 @@ export const useResumeVersions = () => {
       if (content?.analysis) {
         // Use the optimizer for job-targeted content
         try {
-          const { ResumeOptimizer } = require('@/services/resumeOptimizer');
           
           // Convert database format to optimizer format
           const userData = {

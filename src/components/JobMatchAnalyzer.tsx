@@ -26,6 +26,7 @@ import { useResumeVersions } from '@/hooks/useResumeVersions';
 import { useResumeData } from '@/contexts/ResumeDataContext';
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
 import AnalysisResults from './AnalysisResults';
+import { ResumeOptimizer } from '@/services/resumeOptimizer';
 
 interface ATSScore {
   overall: number;
@@ -106,15 +107,19 @@ const JobMatchAnalyzer = () => {
   const generateResumeContent = useCallback((jobAnalysis?: JobAnalysis) => {
     // If we have job analysis, use the optimizer for targeted content
     if (jobAnalysis) {
-      const { ResumeOptimizer } = require('@/services/resumeOptimizer');
-      const optimizedContent = ResumeOptimizer.optimizeResumeForJob(jobAnalysis, {
-        personalInfo,
-        workExperience,
-        education,
-        certifications,
-        skills
-      });
-      return ResumeOptimizer.generateResumeContent(optimizedContent);
+      try {
+        const optimizedContent = ResumeOptimizer.optimizeResumeForJob(jobAnalysis, {
+          personalInfo,
+          workExperience,
+          education,
+          certifications,
+          skills
+        });
+        return ResumeOptimizer.generateResumeContent(optimizedContent);
+      } catch (error) {
+        console.warn('ResumeOptimizer not available, falling back to basic generation:', error);
+        // Fall through to basic generation
+      }
     }
     
     // Fallback to original logic for backward compatibility
