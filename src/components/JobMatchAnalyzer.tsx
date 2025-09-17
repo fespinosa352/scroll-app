@@ -506,7 +506,21 @@ const JobMatchAnalyzer = () => {
   // Helper function to update profile data hash for change detection
   const updateProfileDataHash = () => {
     const currentData = JSON.stringify({ workExperience, education, certifications, skills, personalInfo });
-    const hash = btoa(currentData).slice(0, 10); // Simple hash
+    const toBase64 = (str: string) => {
+      try {
+        // UTF-8 safe base64 encoding to avoid InvalidCharacterError
+        return btoa(unescape(encodeURIComponent(str)));
+      } catch (e) {
+        console.warn('Hash encoding fallback due to invalid chars', e);
+        // Fallback: simple numeric hash
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+        }
+        return String(hash);
+      }
+    };
+    const hash = toBase64(currentData).slice(0, 10); // Simple hash
     setProfileDataHash(hash);
   };
 
