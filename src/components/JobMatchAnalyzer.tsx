@@ -25,7 +25,10 @@ import { useJobAnalysis, type JobAnalysis } from '@/hooks/useJobAnalysis';
 import { useResumeVersions } from '@/hooks/useResumeVersions';
 import { useResumeData } from '@/contexts/ResumeDataContext';
 import { useMarkupConverter } from '@/hooks/useMarkupConverter';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import AnalysisResults from './AnalysisResults';
+import ResumeEditor from './ResumeEditor';
 import { ResumeOptimizer } from '@/services/resumeOptimizer';
 
 interface ATSScore {
@@ -92,10 +95,13 @@ const JobMatchAnalyzer = () => {
   const [analysisTimestamp, setAnalysisTimestamp] = useState<string | null>(null);
   const [profileUpdateDetected, setProfileUpdateDetected] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [showResumeEditor, setShowResumeEditor] = useState(false);
+  const [currentResumeId, setCurrentResumeId] = useState(null);
   
   const { getUserSkillNames, saveJobAnalysis } = useJobAnalysis();
   const { generateResumeFromAnalysis } = useResumeVersions();
   const { workExperience, education, certifications, skills, personalInfo } = useResumeData();
+  const { user } = useAuth();
   
   // Track profile data for change detection
   const profileDataRef = useRef({ workExperience, education, certifications, skills, personalInfo });
@@ -256,13 +262,43 @@ const JobMatchAnalyzer = () => {
       const jobAnalysisResult = await performTraditionalAnalysis();
       setAnalysis(jobAnalysisResult);
       
+      // NEW: Save to job staging table
+      if (user) {
+        try {
+          const { data: stagedJob, error: stagingError } = await supabase
+            .from('job_staging')
+            .insert({
+              user_id: user.id,
+              job_title: jobTitle || 'Untitled Job',
+              company: company || 'Unknown Company',
+              job_description: jobDescription,
+              extracted_keywords: {
+                skills: jobAnalysisResult.matched_skills.concat(jobAnalysisResult.missing_skills),
+                requirements: jobAnalysisResult.key_requirements
+              },
+              status: 'analyzed'
+            })
+            .select()
+            .single();
+
+          if (stagingError) {
+            console.error('Error staging job:', stagingError);
+            toast.error('Analysis complete, but failed to save job');
+          } else {
+            console.log('Job staged successfully:', stagedJob);
+          }
+        } catch (stagingError) {
+          console.error('Job staging error:', stagingError);
+        }
+      }
+      
       // Save to database and update timestamps
       const savedAnalysis = await saveJobAnalysis(jobAnalysisResult);
       if (savedAnalysis) {
         setAnalysisTimestamp(new Date().toISOString());
         setProfileUpdateDetected(false);
         updateProfileDataHash();
-        toast.success("Job match analysis complete!");
+        toast.success("Job analyzed and saved!");
       }
       
     } catch (error) {
@@ -272,6 +308,25 @@ const JobMatchAnalyzer = () => {
       setIsAnalyzing(false);
     }
   }, [jobDescription, generateResumeContent, analyzeWithClaude, saveJobAnalysis]);
+
+  // Copy analysis to clipboard function
+  const copyAnalysisToClipboard = (analysis: JobAnalysis) => {
+    const text = `Job Analysis Summary
+  
+Job: ${analysis.job_title} at ${analysis.company}
+
+Matched Skills: ${analysis.matched_skills.join(', ')}
+Missing Skills: ${analysis.missing_skills.join(', ')}
+
+Key Requirements:
+${analysis.key_requirements.map(req => `• ${req}`).join('\n')}
+
+Recommendations:
+${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`;
+
+    navigator.clipboard.writeText(text);
+    toast.success('Analysis copied to clipboard!');
+  };
 
   // Enhanced analysis with proper keyword matching
   const performTraditionalAnalysis = useCallback(async () => {
@@ -310,7 +365,7 @@ const JobMatchAnalyzer = () => {
       console.log('Total matches:', allMatches.length, 'Missing:', missingKeywords.length);
       
       let matchScore = 0;
-      let criticalAreas: string[] = [];
+      const criticalAreas: string[] = [];
       
       if (allMatches.length > 0) {
         // Calculate score based on matches found
@@ -552,36 +607,17 @@ const JobMatchAnalyzer = () => {
     return `${diffDays}d ago`;
   };
 
+  // Update the handleGenerateResume function to show the editor
   const handleGenerateResume = async () => {
-    
     if (!analysis) {
-      toast.error("Please analyze a job first before generating a resume");
-      return;
-    }
-
-    if (!jobTitle.trim()) {
-      toast.error("Please enter a job title");
+      toast.error('Please analyze a job first before generating a resume');
       return;
     }
     
-    try {
-      // Generate the actual resume content with user's personal data
-      const resumeContent = await generateResumeContent(analysis);
-      console.log('Generated resume content length:', resumeContent.length);
-      
-      toast.loading("Generating optimized resume...");
-      
-      const newResume = await generateResumeFromAnalysis(analysis, resumeContent);
-      
-      if (newResume) {
-        setRecentlyCreatedResumeId(newResume.id);
-        console.log('Resume generated successfully:', newResume.id);
-      } else {
-        throw new Error('Resume generation returned null');
-      }
-    } catch (error) {
-      console.error('Resume generation error:', error);
-      toast.error(`Failed to generate resume: ${error.message}`);
+    const newResume = await generateResumeFromAnalysis(analysis);
+    if (newResume) {
+      setCurrentResumeId(newResume.id);
+      setShowResumeEditor(true);
     }
   };
 
@@ -750,10 +786,19 @@ const JobMatchAnalyzer = () => {
                 onGenerateResume={handleGenerateResume}
                 onNavigateToVault={handleNavigateToVault}
                 recentlyCreatedResumeId={recentlyCreatedResumeId}
+                onCopyAnalysis={copyAnalysisToClipboard}
               />
             </TabsContent>
           </Tabs>
         </div>
+      )}
+
+      {/* Resume Editor Modal */}
+      {showResumeEditor && currentResumeId && (
+        <ResumeEditor 
+          resumeId={currentResumeId} 
+          onClose={() => setShowResumeEditor(false)}
+        />
       )}
     </div>
   );

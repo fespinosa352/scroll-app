@@ -52,7 +52,7 @@ import GettingStarted from "@/components/GettingStarted";
 import WorkExperience from "@/components/WorkExperience";
 import WorkExperienceSimple from "@/components/WorkExperienceSimple";
 import MyResume from "@/components/MyResume";
-import { ResumeEditor } from "@/components/ResumeEditor";
+import ResumeEditor from "@/components/ResumeEditor";
 import { exportResume, type ExportableResume } from "@/utils/resumeExport";
 import { useMarkupConverter } from "@/hooks/useMarkupConverter";
 import { useResumeVersions } from "@/hooks/useResumeVersions";

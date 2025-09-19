@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Plus } from "lucide-react";
+import { FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Plus, Copy } from "lucide-react";
 import { type JobAnalysis, useJobAnalysis } from "@/hooks/useJobAnalysis";
 
 // Extend JobAnalysis type to include critical_areas
@@ -18,9 +18,10 @@ interface AnalysisResultsProps {
   onGenerateResume: () => void;
   onNavigateToVault?: () => void;
   recentlyCreatedResumeId?: string;
+  onCopyAnalysis?: (analysis: ExtendedJobAnalysis) => void;
 }
 
-const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recentlyCreatedResumeId }: AnalysisResultsProps) => {
+const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recentlyCreatedResumeId, onCopyAnalysis }: AnalysisResultsProps) => {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const [addingSkills, setAddingSkills] = useState(false);
   const { addUserSkill, refetchSkills } = useJobAnalysis();
@@ -219,6 +220,17 @@ const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recent
                 >
                   Generate Another
                 </Button>
+                {onCopyAnalysis && (
+                  <Button 
+                    onClick={() => onCopyAnalysis(analysis)} 
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Analysis
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -242,6 +254,17 @@ const AnalysisResults = ({ analysis, onGenerateResume, onNavigateToVault, recent
                   <FileText className="w-5 h-5 mr-2" />
                   Generate Optimized Resume
                 </Button>
+                {onCopyAnalysis && (
+                  <Button 
+                    onClick={() => onCopyAnalysis(analysis)} 
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Analysis
+                  </Button>
+                )}
                 <p className="text-xs text-slate-500">
                   Expected improvement: +15-25 ATS points
                 </p>
