@@ -489,23 +489,14 @@ const JobMatchAnalyzer = () => {
       .map(req => req.trim());
   };
 
-  // Check if user has sufficient data
-  const hasSufficientData = () => {
+  // Check if user has sufficient data (memoized to prevent excessive re-calculations)
+  const hasSufficientData = useCallback(() => {
     const hasWorkExperience = workExperience && workExperience.length > 0;
     const hasEducation = education && education.length > 0;
     const hasSkills = skills && skills.length > 0;
-    const hasPersonalInfo = personalInfo && personalInfo.name;
-    
-    console.log('Data check:', {
-      workExperience: workExperience?.length || 0,
-      education: education?.length || 0,
-      skills: skills?.length || 0,
-      personalInfo: personalInfo,
-      hasPersonalInfo
-    });
     
     return (hasWorkExperience && hasSkills) || (hasEducation && hasSkills);
-  };
+  }, [workExperience, education, skills]);
 
   // Auto-analyze when job description changes
   useEffect(() => {

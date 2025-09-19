@@ -54,7 +54,10 @@ export const useResumeVersions = () => {
 
   // Convert database resumes to ResumeVersion format
   useEffect(() => {
-    console.log('useResumeVersions: dbResumes changed, converting...', dbResumes.length);
+    // Only log significant changes to reduce console noise
+    if (dbResumes.length > 0) {
+      console.log('useResumeVersions: Converting', dbResumes.length, 'resumes');
+    }
     const convertedResumes = dbResumes.map(convertToResumeVersion);
     setResumes(convertedResumes);
   }, [dbResumes]);

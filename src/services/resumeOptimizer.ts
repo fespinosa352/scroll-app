@@ -164,49 +164,83 @@ export class ResumeOptimizer {
     },
     jobAnalysis: JobAnalysisData
   ): Promise<string> {
-    try {
-      // Import supabase here to avoid circular dependencies
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      const { data, error } = await supabase.functions.invoke('generate-optimized-summary', {
-        body: {
-          userData,
-          jobAnalysis,
-          targetRole: jobAnalysis.job_title,
-          jobDescription: jobAnalysis.job_description
-        }
-      });
-
-      if (error) {
-        console.error('Summary optimization error:', error);
-        // Fallback to existing summary or generate basic one
-        return this.generateFallbackSummary(userData, jobAnalysis);
-      }
-
-      return data?.optimizedSummary || this.generateFallbackSummary(userData, jobAnalysis);
-    } catch (error) {
-      console.error('Error generating optimized summary:', error);
-      return this.generateFallbackSummary(userData, jobAnalysis);
-    }
+    // For now, return enhanced fallback summary until Edge Function is deployed
+    // TODO: Implement AI optimization via Edge Function when deployed
+    console.log('Generating optimized summary using enhanced fallback method');
+    return this.generateEnhancedSummary(userData, jobAnalysis);
   }
 
   /**
-   * Generate fallback summary when AI optimization fails
+   * Generate enhanced summary with job-targeted optimization
+   */
+  private static generateEnhancedSummary(
+    userData: any,
+    jobAnalysis: JobAnalysisData
+  ): string {
+    // If user has existing summary, enhance it with job keywords
+    if (userData.personalInfo?.professionalSummary) {
+      const existing = userData.personalInfo.professionalSummary;
+      const matchedSkills = jobAnalysis.matched_skills?.slice(0, 3) || [];
+      
+      // If existing summary already contains matched skills, return as-is
+      const lowerSummary = existing.toLowerCase();
+      const hasMatchedSkills = matchedSkills.some(skill => 
+        lowerSummary.includes(skill.toLowerCase())
+      );
+      
+      if (hasMatchedSkills || matchedSkills.length === 0) {
+        return existing;
+      }
+      
+      // Enhance existing summary with matched skills
+      const skillsText = matchedSkills.length > 0 ? ` Expertise in ${matchedSkills.join(', ')}.` : '';
+      return `${existing.replace(/\.$/, '')}${skillsText}`;
+    }
+    
+    return this.generateFallbackSummary(userData, jobAnalysis);
+  }
+
+  /**
+   * Generate fallback summary when no existing summary available
    */
   private static generateFallbackSummary(
     userData: any,
     jobAnalysis: JobAnalysisData
   ): string {
-    if (userData.personalInfo?.professionalSummary) {
-      return userData.personalInfo.professionalSummary;
+    // Calculate experience years from work history
+    let experienceYears = 0;
+    if (userData.workExperience?.length > 0) {
+      const totalMonths = userData.workExperience.reduce((total: number, exp: any) => {
+        if (exp.startDate) {
+          const start = new Date(exp.startDate);
+          const end = exp.isCurrentRole ? new Date() : (exp.endDate ? new Date(exp.endDate) : new Date());
+          const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+          return total + Math.max(months, 0);
+        }
+        return total;
+      }, 0);
+      experienceYears = Math.max(1, Math.floor(totalMonths / 12));
     }
     
-    // Generate basic summary from user data if no existing summary
-    const totalExperience = userData.workExperience?.length || 0;
-    const topSkills = userData.skills?.slice(0, 3).join(', ') || 'various technologies';
-    const targetRole = jobAnalysis.job_title || 'professional';
+    // Get top matched and user skills
+    const matchedSkills = jobAnalysis.matched_skills?.slice(0, 2) || [];
+    const userSkills = userData.skills?.slice(0, 3) || [];
+    const topSkills = [...new Set([...matchedSkills, ...userSkills])].slice(0, 3);
     
-    return `Experienced ${targetRole.toLowerCase()} with ${totalExperience}+ years of experience in ${topSkills}. Proven track record of delivering results and driving organizational success.`;
+    const targetRole = jobAnalysis.job_title || 'professional';
+    const skillsText = topSkills.length > 0 ? topSkills.join(', ') : 'various technologies';
+    const matchScore = jobAnalysis.match_score || 0;
+    
+    // Different templates based on experience level
+    if (experienceYears >= 10) {
+      return `Senior ${targetRole} with ${experienceYears}+ years of progressive experience in ${skillsText}. Proven leadership in driving strategic initiatives and delivering exceptional results across complex projects.`;
+    } else if (experienceYears >= 5) {
+      return `Experienced ${targetRole} with ${experienceYears} years of expertise in ${skillsText}. Strong track record of successful project delivery and team collaboration with ${matchScore}% job requirements alignment.`;
+    } else if (experienceYears >= 2) {
+      return `Results-driven ${targetRole} with ${experienceYears} years of hands-on experience in ${skillsText}. Demonstrated ability to adapt and excel in dynamic environments.`;
+    } else {
+      return `Motivated ${targetRole} with strong foundation in ${skillsText}. Eager to leverage technical skills and fresh perspective to contribute to organizational success.`;
+    }
   }
   
   /**

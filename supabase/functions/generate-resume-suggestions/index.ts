@@ -50,30 +50,39 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Get request data
-    const { targetRole, jobDescription } = await req.json();
+    const { targetRole, jobDescription, resumeData, userId } = await req.json();
 
-    // Fetch user's professional data
-    console.log('Fetching user professional data...');
-    
-    const [workExperienceRes, skillsRes, educationRes, certificationsRes] = await Promise.all([
-      supabase.from('work_experiences').select('*').eq('user_id', user.id),
-      supabase.from('user_skills').select('*').eq('user_id', user.id),
-      supabase.from('education').select('*').eq('user_id', user.id),
-      supabase.from('certifications').select('*').eq('user_id', user.id)
-    ]);
+    let workExperience, skills, education, certifications;
 
-    if (workExperienceRes.error) {
-      console.error('Work experience fetch error:', workExperienceRes.error);
-      throw new Error('Failed to fetch work experience');
+    // Use provided resumeData if available, otherwise fetch from database
+    if (resumeData) {
+      console.log('Using provided resume data');
+      workExperience = resumeData.workExperience || [];
+      skills = resumeData.skills?.map(skill => ({ skill_name: skill })) || [];
+      education = resumeData.education || [];
+      certifications = resumeData.certifications || [];
+    } else {
+      console.log('Fetching user professional data from database...');
+      
+      const [workExperienceRes, skillsRes, educationRes, certificationsRes] = await Promise.all([
+        supabase.from('work_experiences').select('*').eq('user_id', user.id),
+        supabase.from('user_skills').select('*').eq('user_id', user.id),
+        supabase.from('education').select('*').eq('user_id', user.id),
+        supabase.from('certifications').select('*').eq('user_id', user.id)
+      ]);
+
+      if (workExperienceRes.error) {
+        console.error('Work experience fetch error:', workExperienceRes.error);
+        throw new Error('Failed to fetch work experience');
+      }
+
+      console.log('Professional data fetched successfully');
+
+      workExperience = workExperienceRes.data || [];
+      skills = skillsRes.data || [];
+      education = educationRes.data || [];
+      certifications = certificationsRes.data || [];
     }
-
-    console.log('Professional data fetched successfully');
-
-    // Build context for Claude
-    const workExperience = workExperienceRes.data || [];
-    const skills = skillsRes.data || [];
-    const education = educationRes.data || [];
-    const certifications = certificationsRes.data || [];
 
     // Create rich context string
     let context = `Professional Background:\n\n`;
@@ -81,7 +90,14 @@ serve(async (req) => {
     if (workExperience.length > 0) {
       context += `Work Experience:\n`;
       workExperience.forEach(exp => {
-        context += `- ${exp.title} at ${exp.company_name || exp.company_id} (${exp.start_date} - ${exp.is_current ? 'Present' : exp.end_date})\n`;
+        // Handle both database format and resumeData format
+        const title = exp.title || exp.position;
+        const company = exp.company_name || exp.company;
+        const startDate = exp.start_date || exp.startDate;
+        const endDate = exp.end_date || exp.endDate;
+        const isCurrent = exp.is_current || exp.isCurrentRole;
+        
+        context += `- ${title} at ${company} (${startDate} - ${isCurrent ? 'Present' : endDate})\n`;
         if (exp.description) context += `  Description: ${exp.description}\n`;
         if (exp.location) context += `  Location: ${exp.location}\n`;
       });
@@ -102,7 +118,8 @@ serve(async (req) => {
     if (education.length > 0) {
       context += `Education:\n`;
       education.forEach(edu => {
-        context += `- ${edu.degree} in ${edu.field_of_study || 'N/A'} from ${edu.institution}\n`;
+        const fieldOfStudy = edu.field_of_study || edu.fieldOfStudy || 'N/A';
+        context += `- ${edu.degree} in ${fieldOfStudy} from ${edu.institution}\n`;
       });
       context += `\n`;
     }
@@ -110,7 +127,8 @@ serve(async (req) => {
     if (certifications.length > 0) {
       context += `Certifications:\n`;
       certifications.forEach(cert => {
-        context += `- ${cert.name} from ${cert.issuing_organization}\n`;
+        const issuer = cert.issuing_organization || cert.issuer;
+        context += `- ${cert.name} from ${issuer}\n`;
       });
       context += `\n`;
     }
