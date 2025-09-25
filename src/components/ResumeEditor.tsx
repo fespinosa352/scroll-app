@@ -25,7 +25,10 @@ const ResumeEditor: React.FC<ResumeEditorProps> = ({ resumeId, onClose }) => {
   }, [resumeId]);
 
   const loadResumeAndAvailableData = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !resumeId || resumeId === 'undefined') {
+      console.error('Invalid user ID or resume ID:', { userId: user?.id, resumeId });
+      return;
+    }
 
     try {
       // Load current resume
@@ -60,7 +63,8 @@ const ResumeEditor: React.FC<ResumeEditorProps> = ({ resumeId, onClose }) => {
       if (eduError) throw eduError;
 
       // Filter out experiences already in resume
-      const currentExpIds = resumeData.content?.workExperience?.map(exp => exp.id) || [];
+      const content = resumeData.content as any; // Cast JSONB to any for type safety
+      const currentExpIds = content?.workExperience?.map((exp: any) => exp.id) || [];
       const availableExp = workExp.filter(exp => !currentExpIds.includes(exp.id));
       
       setAvailableExperiences(availableExp);
@@ -78,10 +82,11 @@ const ResumeEditor: React.FC<ResumeEditorProps> = ({ resumeId, onClose }) => {
     const exp = availableExperiences.find(e => e.id === experienceId);
     if (!exp || !resume) return;
 
+    const content = resume.content as any;
     const updatedContent = {
-      ...resume.content,
+      ...content,
       workExperience: [
-        ...(resume.content.workExperience || []),
+        ...(content.workExperience || []),
         {
           id: exp.id,
           title: exp.title,
@@ -114,10 +119,11 @@ const ResumeEditor: React.FC<ResumeEditorProps> = ({ resumeId, onClose }) => {
   const removeExperienceFromResume = async (experienceId) => {
     if (!resume) return;
 
-    const expToRemove = resume.content.workExperience.find(exp => exp.id === experienceId);
+    const content = resume.content as any;
+    const expToRemove = content.workExperience?.find((exp: any) => exp.id === experienceId);
     const updatedContent = {
-      ...resume.content,
-      workExperience: resume.content.workExperience.filter(exp => exp.id !== experienceId)
+      ...content,
+      workExperience: content.workExperience?.filter((exp: any) => exp.id !== experienceId) || []
     };
 
     try {
@@ -151,7 +157,7 @@ const ResumeEditor: React.FC<ResumeEditorProps> = ({ resumeId, onClose }) => {
   const copyResumeToClipboard = () => {
     if (!resume) return;
 
-    const content = resume.content;
+    const content = resume.content as any;
     const text = `${content.personalInfo?.name || 'Your Name'}
 ${content.personalInfo?.email || 'your.email@example.com'} | ${content.personalInfo?.phone || '(555) 123-4567'}
 ${content.personalInfo?.location || 'Your City, State'}
@@ -190,7 +196,7 @@ ${content.education?.map(edu => `${edu.degree} - ${edu.institution} (${edu.year}
       // For txt download, we'll use the existing copyResumeToClipboard content but trigger download
       if (!resume) return;
       
-      const content = resume.content;
+      const content = resume.content as any;
       const text = `${content.personalInfo?.name || 'Your Name'}
 ${content.personalInfo?.email || 'your.email@example.com'} | ${content.personalInfo?.phone || '(555) 123-4567'}
 ${content.personalInfo?.location || 'Your City, State'}
@@ -290,7 +296,7 @@ ${content.education?.map(edu => `${edu.degree} - ${edu.institution} (${edu.year}
               <div>
                 <h3 className='font-semibold mb-2'>Professional Summary</h3>
                 <p className='text-sm text-gray-700 bg-gray-50 p-3 rounded'>
-                  {resume.content.professionalSummary}
+                  {(resume.content as any)?.professionalSummary}
                 </p>
               </div>
 
@@ -298,7 +304,7 @@ ${content.education?.map(edu => `${edu.degree} - ${edu.institution} (${edu.year}
               <div>
                 <h3 className='font-semibold mb-2'>Work Experience</h3>
                 <div className='space-y-4'>
-                  {resume.content.workExperience?.map(exp => (
+                  {((resume.content as any)?.workExperience || []).map((exp: any) => (
                     <div key={exp.id} className='border border-gray-200 rounded-lg p-4'>
                       <div className='flex justify-between items-start mb-2'>
                         <div>

@@ -12,6 +12,7 @@ export interface StagedJob {
   extracted_keywords?: any;
   status: string;
   created_at: string;
+  updated_at: string;
 }
 
 export const useJobStaging = () => {
@@ -24,7 +25,7 @@ export const useJobStaging = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('job_staging')
         .select('*')
         .eq('user_id', user.id)
@@ -52,7 +53,7 @@ export const useJobStaging = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('job_staging')
         .insert({
           user_id: user.id,
@@ -77,7 +78,7 @@ export const useJobStaging = () => {
     if (!user?.id) return false;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('job_staging')
         .delete()
         .eq('id', jobId)

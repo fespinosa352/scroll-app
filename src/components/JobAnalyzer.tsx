@@ -86,7 +86,7 @@ const JobAnalyzer = () => {
 
       // Save to job staging table
       if (user) {
-        const { data: stagedJob, error: stagingError } = await supabase
+        const { data: stagedJob, error: stagingError } = await (supabase as any)
           .from('job_staging')
           .insert({
             user_id: user.id,

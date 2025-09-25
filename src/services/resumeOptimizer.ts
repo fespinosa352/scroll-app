@@ -229,7 +229,7 @@ export class ResumeOptimizer {
     
     const targetRole = jobAnalysis.job_title || 'professional';
     const skillsText = topSkills.length > 0 ? topSkills.join(', ') : 'various technologies';
-    const matchScore = jobAnalysis.match_score || 0;
+    const matchScore = (jobAnalysis as any).match_score || (jobAnalysis as any).matchScore || 0;
     
     // Different templates based on experience level
     if (experienceYears >= 10) {

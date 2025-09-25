@@ -417,12 +417,8 @@ linkedin.com/in/yourprofile
 
   return (
     <ResumeEditor 
-      key={editingResumeId || 'new'} // Force re-render when editing different resume
-      initialContent={initialMarkup}
-      onSave={handleSave}
-      onExport={handleExport}
-      selectedResumeId={editingResumeId}
-      onResumeChange={(resumeId) => setEditingResumeId(resumeId === 'new' ? undefined : resumeId)}
+      resumeId={editingResumeId || 'new'}
+      onClose={() => setEditingResumeId(undefined)}
     />
   );
 };
