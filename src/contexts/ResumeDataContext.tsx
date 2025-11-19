@@ -318,6 +318,31 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   // Convert traditional experience format to block format
   const convertToBlockFormat = (experiences: WorkExperience[]): WorkExperienceWithBlocks[] => {
     return experiences.map(exp => {
+      // Try to parse structured data from description if it looks like JSON
+      if (exp.description && exp.description.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(exp.description);
+          if (parsed.sections && Array.isArray(parsed.sections)) {
+            return {
+              id: exp.id,
+              company: exp.company,
+              position: exp.position,
+              startDate: exp.startDate,
+              endDate: exp.endDate,
+              isCurrentRole: exp.isCurrentRole,
+              location: exp.location || '',
+              sections: parsed.sections,
+              skills: exp.skills,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+          }
+        } catch (e) {
+          // Fallback to text parsing if JSON is invalid
+          console.warn('Failed to parse structured experience data, falling back to text', e);
+        }
+      }
+
       const sections: BlockSection[] = [];
       
       // Create a single section with the complete experience description

@@ -28,18 +28,19 @@ const WorkExperienceBlocks = () => {
 
   // Debounced save functionality
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const debouncedSave = useCallback((experienceId: string, experience: WorkExperienceWithBlocks) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(async () => {
       if (!experienceId.startsWith('exp-')) {
         try {
-          const description = experience.sections
-            .flatMap(section => section.blocks.map(block => block.content))
-            .join('\n• ');
+          const description = JSON.stringify({
+            version: '1.0',
+            sections: experience.sections
+          });
 
           const workExperienceData = {
             title: experience.position,
@@ -61,8 +62,8 @@ const WorkExperienceBlocks = () => {
   }, [updateWorkExperience]);
 
   // Initialize block experiences from traditional format if needed
-  const experiences = workExperienceBlocks.length > 0 
-    ? workExperienceBlocks 
+  const experiences = workExperienceBlocks.length > 0
+    ? workExperienceBlocks
     : (workExperience.length > 0 ? convertToBlockFormat(workExperience) : []);
 
   const updateExperiences = (newExperiences: WorkExperienceWithBlocks[]) => {
@@ -71,10 +72,25 @@ const WorkExperienceBlocks = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.company || !formData.position) {
       toast.error("Please fill in company and position");
       return;
+    }
+
+    // Get existing sections if editing
+    let description = "";
+    let currentSections: any[] = [];
+
+    if (editingId) {
+      const existing = experiences.find(e => e.id === editingId);
+      if (existing) {
+        currentSections = existing.sections;
+        description = JSON.stringify({
+          version: '1.0',
+          sections: existing.sections
+        });
+      }
     }
 
     // Prepare database format
@@ -85,7 +101,7 @@ const WorkExperienceBlocks = () => {
       end_date: formData.isCurrentRole ? null : formData.endDate,
       is_current: formData.isCurrentRole,
       location: formData.location,
-      description: "", // Will be populated from blocks later
+      description: description,
     };
 
     try {
@@ -94,15 +110,16 @@ const WorkExperienceBlocks = () => {
         const result = await updateWorkExperience(editingId, workExperienceData);
         if (result) {
           // Update local state with new data
-          const updatedExperiences = experiences.map(exp => 
-            exp.id === editingId ? { 
-              ...exp, 
+          const updatedExperiences = experiences.map(exp =>
+            exp.id === editingId ? {
+              ...exp,
               company: formData.company,
               position: formData.position,
               startDate: formData.startDate,
               endDate: formData.isCurrentRole ? "" : formData.endDate,
               isCurrentRole: formData.isCurrentRole,
               location: formData.location,
+              sections: currentSections, // Preserve sections
               updated_at: new Date().toISOString()
             } : exp
           );
@@ -131,12 +148,12 @@ const WorkExperienceBlocks = () => {
             created_at: result.created_at,
             updated_at: result.updated_at,
           };
-          
+
           const updatedExperiences = [newExperience, ...experiences];
           updateExperiences(updatedExperiences);
         }
       }
-      
+
       resetForm();
     } catch (error) {
       console.error('Error saving work experience:', error);
@@ -179,7 +196,7 @@ const WorkExperienceBlocks = () => {
           return; // Don't update local state if database deletion failed
         }
       }
-      
+
       // Update local state
       const updatedExperiences = experiences.filter(exp => exp.id !== id);
       updateExperiences(updatedExperiences);
@@ -220,7 +237,7 @@ const WorkExperienceBlocks = () => {
     if (!experience) return;
 
     const updatedSections = experience.sections.filter(section => section.id !== sectionId);
-    
+
     handleUpdateExperience({
       ...experience,
       sections: updatedSections,
@@ -359,7 +376,7 @@ const WorkExperienceBlocks = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
+            <Button
               onClick={() => setShowForm(true)}
               variant="primary"
               size="touch"
@@ -384,7 +401,7 @@ const WorkExperienceBlocks = () => {
                     <Input
                       placeholder="e.g., Microsoft, Google, Airbnb"
                       value={formData.company}
-                      onChange={(e) => setFormData({...formData, company: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       required
                     />
                   </div>
@@ -393,7 +410,7 @@ const WorkExperienceBlocks = () => {
                     <Input
                       placeholder="e.g., Senior Product Manager"
                       value={formData.position}
-                      onChange={(e) => setFormData({...formData, position: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                       required
                     />
                   </div>
@@ -405,7 +422,7 @@ const WorkExperienceBlocks = () => {
                     <Input
                       type="month"
                       value={formData.startDate}
-                      onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -413,7 +430,7 @@ const WorkExperienceBlocks = () => {
                     <Input
                       type="month"
                       value={formData.endDate}
-                      onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       disabled={formData.isCurrentRole}
                       placeholder={formData.isCurrentRole ? "Present" : ""}
                     />
@@ -423,7 +440,7 @@ const WorkExperienceBlocks = () => {
                     <Input
                       placeholder="e.g., San Francisco, CA"
                       value={formData.location}
-                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
                   </div>
                 </div>
@@ -433,7 +450,7 @@ const WorkExperienceBlocks = () => {
                     type="checkbox"
                     id="currentRole"
                     checked={formData.isCurrentRole}
-                    onChange={(e) => setFormData({...formData, isCurrentRole: e.target.checked, endDate: e.target.checked ? "" : formData.endDate})}
+                    onChange={(e) => setFormData({ ...formData, isCurrentRole: e.target.checked, endDate: e.target.checked ? "" : formData.endDate })}
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="currentRole" className="text-sm font-medium">
@@ -472,7 +489,7 @@ const WorkExperienceBlocks = () => {
                   <p className="text-slate-600 mb-4">
                     Upload a resume in Getting Started or manually add your work experience here.
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => setShowForm(true)}
                     variant="primary"
                     size="touch"

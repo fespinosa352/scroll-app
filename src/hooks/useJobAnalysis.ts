@@ -12,6 +12,7 @@ export interface JobAnalysis {
   missing_skills: string[];
   key_requirements: string[];
   recommendations: string[];
+  critical_areas?: string[];
   created_at?: string;
 }
 
@@ -31,7 +32,7 @@ export const useJobAnalysis = () => {
   // Fetch user skills
   const fetchUserSkills = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('user_skills')
@@ -49,7 +50,7 @@ export const useJobAnalysis = () => {
   // Fetch job analyses
   const fetchJobAnalyses = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('job_analyses')
@@ -67,7 +68,7 @@ export const useJobAnalysis = () => {
   // Save job analysis
   const saveJobAnalysis = async (analysis: Omit<JobAnalysis, 'id' | 'created_at'>) => {
     if (!user) return null;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -80,7 +81,7 @@ export const useJobAnalysis = () => {
         .single();
 
       if (error) throw error;
-      
+
       // Update local state
       setJobAnalyses(prev => [data, ...prev]);
       return data;
@@ -95,7 +96,7 @@ export const useJobAnalysis = () => {
   // Add user skill
   const addUserSkill = async (skill: Omit<UserSkill, 'id'>) => {
     if (!user) return null;
-    
+
     try {
       const { data, error } = await supabase
         .from('user_skills')
@@ -107,7 +108,7 @@ export const useJobAnalysis = () => {
         .single();
 
       if (error) throw error;
-      
+
       setUserSkills(prev => [...prev, data as UserSkill]);
       return data;
     } catch (error) {

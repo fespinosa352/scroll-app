@@ -9,7 +9,7 @@ export const FEATURES = {
   // Registration feature flag
   // Set to true to enable user registration (sign up forms, links, etc.)
   // Set to false to disable registration and show guest-only experience
-  ENABLE_USER_REGISTRATION: false, // TODO: Set to true when ready to enable registration
+  ENABLE_USER_REGISTRATION: true, // TODO: Set to true when ready to enable registration
 
   // Add other feature flags here as needed
   // ENABLE_PREMIUM_FEATURES: false,

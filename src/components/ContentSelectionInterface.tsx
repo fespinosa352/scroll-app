@@ -7,12 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Briefcase, 
-  GraduationCap, 
-  Award, 
-  Code, 
-  Target, 
+import {
+  Briefcase,
+  GraduationCap,
+  Award,
+  Code,
+  Target,
   TrendingUp,
   Lightbulb,
   Star,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useResumeData } from '@/contexts/ResumeDataContext';
 import { JobAnalysis } from '@/hooks/useJobAnalysis';
+import { useProjects } from '@/hooks/useProjects';
 
 interface ContentItem {
   id: string;
@@ -56,12 +57,14 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
   onSelectionChange,
   onATSScoreUpdate
 }) => {
-  const { 
-    workExperienceBlocks, 
-    education, 
-    certifications, 
+  const {
+    workExperienceBlocks,
+    education,
+    certifications,
     skills
   } = useResumeData();
+
+  const { projects } = useProjects();
 
   const [selectedContent, setSelectedContent] = useState<ContentItem[]>([]);
   const [selectedBullets, setSelectedBullets] = useState<SelectedBullet[]>([]);
@@ -77,8 +80,8 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
     // Work Experience
     workExperienceBlocks.forEach(exp => {
       const allBullets = exp.sections.flatMap(section => section.blocks.map(block => block.content));
-      const relevanceScore = calculateRelevanceScore(exp.company + ' ' + exp.position, jobAnalysis);
-      
+      const relevanceScore = calculateRelevanceScore(exp.position, allBullets.join('\n'), jobAnalysis);
+
       items.push({
         id: exp.id,
         type: 'work-experience',
@@ -95,13 +98,15 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
     // Education
     education.forEach(edu => {
-      const relevanceScore = calculateRelevanceScore(edu.degree + ' ' + edu.fieldOfStudy, jobAnalysis);
+      const title = `${edu.degree} in ${edu.fieldOfStudy}`;
+      const content = `${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}`;
+      const relevanceScore = calculateRelevanceScore(title, content, jobAnalysis);
       items.push({
         id: edu.id,
         type: 'education',
-        title: `${edu.degree} in ${edu.fieldOfStudy}`,
+        title: title,
         subtitle: edu.institution,
-        content: `${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}`,
+        content: content,
         relevanceScore,
         isRecommended: relevanceScore > 60,
         isSelected: false,
@@ -111,13 +116,14 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
     // Certifications
     certifications.forEach(cert => {
-      const relevanceScore = calculateRelevanceScore(cert.name, jobAnalysis);
+      const content = `${cert.name} from ${cert.issuer}`;
+      const relevanceScore = calculateRelevanceScore(cert.name, content, jobAnalysis);
       items.push({
         id: cert.id,
         type: 'certification',
         title: cert.name,
         subtitle: cert.issuer,
-        content: `${cert.name} from ${cert.issuer}`,
+        content: content,
         relevanceScore,
         isRecommended: relevanceScore > 60,
         isSelected: false,
@@ -127,7 +133,7 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
     // Skills
     skills.forEach((skill, index) => {
-      const relevanceScore = calculateRelevanceScore(skill, jobAnalysis);
+      const relevanceScore = calculateRelevanceScore(skill, skill, jobAnalysis);
       items.push({
         id: `skill-${index}`,
         type: 'skill',
@@ -139,7 +145,21 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
       });
     });
 
-    // Achievements (removed for now - not available in context)
+    // Achievements
+    projects.forEach(project => {
+      const relevanceScore = calculateRelevanceScore(project.title, project.description, jobAnalysis);
+      items.push({
+        id: project.id,
+        type: 'achievement',
+        title: project.title,
+        subtitle: project.work_experiences?.company_name || 'Personal Project',
+        content: project.description,
+        relevanceScore,
+        isRecommended: relevanceScore > 60,
+        isSelected: false,
+        metadata: project
+      });
+    });
 
     return items.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
   };
@@ -148,28 +168,50 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
   useEffect(() => {
     setAllContentItems(convertToContentItems());
-  }, [workExperienceBlocks, education, certifications, skills, jobAnalysis]);
+  }, [workExperienceBlocks, education, certifications, skills, projects, jobAnalysis]);
 
   // Calculate relevance score based on job analysis
-  const calculateRelevanceScore = (content: string, analysis?: JobAnalysis): number => {
-    if (!analysis || !content) return 0;
+  const calculateRelevanceScore = (title: string, content: string, analysis?: JobAnalysis): number => {
+    if (!analysis) return 0;
 
+    const titleLower = title.toLowerCase();
     const contentLower = content.toLowerCase();
     let score = 0;
 
+    // Helper to check for whole word matches to avoid false positives
+    const hasMatch = (text: string, keyword: string) => {
+      const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'i');
+      return regex.test(text);
+    };
+
     // Check matched skills
     analysis.matched_skills.forEach(skill => {
-      if (contentLower.includes(skill.toLowerCase())) {
-        score += 20;
+      if (hasMatch(titleLower, skill)) {
+        score += 30; // Higher weight for title match
+      } else if (hasMatch(contentLower, skill)) {
+        score += 15;
       }
     });
 
     // Check key requirements
     analysis.key_requirements.forEach(req => {
-      if (contentLower.includes(req.toLowerCase())) {
-        score += 15;
+      if (hasMatch(titleLower, req)) {
+        score += 25; // Higher weight for title match
+      } else if (hasMatch(contentLower, req)) {
+        score += 10;
       }
     });
+
+    // Bonus for critical areas
+    if (analysis.critical_areas) {
+      analysis.critical_areas.forEach(area => {
+        if (hasMatch(titleLower, area)) {
+          score += 20;
+        } else if (hasMatch(contentLower, area)) {
+          score += 10;
+        }
+      });
+    }
 
     return Math.min(score, 100);
   };
@@ -202,17 +244,17 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
   // Handle content selection
   const toggleContentSelection = (itemId: string) => {
-    const updatedItems = allContentItems.map(item => 
+    const updatedItems = allContentItems.map(item =>
       item.id === itemId ? { ...item, isSelected: !item.isSelected } : item
     );
     setAllContentItems(updatedItems);
 
     const selected = updatedItems.filter(item => item.isSelected);
     setSelectedContent(selected);
-    
+
     const newScore = calculateATSScore(selected);
     setCurrentATSScore(newScore);
-    
+
     onSelectionChange?.(selected);
     onATSScoreUpdate?.(newScore);
   };
@@ -221,7 +263,7 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
   const toggleBulletSelection = (experienceId: string, bulletIndex: number, bulletContent: string) => {
     const bulletId = `${experienceId}-${bulletIndex}`;
     const existing = selectedBullets.find(b => b.bulletId === bulletId);
-    
+
     if (existing) {
       setSelectedBullets(prev => prev.filter(b => b.bulletId !== bulletId));
     } else {
@@ -235,12 +277,12 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
 
   // Filter content based on search and recommendations
   const filteredContent = allContentItems.filter(item => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.content.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesFilter = !filterRecommended || item.isRecommended;
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -374,14 +416,14 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
                           </Badge>
                         )}
                       </div>
-                      
+
                       {/* Individual bullets selection */}
                       {item.bullets && (
                         <div className="space-y-2 ml-6">
                           {item.bullets.map((bullet, index) => {
                             const bulletId = `${item.id}-${index}`;
                             const isSelected = selectedBullets.some(b => b.bulletId === bulletId);
-                            
+
                             return (
                               <div key={index} className="flex items-start gap-2">
                                 <Checkbox
@@ -397,7 +439,7 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Relevance Score */}
                   <div className="text-right">
                     <div className={`w-3 h-3 rounded-full ${getRelevanceColor(item.relevanceScore)}`} />
@@ -440,7 +482,7 @@ export const ContentSelectionInterface: React.FC<ContentSelectionInterfaceProps>
                         <p className="text-sm text-muted-foreground mt-1">{item.content}</p>
                       </div>
                     </div>
-                    
+
                     {/* Relevance Score */}
                     <div className="text-right">
                       <div className={`w-3 h-3 rounded-full ${getRelevanceColor(item.relevanceScore)}`} />
