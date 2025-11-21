@@ -58,7 +58,7 @@ serve(async (req) => {
     if (resumeData) {
       console.log('Using provided resume data');
       workExperience = resumeData.workExperience || [];
-      skills = resumeData.skills?.map(skill => ({ skill_name: skill })) || [];
+      skills = resumeData.skills?.map((skill: string) => ({ skill_name: skill })) || [];
       education = resumeData.education || [];
       certifications = resumeData.certifications || [];
     } else {
@@ -89,7 +89,7 @@ serve(async (req) => {
     
     if (workExperience.length > 0) {
       context += `Work Experience:\n`;
-      workExperience.forEach(exp => {
+      workExperience.forEach((exp: any) => {
         // Handle both database format and resumeData format
         const title = exp.title || exp.position;
         const company = exp.company_name || exp.company;
@@ -106,7 +106,7 @@ serve(async (req) => {
 
     if (skills.length > 0) {
       context += `Skills:\n`;
-      skills.forEach(skill => {
+      skills.forEach((skill: any) => {
         context += `- ${skill.skill_name}`;
         if (skill.proficiency_level) context += ` (${skill.proficiency_level})`;
         if (skill.years_experience) context += ` - ${skill.years_experience} years`;
@@ -117,7 +117,7 @@ serve(async (req) => {
 
     if (education.length > 0) {
       context += `Education:\n`;
-      education.forEach(edu => {
+      education.forEach((edu: any) => {
         const fieldOfStudy = edu.field_of_study || edu.fieldOfStudy || 'N/A';
         context += `- ${edu.degree} in ${fieldOfStudy} from ${edu.institution}\n`;
       });
@@ -126,7 +126,7 @@ serve(async (req) => {
 
     if (certifications.length > 0) {
       context += `Certifications:\n`;
-      certifications.forEach(cert => {
+      certifications.forEach((cert: any) => {
         const issuer = cert.issuing_organization || cert.issuer;
         context += `- ${cert.name} from ${issuer}\n`;
       });
@@ -211,7 +211,7 @@ Return only the bullet points, one per line, without numbers or additional forma
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate suggestions', 
-        details: error.message 
+        details: error instanceof Error ? error.message : 'An error occurred'
       }),
       {
         status: 500,

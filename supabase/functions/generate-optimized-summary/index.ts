@@ -157,7 +157,7 @@ Return only the optimized professional summary text, without any additional form
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate optimized summary', 
-        details: error.message 
+        details: error instanceof Error ? error.message : 'An error occurred'
       }),
       {
         status: 500,

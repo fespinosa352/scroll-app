@@ -193,7 +193,7 @@ IMPORTANT: Return ONLY the JSON array, no additional text or explanation.`;
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An error occurred while searching for jobs',
+        error: error instanceof Error ? error.message : 'An error occurred while searching for jobs',
         success: false 
       }),
       {
