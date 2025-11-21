@@ -117,7 +117,7 @@ Please analyze this job description and extract structured data according to the
     }
 
     // Validate and clean the structured data
-    const cleanedData = {
+    const cleanedData: any = {
       company_name: structuredData.company_name || company || 'Unknown Company',
       title: structuredData.title || jobTitle || 'Unknown Position',
       category: structuredData.category || 'Other',
@@ -179,7 +179,7 @@ Please analyze this job description and extract structured data according to the
     console.error('Error in process-job-description function:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'An error occurred',
       data: null
     }), {
       status: 500,

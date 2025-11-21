@@ -251,6 +251,42 @@ export type Database = {
         }
         Relationships: []
       }
+      job_staging: {
+        Row: {
+          company: string
+          created_at: string
+          extracted_keywords: Json | null
+          id: string
+          job_description: string
+          job_title: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          extracted_keywords?: Json | null
+          id?: string
+          job_description: string
+          job_title: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          extracted_keywords?: Json | null
+          id?: string
+          job_description?: string
+          job_title?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

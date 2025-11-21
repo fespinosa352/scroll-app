@@ -136,7 +136,7 @@ Please analyze this resume against the job description and provide detailed ATS 
   } catch (error) {
     console.error('Error in claude-ats-analysis function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'An error occurred',
       overallScore: 0,
       categoryScores: { keyword: 0, content: 0, structure: 0, experience: 0 },
       keywordAnalysis: [],
