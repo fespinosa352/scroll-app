@@ -112,7 +112,7 @@ const ResumeBuilder = () => {
 
     // Create header block (not draggable, just for organization)
     const headerBlock: DraggableBlock = {
-      id: `work - header - ${experience.id} `,
+      id: `work-header-${experience.id}`,
       type: 'header' as const,
       content: `${experience.company} • ${experience.position} `,
       metadata: {
@@ -137,7 +137,7 @@ const ResumeBuilder = () => {
 
     // Create individual bullet blocks (draggable)
     const bulletBlocks: DraggableBlock[] = allBlocks.map((block, index) => ({
-      id: `work - bullet - ${experience.id} -${block.id} `,
+      id: `work-bullet-${experience.id}-${block.id}`,
       type: block.type,
       content: block.content,
       metadata: {
@@ -163,7 +163,7 @@ const ResumeBuilder = () => {
 
   // Convert education to draggable blocks
   const educationBlocks: DraggableBlock[] = education.map(edu => ({
-    id: `education - ${edu.id} `,
+    id: `education-${edu.id}`,
     type: 'text' as const,
     content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''} `,
     metadata: {
@@ -187,7 +187,7 @@ const ResumeBuilder = () => {
 
   // Convert certifications to draggable blocks
   const certificationBlocks: DraggableBlock[] = certifications.map(cert => ({
-    id: `certification - ${cert.id} `,
+    id: `certification-${cert.id}`,
     type: 'text' as const,
     content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''} `,
     metadata: {
@@ -212,13 +212,13 @@ const ResumeBuilder = () => {
 
   // Convert skills to draggable blocks
   const skillBlocks: DraggableBlock[] = skills.map((skill, index) => ({
-    id: `skill - ${index} `,
+    id: `skill-${index}`,
     type: 'skill_tag' as const,
     content: skill,
     order: index,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    sourceExperienceId: `skill - ${index} `,
+    sourceExperienceId: `skill-${index}`,
     sourceSectionId: 'skills',
     isDraggable: true,
     contentType: 'skills' as const,
@@ -361,7 +361,7 @@ const ResumeBuilder = () => {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className={`grid gap - 6 h - full ${isPreviewMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} `}>
+      <div className={`grid gap-6 h-full ${isPreviewMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
         {/* Block Library - Hidden in preview mode */}
         {!isPreviewMode && (
           <div className="lg:col-span-1 space-y-4">
@@ -382,7 +382,7 @@ const ResumeBuilder = () => {
                         if (experienceSection) {
                           const newBlocks = workBlocks.map(block => ({
                             ...block,
-                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
                           }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === experienceSection.id
@@ -406,7 +406,7 @@ const ResumeBuilder = () => {
                         if (educationSection) {
                           const newBlocks = educationBlocks.map(block => ({
                             ...block,
-                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
                           }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === educationSection.id
@@ -430,7 +430,7 @@ const ResumeBuilder = () => {
                         if (certSection) {
                           const newBlocks = certificationBlocks.map(block => ({
                             ...block,
-                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
                           }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === certSection.id
@@ -454,7 +454,7 @@ const ResumeBuilder = () => {
                         if (skillsSection) {
                           const newBlocks = skillBlocks.map(block => ({
                             ...block,
-                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
                           }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === skillsSection.id
@@ -632,7 +632,7 @@ const ResumeBuilder = () => {
         )}
 
         {/* Resume Builder */}
-        <div className={`space - y - 4 ${isPreviewMode ? '' : 'lg:col-span-2'} `}>
+        <div className={`space-y-4 ${isPreviewMode ? '' : 'lg:col-span-2'}`}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -696,7 +696,7 @@ const ResumeBuilder = () => {
                         {section.title}
                       </h3>
 
-                      <Droppable droppableId={`resume - section - ${section.id} `}>
+                      <Droppable droppableId={`resume-section-${section.id}`}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
