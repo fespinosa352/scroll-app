@@ -39,28 +39,8 @@ const ResumeBuilder = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
 
-  // Update resume name when editing resume changes
-  useEffect(() => {
-    if (currentEditingResume) {
-      setResumeName(currentEditingResume.name);
-    }
-  }, [currentEditingResume]);
-
-  // Toggle expansion of work experience blocks
-  const toggleExpansion = (blockId: string) => {
-    setExpandedBlocks(prev => {
-      const next = new Set(prev);
-      if (next.has(blockId)) {
-        next.delete(blockId);
-      } else {
-        next.add(blockId);
-      }
-      return next;
-    });
-  };
-
-  // Use context resume sections if available, otherwise fall back to default
-  const activeResumeSections = resumeSections.length > 0 ? resumeSections : [
+  // Default sections configuration
+  const defaultSections: ResumeSection[] = [
     {
       id: 'section-experience',
       title: 'Work Experience',
@@ -94,6 +74,36 @@ const ResumeBuilder = () => {
       visible: true,
     }
   ];
+
+  // Initialize resume sections in context if empty
+  useEffect(() => {
+    if (resumeSections.length === 0) {
+      setResumeSections(defaultSections);
+    }
+  }, []);
+
+  // Update resume name when editing resume changes
+  useEffect(() => {
+    if (currentEditingResume) {
+      setResumeName(currentEditingResume.name);
+    }
+  }, [currentEditingResume]);
+
+  // Toggle expansion of work experience blocks
+  const toggleExpansion = (blockId: string) => {
+    setExpandedBlocks(prev => {
+      const next = new Set(prev);
+      if (next.has(blockId)) {
+        next.delete(blockId);
+      } else {
+        next.add(blockId);
+      }
+      return next;
+    });
+  };
+
+  // Use context resume sections (initialized by useEffect above)
+  const activeResumeSections = resumeSections;
 
   // Convert work experiences to expandable structure
   const workBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience => {
