@@ -6,25 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-  FileText, 
-  User, 
-  BookOpen, 
-  Target, 
-  TrendingUp, 
-  Search, 
-  PlayCircle, 
-  Briefcase, 
-  Calendar, 
-  Activity, 
-  LogOut, 
-  Settings, 
-  GraduationCap, 
-  Award, 
-  Trophy, 
-  ChevronDown, 
-  Zap, 
-  Download, 
+import {
+  FileText,
+  User,
+  BookOpen,
+  Target,
+  TrendingUp,
+  Search,
+  PlayCircle,
+  Briefcase,
+  Calendar,
+  Activity,
+  LogOut,
+  Settings,
+  GraduationCap,
+  Award,
+  Trophy,
+  ChevronDown,
+  Zap,
+  Download,
   Copy,
   Brain,
   BarChart3,
@@ -64,73 +64,73 @@ import { ResumeDataProvider, useResumeData } from "@/contexts/ResumeDataContext"
 import { GuestWarningBanner } from "@/components/GuestWarningBanner";
 
 // Component to handle resume editing state within the context
-const ResumeContent: React.FC<{ 
-  isEditingResume: boolean; 
+const ResumeContent: React.FC<{
+  isEditingResume: boolean;
   setIsEditingResume: (editing: boolean) => void;
   setEditingResumeId: (id: string | undefined) => void;
   handleTabChange: (tab: string) => void;
-}> = ({ 
-  isEditingResume, 
+}> = ({
+  isEditingResume,
   setIsEditingResume,
   setEditingResumeId,
   handleTabChange
 }) => {
-  const { createNewResume, currentEditingResume } = useResumeData();
+    const { createNewResume, currentEditingResume } = useResumeData();
 
-  const handleCreateNew = () => {
-    createNewResume();
-    setIsEditingResume(true);
-  };
+    const handleCreateNew = () => {
+      createNewResume();
+      setIsEditingResume(true);
+    };
 
-  const handleBackToList = () => {
-    setIsEditingResume(false);
-  };
+    const handleBackToList = () => {
+      setIsEditingResume(false);
+    };
 
-  return (
-    <>
-      {isEditingResume ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900">
-              {currentEditingResume?.id?.startsWith('new-') ? 'Create New Resume' : 'Edit Resume'}
-            </h2>
-            <Button 
-              variant="outline" 
-              onClick={handleBackToList}
-            >
-              ← Back to Resume List
-            </Button>
+    return (
+      <>
+        {isEditingResume ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">
+                {currentEditingResume?.id?.startsWith('new-') ? 'Create New Resume' : 'Edit Resume'}
+              </h2>
+              <Button
+                variant="outline"
+                onClick={handleBackToList}
+              >
+                ← Back to Resume List
+              </Button>
+            </div>
+            <ResumeBuilder />
           </div>
-          <ResumeBuilder />
-        </div>
-      ) : (
-        <ResumeVersions 
-          onEditResume={(resumeId: string) => {
-            setEditingResumeId(resumeId);
-            handleTabChange('editor'); // Switch to editor tab
-          }} 
-          onCreateNew={handleCreateNew}
-        />
-      )}
-    </>
-  );
-};
+        ) : (
+          <ResumeVersions
+            onEditResume={(resumeId: string) => {
+              setEditingResumeId(resumeId);
+              handleTabChange('editor'); // Switch to editor tab
+            }}
+            onCreateNew={handleCreateNew}
+          />
+        )}
+      </>
+    );
+  };
 
 // Component to handle ResumeEditor with resume data
-const ResumeEditorContent: React.FC<{ 
+const ResumeEditorContent: React.FC<{
   editingResumeId?: string;
   setEditingResumeId: (id: string | undefined) => void;
 }> = ({ editingResumeId, setEditingResumeId }) => {
-  const { 
-    workExperience, 
-    personalInfo, 
-    education, 
-    certifications, 
+  const {
+    workExperience,
+    personalInfo,
+    education,
+    certifications,
     skills,
     currentEditingResume,
     saveCurrentResume
   } = useResumeData();
-  
+
   const { convertMarkupToStructured } = useMarkupConverter();
   const { updateResumeStatus } = useResumeVersions();
   const [initialMarkup, setInitialMarkup] = useState('');
@@ -138,7 +138,7 @@ const ResumeEditorContent: React.FC<{
   // Convert resume database content to markup format
   const convertResumeToMarkup = useCallback((resume: any) => {
     if (!resume?.content) return '';
-    
+
     const content = resume.content;
     let markup = '';
 
@@ -164,7 +164,7 @@ const ResumeEditorContent: React.FC<{
           markup += `*${start} - ${end}*\n`;
         }
         if (exp.location) markup += `*${exp.location}*\n`;
-        
+
         if (exp.description) {
           // Convert description to bullet points if it isn't already
           const descriptions = exp.description.split('\n').filter((line: string) => line.trim());
@@ -242,14 +242,14 @@ const ResumeEditorContent: React.FC<{
     // Work Experience
     if (workExperience.length > 0) {
       markup += '## Professional Experience\n\n';
-      
+
       workExperience.forEach(exp => {
         markup += `### ${exp.position}\n`;
         markup += `**${exp.company}**\n`;
         const endDate = exp.isCurrentRole ? 'Present' : exp.endDate;
         markup += `*${exp.startDate} - ${endDate}*\n`;
         if (exp.location) markup += `*${exp.location}*\n`;
-        
+
         // Handle work experience with blocks
         if ('sections' in exp && exp.sections && Array.isArray(exp.sections)) {
           exp.sections.forEach((section: any) => {
@@ -274,7 +274,7 @@ const ResumeEditorContent: React.FC<{
     // Education
     if (education.length > 0) {
       markup += '## Education\n\n';
-      
+
       education.forEach(edu => {
         markup += `### ${edu.degree}\n`;
         markup += `**${edu.institution}**\n`;
@@ -289,7 +289,7 @@ const ResumeEditorContent: React.FC<{
     // Certifications
     if (certifications.length > 0) {
       markup += '## Certifications\n\n';
-      
+
       certifications.forEach(cert => {
         markup += `### ${cert.name}\n`;
         markup += `**${cert.issuer}**\n`;
@@ -382,7 +382,7 @@ linkedin.com/in/yourprofile
         // For txt download, create a simple text file
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
-        
+
         const link = document.createElement('a');
         link.href = url;
         link.download = `resume_${new Date().toISOString().split('T')[0]}.txt`;
@@ -390,7 +390,7 @@ linkedin.com/in/yourprofile
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         toast.success('Resume downloaded as text file');
       } else {
         // Fallback to old method if no content provided
@@ -402,7 +402,7 @@ linkedin.com/in/yourprofile
         };
 
         const success = await exportResume(resumeData, format);
-        
+
         if (success) {
           toast.success(format === 'copy' ? 'Resume copied to clipboard' : 'Resume exported');
         } else {
@@ -416,7 +416,7 @@ linkedin.com/in/yourprofile
   };
 
   return (
-    <ResumeEditor 
+    <ResumeEditor
       resumeId={editingResumeId || 'new'}
       onClose={() => setEditingResumeId(undefined)}
     />
@@ -464,7 +464,7 @@ const Index = () => {
 
     window.addEventListener('navigateToResumeVault', handleNavigateToResumeVault);
     window.addEventListener('navigateToEditor', handleNavigateToEditor as EventListener);
-    
+
     return () => {
       window.removeEventListener('navigateToResumeVault', handleNavigateToResumeVault);
       window.removeEventListener('navigateToEditor', handleNavigateToEditor as EventListener);
@@ -501,9 +501,9 @@ const Index = () => {
           <div className="container mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <img 
-                  src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png" 
-                  alt="Chameleon Logo" 
+                <img
+                  src="/lovable-uploads/babfb0eb-4f02-470d-b21c-114fe32a923c.png"
+                  alt="Chameleon Logo"
                   className="w-12 h-12"
                 />
                 <h1 className="text-xl font-semibold text-slate-900">Chameleon</h1>
@@ -517,8 +517,8 @@ const Index = () => {
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="flex items-center space-x-1 text-slate-600 hover:text-slate-900"
                     >
@@ -527,14 +527,14 @@ const Index = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => navigate('/settings')}
                       className="flex items-center space-x-2"
                     >
                       <Settings className="w-4 h-4" />
                       <span>Settings</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleSignOut}
                       className="flex items-center space-x-2"
                     >
@@ -549,177 +549,177 @@ const Index = () => {
         </header>
 
         <div className="container mx-auto px-4 py-6 md:py-8">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
-            <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Home className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Rocket className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Get Started</span>
-            </TabsTrigger>
-            <TabsTrigger value="job-search" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Search className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Job Search</span>
-            </TabsTrigger>
-            <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <FileText className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Resumes</span>
-            </TabsTrigger>
-            <TabsTrigger value="editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-              <Edit className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Editor</span>
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
+              <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <Home className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <Rocket className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Get Started</span>
+              </TabsTrigger>
+              <TabsTrigger value="job-search" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <Search className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Job Search</span>
+              </TabsTrigger>
+              <TabsTrigger value="resumes" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <FileText className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Resumes</span>
+              </TabsTrigger>
+              <TabsTrigger value="editor" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <Edit className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Editor</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-4 md:space-y-6">
-            {/* Quick Launch */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Launch</CardTitle>
-                <CardDescription>Access key features directly from your dashboard</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2"
-                    onClick={() => handleTabChange("achievements")}
-                  >
-                    <Trophy className="w-6 h-6" />
-                    <span className="text-sm">+ Log Wins</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2"
-                    onClick={() => handleTabChange("experience")}
-                  >
-                    <Briefcase className="w-6 h-6" />
-                    <span className="text-sm">+ Experience</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2"
-                    onClick={() => handleTabChange("education")}
-                  >
-                    <GraduationCap className="w-6 h-6" />
-                    <span className="text-sm">+ Education</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2"
-                    onClick={() => handleTabChange("certifications")}
-                  >
-                    <Award className="w-6 h-6" />
-                    <span className="text-sm">+ Certifications</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2"
-                    onClick={() => handleTabChange("skills")}
-                  >
-                    <Zap className="w-6 h-6" />
-                    <span className="text-sm">+ New Skills</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
-                    onClick={() => handleTabChange("job-search")}
-                  >
-                    <Search className="w-6 h-6 text-blue-600" />
-                    <span className="text-sm text-blue-700">Job Search</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <TabsContent value="dashboard" className="space-y-4 md:space-y-6">
+              {/* Quick Launch */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Launch</CardTitle>
+                  <CardDescription>Access key features directly from your dashboard</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                      onClick={() => handleTabChange("achievements")}
+                    >
+                      <Trophy className="w-6 h-6" />
+                      <span className="text-sm">+ Log Wins</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                      onClick={() => handleTabChange("experience")}
+                    >
+                      <Briefcase className="w-6 h-6" />
+                      <span className="text-sm">+ Experience</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                      onClick={() => handleTabChange("education")}
+                    >
+                      <GraduationCap className="w-6 h-6" />
+                      <span className="text-sm">+ Education</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                      onClick={() => handleTabChange("certifications")}
+                    >
+                      <Award className="w-6 h-6" />
+                      <span className="text-sm">+ Certifications</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                      onClick={() => handleTabChange("skills")}
+                    >
+                      <Zap className="w-6 h-6" />
+                      <span className="text-sm">+ New Skills</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                      onClick={() => handleTabChange("job-search")}
+                    >
+                      <Search className="w-6 h-6 text-blue-600" />
+                      <span className="text-sm text-blue-700">Job Search</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Welcome Message */}
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    Welcome to your career growth hub! 👋
-                  </h2>
-                  <p className="text-slate-700 leading-relaxed">
-                    Your professional journey is unique, and we're here to help you showcase it brilliantly. Whether you're 
-                    crafting the perfect resume, logging a recent win, or preparing for your dream role, every step you take 
-                    here moves you closer to your career goals.
-                  </p>
-                  <p className="text-slate-600 italic font-medium">
-                    Your achievements matter, your growth is measurable, and your next opportunity is within reach.
-                  </p>
-                  
-                  {/* Pro Tip Section */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-yellow-800 text-sm">💡</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-blue-700">Today's tip:</span>
-                        <span className="text-slate-700 ml-2">
-                          Log achievements as they happen – don't wait until update time!
-                        </span>
+              {/* Welcome Message */}
+              <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                <CardContent className="p-8">
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                      Welcome to your career growth hub! 👋
+                    </h2>
+                    <p className="text-slate-700 leading-relaxed">
+                      Your professional journey is unique, and we're here to help you showcase it brilliantly. Whether you're
+                      crafting the perfect resume, logging a recent win, or preparing for your dream role, every step you take
+                      here moves you closer to your career goals.
+                    </p>
+                    <p className="text-slate-600 italic font-medium">
+                      Your achievements matter, your growth is measurable, and your next opportunity is within reach.
+                    </p>
+
+                    {/* Pro Tip Section */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-yellow-800 text-sm">💡</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-blue-700">Today's tip:</span>
+                          <span className="text-slate-700 ml-2">
+                            Log achievements as they happen – don't wait until update time!
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="getting-started">
-            <GettingStarted />
-          </TabsContent>
+            <TabsContent value="getting-started">
+              <GettingStarted />
+            </TabsContent>
 
-          <TabsContent value="achievements">
-            <AchievementLogger />
-          </TabsContent>
+            <TabsContent value="achievements">
+              <AchievementLogger />
+            </TabsContent>
 
-          <TabsContent value="resumes">
-            <ResumeContent 
-              isEditingResume={isEditingResume}
-              setIsEditingResume={setIsEditingResume}
-              setEditingResumeId={setEditingResumeId}
-              handleTabChange={handleTabChange}
-            />
-          </TabsContent>
+            <TabsContent value="resumes">
+              <ResumeContent
+                isEditingResume={isEditingResume}
+                setIsEditingResume={setIsEditingResume}
+                setEditingResumeId={setEditingResumeId}
+                handleTabChange={handleTabChange}
+              />
+            </TabsContent>
 
-          <TabsContent value="job-search">
-            <JobSearch />
-          </TabsContent>
-
+            <TabsContent value="job-search">
+              <JobSearch />
+            </TabsContent>
 
 
-          <TabsContent value="experience">
-            <WorkExperienceSimple />
-          </TabsContent>
 
-          <TabsContent value="education">
-            <Education />
-          </TabsContent>
+            <TabsContent value="experience">
+              <WorkExperienceSimple />
+            </TabsContent>
 
-          <TabsContent value="certifications">
-            <Certifications />
-          </TabsContent>
+            <TabsContent value="education">
+              <Education />
+            </TabsContent>
 
-          <TabsContent value="skills">
-            <UserSkills />
-          </TabsContent>
+            <TabsContent value="certifications">
+              <Certifications />
+            </TabsContent>
 
-          <TabsContent value="my-resume">
-            <MyResume />
-          </TabsContent>
+            <TabsContent value="skills">
+              <UserSkills />
+            </TabsContent>
 
-          <TabsContent value="editor">
-            <ResumeEditorContent 
-              editingResumeId={editingResumeId} 
-              setEditingResumeId={setEditingResumeId}
-            />
-          </TabsContent>
+            <TabsContent value="my-resume">
+              <MyResume />
+            </TabsContent>
 
-        </Tabs>
+            <TabsContent value="editor">
+              <ResumeEditorContent
+                editingResumeId={editingResumeId}
+                setEditingResumeId={setEditingResumeId}
+              />
+            </TabsContent>
+
+          </Tabs>
         </div>
       </div>
     </ResumeDataProvider>
