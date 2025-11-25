@@ -161,69 +161,153 @@ const ResumeBuilder = () => {
     return [headerBlock, ...bulletBlocks];
   });
 
-  // Convert education to draggable blocks
-  const educationBlocks: DraggableBlock[] = education.map(edu => ({
-    id: `education-${edu.id}`,
-    type: 'text' as const,
-    content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''} `,
-    metadata: {
-      education: {
-        institution: edu.institution,
-        degree: edu.degree,
-        fieldOfStudy: edu.fieldOfStudy,
-        dates: `${edu.startDate} - ${edu.endDate || 'Present'} `,
-        gpa: edu.gpa
-      }
-    },
-    order: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    sourceExperienceId: edu.id,
-    sourceSectionId: 'education',
-    isDraggable: true,
-    contentType: 'education' as const,
-    tags: [edu.institution.toLowerCase(), edu.degree.toLowerCase(), 'education']
-  }));
+  // Convert education to expandable structure
+  const educationBlocks: DraggableBlock[] = education.flatMap(edu => {
+    const headerBlock: DraggableBlock = {
+      id: `education-header-${edu.id}`,
+      type: 'header' as const,
+      content: `${edu.institution}`,
+      metadata: {
+        isExpandable: true,
+        bulletCount: 1,
+        education: {
+          institution: edu.institution,
+          degree: edu.degree,
+          fieldOfStudy: edu.fieldOfStudy,
+          dates: `${edu.startDate} - ${edu.endDate || 'Present'}`,
+          gpa: edu.gpa
+        }
+      },
+      order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: edu.id,
+      sourceSectionId: 'header',
+      isDraggable: false,
+      contentType: 'education' as const,
+      tags: [edu.institution.toLowerCase(), 'education']
+    };
 
-  // Convert certifications to draggable blocks
-  const certificationBlocks: DraggableBlock[] = certifications.map(cert => ({
-    id: `certification-${cert.id}`,
-    type: 'text' as const,
-    content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''} `,
-    metadata: {
-      certification: {
-        name: cert.name,
-        issuer: cert.issuer,
-        issueDate: cert.issueDate,
-        expiryDate: cert.expiryDate,
-        credentialId: cert.credentialId,
-        credentialUrl: cert.credentialUrl
-      }
-    },
-    order: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    sourceExperienceId: cert.id,
-    sourceSectionId: 'certifications',
-    isDraggable: true,
-    contentType: 'certifications' as const,
-    tags: [cert.name.toLowerCase(), cert.issuer.toLowerCase(), 'certification']
-  }));
+    const detailBlock: DraggableBlock = {
+      id: `education-${edu.id}`,
+      type: 'text' as const,
+      content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''}`,
+      metadata: {
+        education: {
+          institution: edu.institution,
+          degree: edu.degree,
+          fieldOfStudy: edu.fieldOfStudy,
+          dates: `${edu.startDate} - ${edu.endDate || 'Present'}`,
+          gpa: edu.gpa
+        }
+      },
+      order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: edu.id,
+      sourceSectionId: 'education',
+      isDraggable: true,
+      contentType: 'education' as const,
+      tags: [edu.institution.toLowerCase(), 'education'],
+      parentHeaderId: headerBlock.id
+    };
 
-  // Convert skills to draggable blocks
-  const skillBlocks: DraggableBlock[] = skills.map((skill, index) => ({
-    id: `skill-${index}`,
-    type: 'skill_tag' as const,
-    content: skill,
-    order: index,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    sourceExperienceId: `skill-${index}`,
-    sourceSectionId: 'skills',
-    isDraggable: true,
-    contentType: 'skills' as const,
-    tags: [skill.toLowerCase(), 'skill']
-  }));
+    return [headerBlock, detailBlock];
+  });
+
+  // Convert certifications to expandable structure
+  const certificationBlocks: DraggableBlock[] = certifications.flatMap(cert => {
+    const headerBlock: DraggableBlock = {
+      id: `certification-header-${cert.id}`,
+      type: 'header' as const,
+      content: `${cert.name}`,
+      metadata: {
+        isExpandable: true,
+        bulletCount: 1,
+        certification: {
+          name: cert.name,
+          issuer: cert.issuer,
+          issueDate: cert.issueDate,
+          expiryDate: cert.expiryDate,
+          credentialId: cert.credentialId,
+          credentialUrl: cert.credentialUrl
+        }
+      },
+      order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: cert.id,
+      sourceSectionId: 'header',
+      isDraggable: false,
+      contentType: 'certifications' as const,
+      tags: [cert.name.toLowerCase(), 'certification']
+    };
+
+    const detailBlock: DraggableBlock = {
+      id: `certification-${cert.id}`,
+      type: 'text' as const,
+      content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''}`,
+      metadata: {
+        certification: {
+          name: cert.name,
+          issuer: cert.issuer,
+          issueDate: cert.issueDate,
+          expiryDate: cert.expiryDate,
+          credentialId: cert.credentialId,
+          credentialUrl: cert.credentialUrl
+        }
+      },
+      order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: cert.id,
+      sourceSectionId: 'certification',
+      isDraggable: true,
+      contentType: 'certifications' as const,
+      tags: [cert.name.toLowerCase(), 'certification'],
+      parentHeaderId: headerBlock.id
+    };
+
+    return [headerBlock, detailBlock];
+  });
+
+  // Convert skills to expandable structure
+  const skillBlocks: DraggableBlock[] = skills.length > 0 ? (() => {
+    const headerBlock: DraggableBlock = {
+      id: 'skills-header',
+      type: 'header' as const,
+      content: 'Skills',
+      metadata: {
+        isExpandable: true,
+        bulletCount: skills.length
+      },
+      order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: 'skills-header',
+      sourceSectionId: 'header',
+      isDraggable: false,
+      contentType: 'skills' as const,
+      tags: ['skills']
+    };
+
+    const skillItems: DraggableBlock[] = skills.map((skill, index) => ({
+      id: `skill-${index}`,
+      type: 'skill_tag' as const,
+      content: skill,
+      order: index,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sourceExperienceId: `skill-${index}`,
+      sourceSectionId: 'skills',
+      isDraggable: true,
+      contentType: 'skills' as const,
+      tags: [skill.toLowerCase(), 'skill'],
+      parentHeaderId: headerBlock.id
+    }));
+
+    return [headerBlock, ...skillItems];
+  })() : [];
 
   const availableBlocks: DraggableBlock[] = [
     ...workBlocks,
@@ -404,10 +488,12 @@ const ResumeBuilder = () => {
                       onClick={() => {
                         const educationSection = activeResumeSections.find(s => s.type === 'education');
                         if (educationSection) {
-                          const newBlocks = educationBlocks.map(block => ({
-                            ...block,
-                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                          }));
+                          const newBlocks = educationBlocks
+                            .filter(b => b.type !== 'header')
+                            .map(block => ({
+                              ...block,
+                              id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                            }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === educationSection.id
                               ? { ...section, blocks: [...section.blocks, ...newBlocks] }
@@ -418,7 +504,7 @@ const ResumeBuilder = () => {
                       }}
                       className="text-xs h-6"
                     >
-                      + All Education ({educationBlocks.length})
+                      + All Education ({educationBlocks.filter(b => b.type !== 'header').length})
                     </Button>
                   )}
                   {certificationBlocks.length > 0 && (
@@ -428,10 +514,12 @@ const ResumeBuilder = () => {
                       onClick={() => {
                         const certSection = activeResumeSections.find(s => s.type === 'certifications');
                         if (certSection) {
-                          const newBlocks = certificationBlocks.map(block => ({
-                            ...block,
-                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                          }));
+                          const newBlocks = certificationBlocks
+                            .filter(b => b.type !== 'header')
+                            .map(block => ({
+                              ...block,
+                              id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                            }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === certSection.id
                               ? { ...section, blocks: [...section.blocks, ...newBlocks] }
@@ -442,7 +530,7 @@ const ResumeBuilder = () => {
                       }}
                       className="text-xs h-6"
                     >
-                      + All Certs ({certificationBlocks.length})
+                      + All Certs ({certificationBlocks.filter(b => b.type !== 'header').length})
                     </Button>
                   )}
                   {skillBlocks.length > 0 && (
@@ -452,10 +540,12 @@ const ResumeBuilder = () => {
                       onClick={() => {
                         const skillsSection = activeResumeSections.find(s => s.type === 'skills');
                         if (skillsSection) {
-                          const newBlocks = skillBlocks.map(block => ({
-                            ...block,
-                            id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                          }));
+                          const newBlocks = skillBlocks
+                            .filter(b => b.type !== 'header')
+                            .map(block => ({
+                              ...block,
+                              id: `resume-${block.id}-${Date.now()}-${Math.random()}`
+                            }));
                           const updatedSections = activeResumeSections.map(section =>
                             section.id === skillsSection.id
                               ? { ...section, blocks: [...section.blocks, ...newBlocks] }
@@ -466,7 +556,7 @@ const ResumeBuilder = () => {
                       }}
                       className="text-xs h-6"
                     >
-                      + All Skills ({skillBlocks.length})
+                      + All Skills ({skillBlocks.filter(b => b.type !== 'header').length})
                     </Button>
                   )}
                 </div>
