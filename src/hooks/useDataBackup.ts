@@ -14,7 +14,8 @@ interface BackupData {
   achievements: any[];
   projects: any[];
   job_analyses: any[];
-  resumes: any[];
+  source_resumes: any[];
+  generated_resumes: any[];
 }
 
 export const useDataBackup = () => {
@@ -30,7 +31,7 @@ export const useDataBackup = () => {
     }
 
     setIsExporting(true);
-    
+
     try {
       // Fetch all user data
       const [
@@ -41,7 +42,8 @@ export const useDataBackup = () => {
         achievements,
         projects,
         jobAnalyses,
-        resumes
+        sourceResumes,
+        generatedResumes
       ] = await Promise.all([
         supabase.from('work_experiences').select('*').eq('user_id', user.id),
         supabase.from('education').select('*').eq('user_id', user.id),
@@ -50,7 +52,8 @@ export const useDataBackup = () => {
         supabase.from('achievements').select('*').eq('user_id', user.id),
         supabase.from('projects').select('*').eq('user_id', user.id),
         supabase.from('job_analyses').select('*').eq('user_id', user.id),
-        supabase.from('resumes').select('*').eq('user_id', user.id)
+        supabase.from('source_resumes').select('*').eq('user_id', user.id),
+        supabase.from('generated_resumes').select('*').eq('user_id', user.id)
       ]);
 
       const backupData: BackupData = {
@@ -63,14 +66,15 @@ export const useDataBackup = () => {
         achievements: achievements.data || [],
         projects: projects.data || [],
         job_analyses: jobAnalyses.data || [],
-        resumes: resumes.data || []
+        source_resumes: sourceResumes.data || [],
+        generated_resumes: generatedResumes.data || []
       };
 
       // Create downloadable file
       const dataStr = JSON.stringify(backupData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `chameleon-backup-${new Date().toISOString().split('T')[0]}.json`;
@@ -79,7 +83,7 @@ export const useDataBackup = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      const totalItems = Object.values(backupData).reduce((sum, arr) => 
+      const totalItems = Object.values(backupData).reduce((sum, arr) =>
         Array.isArray(arr) ? sum + arr.length : sum, 0
       );
 
@@ -168,15 +172,15 @@ export const useDataBackup = () => {
 
       // Show detailed results
       console.log('Import results:', importResults);
-      
+
       if (successCount > 0) {
         // Invalidate cache to refresh UI
         queryClient.invalidateQueries({ queryKey: ['userProfileData', user.id] });
-        
+
         toast.success(`Data imported successfully! ${totalItems} items restored from ${successCount} tables.`, {
           description: 'Your professional data has been restored. The page will refresh to show the data.'
         });
-        
+
         // Force page refresh to ensure data shows
         setTimeout(() => {
           window.location.reload();
@@ -184,7 +188,7 @@ export const useDataBackup = () => {
       } else {
         const failedTables = importResults.filter(r => !r.success);
         const errorMessages = failedTables.map(r => `${r.table}: ${r.error}`).join('; ');
-        
+
         toast.error('Import failed. Please check if you are properly logged in.', {
           description: 'All table inserts were rejected. Try logging out and back in.'
         });

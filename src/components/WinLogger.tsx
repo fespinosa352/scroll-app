@@ -6,80 +6,68 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Trophy, Save, X } from "lucide-react";
-import { useWorkExperience } from "@/hooks/useWorkExperience";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useAchievements } from "@/hooks/useAchievements";
 import { toast } from "sonner";
-import { formatDateForInput } from "@/lib/dateUtils";
 
 interface WinLoggerProps {
   onCancel: () => void;
   onSuccess: () => void;
 }
 
+const ACHIEVEMENT_CATEGORIES = [
+  "Leadership",
+  "Technical Achievement",
+  "Business Impact",
+  "Process Improvement",
+  "Team Collaboration",
+  "Innovation",
+  "Customer Success",
+  "Other"
+];
+
 const WinLogger = ({ onCancel, onSuccess }: WinLoggerProps) => {
   const [formData, setFormData] = useState({
-    company: "",
-    date: "",
-    description: ""
+    title: "",
+    description: "",
+    category: "",
+    metrics: "",
+    date: ""
   });
   const [saving, setSaving] = useState(false);
-  const { workExperiences, loading } = useWorkExperience();
-  const { user } = useAuth();
+  const { createAchievement } = useAchievements();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast.error('You must be logged in to log wins');
-      return;
-    }
 
-    if (!formData.company || !formData.date || !formData.description.trim()) {
+    if (!formData.title.trim() || !formData.description.trim() || !formData.category || !formData.date) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     setSaving(true);
     try {
-      // Find the selected work experience
-      const selectedWorkExperience = workExperiences.find(
-        exp => exp.id === formData.company
-      );
-
-      if (!selectedWorkExperience) {
-        toast.error('Selected company not found');
-        return;
-      }
-
-      // Create the win as a project entry
-      const { error } = await supabase
-        .from('projects')
-        .insert({
-          user_id: user.id,
-          work_experience_id: formData.company,
-          title: `Win - ${selectedWorkExperience.company_name || 'Unknown Company'}`,
-          description: formData.description,
-          start_date: formData.date,
-          end_date: formData.date,
-          impact_metrics: null,
-          technologies_used: []
-        });
-
-      if (error) throw error;
-
-      toast.success('Win logged successfully!');
-      onSuccess();
-      
-      // Reset form
-      setFormData({
-        company: "",
-        date: "",
-        description: ""
+      const achievement = await createAchievement({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        metrics: formData.metrics || null,
+        date_achieved: formData.date
       });
+
+      if (achievement) {
+        onSuccess();
+
+        // Reset form
+        setFormData({
+          title: "",
+          description: "",
+          category: "",
+          metrics: "",
+          date: ""
+        });
+      }
     } catch (error) {
       console.error('Error logging win:', error);
-      toast.error('Failed to log win');
     } finally {
       setSaving(false);
     }
@@ -100,25 +88,35 @@ const WinLogger = ({ onCancel, onSuccess }: WinLoggerProps) => {
           Log Your Win
         </CardTitle>
         <CardDescription>
-          Record your achievement and associate it with a company from your work experience
+          Record your achievement with details that will make your resume stand out
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="company">Company *</Label>
-            <Select 
-              value={formData.company} 
-              onValueChange={(value) => handleInputChange('company', value)}
-              disabled={loading}
+            <Label htmlFor="title">Achievement Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+              placeholder="e.g., Led team to deliver project 2 weeks ahead of schedule"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category *</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => handleInputChange('category', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select company where you achieved this win" />
+                <SelectValue placeholder="Select achievement category" />
               </SelectTrigger>
               <SelectContent>
-                {workExperiences.map((exp) => (
-                  <SelectItem key={exp.id} value={exp.id}>
-                    {exp.company_name || 'Unknown Company'} - {exp.title}
+                {ACHIEVEMENT_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -126,7 +124,7 @@ const WinLogger = ({ onCancel, onSuccess }: WinLoggerProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date">Date *</Label>
+            <Label htmlFor="date">Date Achieved *</Label>
             <div className="relative">
               <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
               <Input
@@ -141,24 +139,37 @@ const WinLogger = ({ onCancel, onSuccess }: WinLoggerProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Win Description *</Label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Describe your achievement in detail. Example: 'Presented to Board of Directors a recommendation to improve benefits and they agreed, resulting in 15% increase in employee satisfaction.'"
+              placeholder="Describe your achievement in detail. What was the challenge? What actions did you take? What was the outcome?"
               rows={4}
               required
             />
             <p className="text-sm text-gray-500">
-              Be specific about what you accomplished and include measurable impact when possible.
+              Be specific about what you accomplished and your role in achieving it.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="metrics">Quantifiable Impact (Optional)</Label>
+            <Input
+              id="metrics"
+              value={formData.metrics}
+              onChange={(e) => handleInputChange('metrics', e.target.value)}
+              placeholder="e.g., Increased revenue by 25%, Reduced costs by $50K, Improved efficiency by 40%"
+            />
+            <p className="text-sm text-gray-500">
+              Include specific numbers, percentages, or dollar amounts when possible.
             </p>
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              disabled={saving || loading}
+              disabled={saving}
               className="flex-1"
             >
               <Save className="w-4 h-4 mr-2" />
