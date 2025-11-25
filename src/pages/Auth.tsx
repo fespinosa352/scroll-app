@@ -100,7 +100,7 @@ const Auth = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
 
           <Card>
@@ -242,7 +242,7 @@ const Auth = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
