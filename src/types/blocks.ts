@@ -1,12 +1,13 @@
 // Block-based content system types
 
-export type BlockType = 
-  | 'text' 
-  | 'bullet' 
-  | 'achievement' 
-  | 'heading' 
+export type BlockType =
+  | 'text'
+  | 'bullet'
+  | 'achievement'
+  | 'heading'
   | 'metric'
-  | 'skill_tag';
+  | 'skill_tag'
+  | 'header';
 
 export interface Block {
   id: string;
@@ -16,6 +17,12 @@ export interface Block {
     level?: number; // for headings (h1, h2, h3)
     style?: 'bold' | 'italic' | 'underline';
     color?: string;
+    isExpandable?: boolean; // for header blocks
+    bulletCount?: number; // for header blocks
+    parentExperience?: { // for bullet blocks
+      company: string;
+      position: string;
+    };
     metric?: {
       value: string;
       unit: string;
@@ -91,6 +98,7 @@ export interface DraggableBlock extends Block {
   isDraggable: boolean;
   tags: string[]; // for filtering/searching
   contentType?: 'experience' | 'education' | 'certifications' | 'skills';
+  parentHeaderId?: string; // for bullet blocks that belong to a header
 }
 
 // Resume structure with blocks

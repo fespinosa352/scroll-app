@@ -3,18 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, 
-  Plus, 
-  Download, 
-  Eye, 
+import {
+  FileText,
+  Plus,
+  Download,
+  Eye,
   Settings2,
   GripVertical,
   Target,
   List,
   Type,
   BarChart,
-  Tag
+  Tag,
+  ChevronDown
 } from "lucide-react";
 import { useResumeData } from "@/contexts/ResumeDataContext";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
@@ -22,27 +23,41 @@ import { DraggableBlock, ResumeSection, Block } from "@/types/blocks";
 import { Block as BlockComponent } from "@/components/blocks/Block";
 
 const ResumeBuilder = () => {
-  const { 
-    workExperienceBlocks, 
+  const {
+    workExperienceBlocks,
     education,
     certifications,
     skills,
-    personalInfo, 
-    currentEditingResume, 
-    resumeSections, 
+    personalInfo,
+    currentEditingResume,
+    resumeSections,
     setResumeSections,
-    saveCurrentResume 
+    saveCurrentResume
   } = useResumeData();
   const [resumeName, setResumeName] = useState(currentEditingResume?.name || "My Resume");
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  
+  const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
+
   // Update resume name when editing resume changes
   useEffect(() => {
     if (currentEditingResume) {
       setResumeName(currentEditingResume.name);
     }
   }, [currentEditingResume]);
+
+  // Toggle expansion of work experience blocks
+  const toggleExpansion = (blockId: string) => {
+    setExpandedBlocks(prev => {
+      const next = new Set(prev);
+      if (next.has(blockId)) {
+        next.delete(blockId);
+      } else {
+        next.add(blockId);
+      }
+      return next;
+    });
+  };
 
   // Use context resume sections if available, otherwise fall back to default
   const activeResumeSections = resumeSections.length > 0 ? resumeSections : [
@@ -80,21 +95,23 @@ const ResumeBuilder = () => {
     }
   ];
 
-  // Convert work experiences to draggable blocks (one block per complete work experience)
-  const workBlocks: DraggableBlock[] = workExperienceBlocks.map(experience => {
-    // Combine all blocks from all sections into one complete description
+  // Convert work experiences to expandable structure
+  const workBlocks: DraggableBlock[] = workExperienceBlocks.flatMap(experience => {
+    // Get all blocks from all sections
     const allBlocks = experience.sections.flatMap(section => section.blocks);
-    const combinedContent = allBlocks.map(block => block.content).join('\n');
-    
-    return {
-      id: `work-experience-${experience.id}`,
-      type: 'text' as const,
-      content: combinedContent,
+
+    // Create header block (not draggable, just for organization)
+    const headerBlock: DraggableBlock = {
+      id: `work - header - ${experience.id} `,
+      type: 'header' as const,
+      content: `${experience.company} • ${experience.position} `,
       metadata: {
+        isExpandable: true,
+        bulletCount: allBlocks.length,
         workExperience: {
           company: experience.company,
           position: experience.position,
-          sectionTitle: 'Complete Experience',
+          sectionTitle: 'Work Experience',
           blocks: allBlocks
         }
       },
@@ -102,28 +119,49 @@ const ResumeBuilder = () => {
       created_at: experience.created_at,
       updated_at: experience.updated_at,
       sourceExperienceId: experience.id,
-      sourceSectionId: 'complete-experience',
+      sourceSectionId: 'header',
+      isDraggable: false,
+      contentType: 'experience' as const,
+      tags: [experience.company.toLowerCase(), experience.position.toLowerCase()]
+    };
+
+    // Create individual bullet blocks (draggable)
+    const bulletBlocks: DraggableBlock[] = allBlocks.map((block, index) => ({
+      id: `work - bullet - ${experience.id} -${block.id} `,
+      type: block.type,
+      content: block.content,
+      metadata: {
+        ...block.metadata,
+        parentExperience: {
+          company: experience.company,
+          position: experience.position
+        }
+      },
+      order: index,
+      created_at: block.created_at,
+      updated_at: block.updated_at,
+      sourceExperienceId: experience.id,
+      sourceSectionId: block.id,
       isDraggable: true,
       contentType: 'experience' as const,
-      tags: [
-        experience.company.toLowerCase(),
-        experience.position.toLowerCase(),
-        'work-experience'
-      ]
-    };
+      tags: [experience.company.toLowerCase(), experience.position.toLowerCase(), 'bullet'],
+      parentHeaderId: headerBlock.id
+    }));
+
+    return [headerBlock, ...bulletBlocks];
   });
 
   // Convert education to draggable blocks
   const educationBlocks: DraggableBlock[] = education.map(edu => ({
-    id: `education-${edu.id}`,
+    id: `education - ${edu.id} `,
     type: 'text' as const,
-    content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''}`,
+    content: `${edu.degree} in ${edu.fieldOfStudy} - ${edu.institution}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''} `,
     metadata: {
       education: {
         institution: edu.institution,
         degree: edu.degree,
         fieldOfStudy: edu.fieldOfStudy,
-        dates: `${edu.startDate} - ${edu.endDate || 'Present'}`,
+        dates: `${edu.startDate} - ${edu.endDate || 'Present'} `,
         gpa: edu.gpa
       }
     },
@@ -139,9 +177,9 @@ const ResumeBuilder = () => {
 
   // Convert certifications to draggable blocks
   const certificationBlocks: DraggableBlock[] = certifications.map(cert => ({
-    id: `certification-${cert.id}`,
+    id: `certification - ${cert.id} `,
     type: 'text' as const,
-    content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''}`,
+    content: `${cert.name} - ${cert.issuer}${cert.credentialId ? ` (ID: ${cert.credentialId})` : ''} `,
     metadata: {
       certification: {
         name: cert.name,
@@ -164,13 +202,13 @@ const ResumeBuilder = () => {
 
   // Convert skills to draggable blocks
   const skillBlocks: DraggableBlock[] = skills.map((skill, index) => ({
-    id: `skill-${index}`,
+    id: `skill - ${index} `,
     type: 'skill_tag' as const,
     content: skill,
     order: index,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    sourceExperienceId: `skill-${index}`,
+    sourceExperienceId: `skill - ${index} `,
     sourceSectionId: 'skills',
     isDraggable: true,
     contentType: 'skills' as const,
@@ -193,46 +231,27 @@ const ResumeBuilder = () => {
       // Dragging from available blocks to resume
       const blockIndex = parseInt(source.index.toString());
       const block = availableBlocks[blockIndex];
-      
+
       if (!block) return;
 
       const targetSectionId = destination.droppableId.replace('resume-section-', '');
       const targetSection = activeResumeSections.find(s => s.id === targetSectionId);
-      
+
       if (!targetSection) return;
 
-      // Create blocks for the resume based on block type
-      let resumeBlocks: DraggableBlock[] = [];
-      
-      if (block.contentType === 'experience' && block.metadata?.workExperience?.blocks) {
-        // If it's a work experience section, expand it into individual blocks
-        resumeBlocks = block.metadata.workExperience.blocks.map((originalBlock, index) => ({
-          id: `resume-${originalBlock.id}-${Date.now()}-${index}`,
-          type: originalBlock.type,
-          content: originalBlock.content,
-          metadata: originalBlock.metadata,
-          order: index,
-          created_at: originalBlock.created_at,
-          updated_at: originalBlock.updated_at,
-          sourceExperienceId: block.sourceExperienceId,
-          sourceSectionId: block.sourceSectionId,
-          isDraggable: true,
-          contentType: 'experience' as const,
-          tags: block.tags
-        }));
-      } else {
-        // For other block types, just copy the block
-        resumeBlocks = [{
-          ...block,
-          id: `resume-${block.id}-${Date.now()}`,
-        }];
-      }
+      // Skip header blocks - they shouldn't be draggable
+      if (block.type === 'header') return;
+
+      // For all draggable blocks (including individual bullets), just copy the block
+      const resumeBlock: DraggableBlock = {
+        ...block,
+        id: `resume-${block.id}-${Date.now()}`,
+      };
 
       const updatedSections = activeResumeSections.map(section => {
         if (section.id === targetSectionId) {
           const newBlocks = [...section.blocks];
-          // Insert all resume blocks at the destination index
-          newBlocks.splice(destination.index, 0, ...resumeBlocks);
+          newBlocks.splice(destination.index, 0, resumeBlock);
           return { ...section, blocks: newBlocks };
         }
         return section;
@@ -332,181 +351,278 @@ const ResumeBuilder = () => {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className={`grid gap-6 h-full ${isPreviewMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+      <div className={`grid gap - 6 h - full ${isPreviewMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} `}>
         {/* Block Library - Hidden in preview mode */}
         {!isPreviewMode && (
           <div className="lg:col-span-1 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Block Library</CardTitle>
-              <CardDescription className="text-xs">
-                Drag blocks from your experiences to build your resume
-              </CardDescription>
-              {/* Add All Buttons */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {workBlocks.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const experienceSection = activeResumeSections.find(s => s.type === 'experience');
-                      if (experienceSection) {
-                        const newBlocks = workBlocks.map(block => ({
-                          ...block,
-                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                        }));
-                        const updatedSections = activeResumeSections.map(section => 
-                          section.id === experienceSection.id 
-                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
-                            : section
-                        );
-                        setResumeSections(updatedSections);
-                      }
-                    }}
-                    className="text-xs h-6"
-                  >
-                    + All Work ({workBlocks.length})
-                  </Button>
-                )}
-                {educationBlocks.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const educationSection = activeResumeSections.find(s => s.type === 'education');
-                      if (educationSection) {
-                        const newBlocks = educationBlocks.map(block => ({
-                          ...block,
-                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                        }));
-                        const updatedSections = activeResumeSections.map(section => 
-                          section.id === educationSection.id 
-                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
-                            : section
-                        );
-                        setResumeSections(updatedSections);
-                      }
-                    }}
-                    className="text-xs h-6"
-                  >
-                    + All Education ({educationBlocks.length})
-                  </Button>
-                )}
-                {certificationBlocks.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const certSection = activeResumeSections.find(s => s.type === 'certifications');
-                      if (certSection) {
-                        const newBlocks = certificationBlocks.map(block => ({
-                          ...block,
-                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                        }));
-                        const updatedSections = activeResumeSections.map(section => 
-                          section.id === certSection.id 
-                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
-                            : section
-                        );
-                        setResumeSections(updatedSections);
-                      }
-                    }}
-                    className="text-xs h-6"
-                  >
-                    + All Certs ({certificationBlocks.length})
-                  </Button>
-                )}
-                {skillBlocks.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const skillsSection = activeResumeSections.find(s => s.type === 'skills');
-                      if (skillsSection) {
-                        const newBlocks = skillBlocks.map(block => ({
-                          ...block,
-                          id: `resume-${block.id}-${Date.now()}-${Math.random()}`
-                        }));
-                        const updatedSections = activeResumeSections.map(section => 
-                          section.id === skillsSection.id 
-                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
-                            : section
-                        );
-                        setResumeSections(updatedSections);
-                      }
-                    }}
-                    className="text-xs h-6"
-                  >
-                    + All Skills ({skillBlocks.length})
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <Droppable droppableId="available-blocks" isDropDisabled={true}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="space-y-2 max-h-96 overflow-y-auto"
-                  >
-                    {availableBlocks.map((block, index) => {
-                      // Get context information based on content type
-                      let contextInfo = '';
-                      if (block.contentType === 'experience') {
-                        const experience = workExperienceBlocks.find(exp => exp.id === block.sourceExperienceId);
-                        contextInfo = `${experience?.company} • ${experience?.position}`;
-                      } else if (block.contentType === 'education') {
-                        const edu = education.find(e => e.id === block.sourceExperienceId);
-                        contextInfo = `${edu?.institution} • Education`;
-                      } else if (block.contentType === 'certifications') {
-                        const cert = certifications.find(c => c.id === block.sourceExperienceId);
-                        contextInfo = `${cert?.issuer} • Certification`;
-                      } else if (block.contentType === 'skills') {
-                        contextInfo = 'Skills';
-                      }
-                      
-                      return (
-                        <Draggable key={`${block.sourceExperienceId}-${block.id}`} draggableId={`${block.sourceExperienceId}-${block.id}`} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`
-                                p-2 bg-white border rounded text-xs cursor-grab active:cursor-grabbing
-                                ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
-                              `}
-                            >
-                              <div className="flex items-start space-x-2">
-                                <div className="flex-shrink-0 mt-0.5">
-                                  {getBlockIcon(block.type)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs text-gray-500 mb-1">
-                                    {contextInfo}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Block Library</CardTitle>
+                <CardDescription className="text-xs">
+                  Drag blocks from your experiences to build your resume
+                </CardDescription>
+                {/* Add All Buttons */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {workBlocks.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const experienceSection = activeResumeSections.find(s => s.type === 'experience');
+                        if (experienceSection) {
+                          const newBlocks = workBlocks.map(block => ({
+                            ...block,
+                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                          }));
+                          const updatedSections = activeResumeSections.map(section =>
+                            section.id === experienceSection.id
+                              ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                              : section
+                          );
+                          setResumeSections(updatedSections);
+                        }
+                      }}
+                      className="text-xs h-6"
+                    >
+                      + All Work ({workBlocks.length})
+                    </Button>
+                  )}
+                  {educationBlocks.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const educationSection = activeResumeSections.find(s => s.type === 'education');
+                        if (educationSection) {
+                          const newBlocks = educationBlocks.map(block => ({
+                            ...block,
+                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                          }));
+                          const updatedSections = activeResumeSections.map(section =>
+                            section.id === educationSection.id
+                              ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                              : section
+                          );
+                          setResumeSections(updatedSections);
+                        }
+                      }}
+                      className="text-xs h-6"
+                    >
+                      + All Education ({educationBlocks.length})
+                    </Button>
+                  )}
+                  {certificationBlocks.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const certSection = activeResumeSections.find(s => s.type === 'certifications');
+                        if (certSection) {
+                          const newBlocks = certificationBlocks.map(block => ({
+                            ...block,
+                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                          }));
+                          const updatedSections = activeResumeSections.map(section =>
+                            section.id === certSection.id
+                              ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                              : section
+                          );
+                          setResumeSections(updatedSections);
+                        }
+                      }}
+                      className="text-xs h-6"
+                    >
+                      + All Certs ({certificationBlocks.length})
+                    </Button>
+                  )}
+                  {skillBlocks.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const skillsSection = activeResumeSections.find(s => s.type === 'skills');
+                        if (skillsSection) {
+                          const newBlocks = skillBlocks.map(block => ({
+                            ...block,
+                            id: `resume - ${block.id} -${Date.now()} -${Math.random()} `
+                          }));
+                          const updatedSections = activeResumeSections.map(section =>
+                            section.id === skillsSection.id
+                              ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                              : section
+                          );
+                          setResumeSections(updatedSections);
+                        }
+                      }}
+                      className="text-xs h-6"
+                    >
+                      + All Skills ({skillBlocks.length})
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <Droppable droppableId="available-blocks" isDropDisabled={true}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="space-y-2 max-h-96 overflow-y-auto"
+                    >
+                      {availableBlocks.map((block, index) => {
+                        // Handle header blocks (expandable work experiences)
+                        if (block.type === 'header' && block.metadata?.isExpandable) {
+                          const isExpanded = expandedBlocks.has(block.id);
+                          const bulletCount = block.metadata.bulletCount || 0;
+
+                          // Get child bullets for this header
+                          const childBullets = availableBlocks.filter(
+                            b => b.parentHeaderId === block.id
+                          );
+
+                          return (
+                            <div key={block.id} className="space-y-1">
+                              {/* Expandable Header */}
+                              <div
+                                onClick={() => toggleExpansion(block.id)}
+                                className="p-2 bg-gray-100 border border-gray-200 rounded cursor-pointer hover:bg-gray-200 transition-colors"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                    <ChevronDown
+                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                    />
+                                    <span className="font-medium text-sm truncate">{block.content}</span>
                                   </div>
-                                  <div className="break-words">
-                                    {block.content || 'Empty block'}
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    {bulletCount} bullet{bulletCount !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Expanded Content */}
+                              {isExpanded && (
+                                <div className="ml-4 space-y-1 border-l-2 border-gray-200 pl-2">
+                                  {/* Add All Button */}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const experienceSection = activeResumeSections.find(s => s.type === 'experience');
+                                      if (experienceSection && childBullets.length > 0) {
+                                        const newBlocks = childBullets.map(bullet => ({
+                                          ...bullet,
+                                          id: `resume-${bullet.id}-${Date.now()}-${Math.random()}`
+                                        }));
+                                        const updatedSections = activeResumeSections.map(section =>
+                                          section.id === experienceSection.id
+                                            ? { ...section, blocks: [...section.blocks, ...newBlocks] }
+                                            : section
+                                        );
+                                        setResumeSections(updatedSections);
+                                      }
+                                    }}
+                                    className="w-full text-xs h-7 justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add All {bulletCount} Bullets
+                                  </Button>
+
+                                  {/* Individual Draggable Bullets */}
+                                  {childBullets.map((bullet) => (
+                                    <Draggable
+                                      key={bullet.id}
+                                      draggableId={bullet.id}
+                                      index={availableBlocks.indexOf(bullet)}
+                                    >
+                                      {(provided, snapshot) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          {...provided.dragHandleProps}
+                                          className={`
+                                            p-2 bg-white border rounded text-xs cursor-grab active:cursor-grabbing
+                                            ${snapshot.isDragging ? 'shadow-lg bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}
+                                          `}
+                                        >
+                                          <div className="flex items-start space-x-2">
+                                            <div className="flex-shrink-0 mt-0.5">
+                                              {getBlockIcon(bullet.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0 break-words">
+                                              {bullet.content || 'Empty block'}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        // Skip bullet blocks that belong to a header (they're rendered under the header)
+                        if (block.parentHeaderId) {
+                          return null;
+                        }
+
+                        // Handle regular blocks (education, certs, skills)
+                        let contextInfo = '';
+                        if (block.contentType === 'education') {
+                          const edu = education.find(e => e.id === block.sourceExperienceId);
+                          contextInfo = `${edu?.institution} • Education`;
+                        } else if (block.contentType === 'certifications') {
+                          const cert = certifications.find(c => c.id === block.sourceExperienceId);
+                          contextInfo = `${cert?.issuer} • Certification`;
+                        } else if (block.contentType === 'skills') {
+                          contextInfo = 'Skills';
+                        }
+
+                        return (
+                          <Draggable key={block.id} draggableId={block.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`
+                                  p-2 bg-white border rounded text-xs cursor-grab active:cursor-grabbing
+                                  ${snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'hover:bg-gray-50'}
+                                `}
+                              >
+                                <div className="flex items-start space-x-2">
+                                  <div className="flex-shrink-0 mt-0.5">
+                                    {getBlockIcon(block.type)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    {contextInfo && (
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        {contextInfo}
+                                      </div>
+                                    )}
+                                    <div className="break-words">
+                                      {block.content || 'Empty block'}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </CardContent>
-          </Card>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {/* Resume Builder */}
-        <div className={`space-y-4 ${isPreviewMode ? '' : 'lg:col-span-2'}`}>
+        <div className={`space - y - 4 ${isPreviewMode ? '' : 'lg:col-span-2'} `}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -520,17 +636,17 @@ const ResumeBuilder = () => {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={handleSaveResume}
                     disabled={isSaving}
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handlePreview}
                   >
                     <Eye className="w-4 h-4 mr-2" />
@@ -569,22 +685,22 @@ const ResumeBuilder = () => {
                       <h3 className="text-lg font-semibold border-b pb-1">
                         {section.title}
                       </h3>
-                      
-                      <Droppable droppableId={`resume-section-${section.id}`}>
+
+                      <Droppable droppableId={`resume - section - ${section.id} `}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`
-                              ${isPreviewMode 
-                                ? 'min-h-0 p-0' 
+                              ${isPreviewMode
+                                ? 'min-h-0 p-0'
                                 : 'min-h-[100px] p-4 border-2 border-dashed rounded-lg'
                               }
-                              ${!isPreviewMode && snapshot.isDraggingOver 
-                                ? 'border-blue-300 bg-blue-50' 
+                              ${!isPreviewMode && snapshot.isDraggingOver
+                                ? 'border-blue-300 bg-blue-50'
                                 : !isPreviewMode ? 'border-gray-200 bg-gray-50' : ''
                               }
-                            `}
+`}
                           >
                             {section.blocks.length === 0 ? (
                               !isPreviewMode && (
@@ -602,12 +718,12 @@ const ResumeBuilder = () => {
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         className={`
-                                          ${isPreviewMode 
-                                            ? 'p-2 mb-1' 
+                                          ${isPreviewMode
+                                            ? 'p-2 mb-1'
                                             : 'bg-white p-3 rounded border'
                                           }
                                           ${!isPreviewMode && snapshot.isDragging ? 'shadow-lg' : ''}
-                                        `}
+`}
                                       >
                                         <div className="flex items-start space-x-2">
                                           {!isPreviewMode && (
@@ -634,16 +750,16 @@ const ResumeBuilder = () => {
                                                       )}
                                                     </div>
                                                   )}
-                                                  <div className={`${isPreviewMode ? 'text-base leading-relaxed' : 'text-sm'}`}>
+                                                  <div className={`${isPreviewMode ? 'text-base leading-relaxed' : 'text-sm'} `}>
                                                     {isPreviewMode && sourceExperience && section.type === 'experience' && index === 0 && (
                                                       <div className="mb-2">
                                                         <h4 className="font-semibold text-lg">{sourceExperience.position}</h4>
                                                         <p className="text-gray-600">{sourceExperience.company} • {sourceExperience.startDate} - {sourceExperience.isCurrentRole ? 'Present' : sourceExperience.endDate}</p>
                                                       </div>
                                                     )}
-                                                     <div className="break-words whitespace-pre-wrap">
-                                                       {block.type === 'skill_tag' || block.type === 'heading' ? block.content : `• ${block.content}`}
-                                                     </div>
+                                                    <div className="break-words whitespace-pre-wrap">
+                                                      {block.type === 'skill_tag' || block.type === 'heading' ? block.content : `• ${block.content} `}
+                                                    </div>
                                                   </div>
                                                 </div>
                                               );
