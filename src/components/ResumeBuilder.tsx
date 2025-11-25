@@ -239,8 +239,8 @@ const ResumeBuilder = () => {
 
     if (source.droppableId === 'available-blocks') {
       // Dragging from available blocks to resume
-      const blockIndex = parseInt(source.index.toString());
-      const block = availableBlocks[blockIndex];
+      // Use draggableId to find the block, as indices might not match due to filtering/nesting
+      const block = availableBlocks.find(b => b.id === result.draggableId);
 
       if (!block) return;
 
