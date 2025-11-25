@@ -551,13 +551,13 @@ const Index = () => {
         <div className="container mx-auto px-4 py-6 md:py-8">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 lg:w-auto h-auto p-1">
-              <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
-                <Home className="w-4 h-4" />
-                <span className="text-xs md:text-sm">Dashboard</span>
-              </TabsTrigger>
               <TabsTrigger value="getting-started" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
                 <Rocket className="w-4 h-4" />
                 <span className="text-xs md:text-sm">Get Started</span>
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
+                <Home className="w-4 h-4" />
+                <span className="text-xs md:text-sm">Dashboard</span>
               </TabsTrigger>
               <TabsTrigger value="job-search" className="flex items-center gap-1 md:gap-2 p-2 md:p-3 h-auto">
                 <Search className="w-4 h-4" />
