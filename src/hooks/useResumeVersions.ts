@@ -23,7 +23,7 @@ export interface ResumeVersion {
 }
 
 // Convert database resume to ResumeVersion format
-const convertToResumeVersion = (resume: Resume): ResumeVersion => {
+const convertToResumeVersion = (resume: Partial<Resume> & { id: string; name: string; created_at: string }): ResumeVersion => {
   const content = resume.content as any; // Cast JSONB to any for flexibility
   
   return {
@@ -32,7 +32,7 @@ const convertToResumeVersion = (resume: Resume): ResumeVersion => {
     targetRole: content?.targetRole || 'Unknown Role',
     company: content?.company || 'Unknown Company',
     createdDate: resume.created_at.split('T')[0],
-    atsScore: resume.ats_score || 0,
+    atsScore: resume.ats_score ?? 0,
     status: resume.is_active ? "active" : "draft",
     matchedAchievements: content?.matchedAchievements || 0,
     jobAnalysisId: content?.jobAnalysisId,
