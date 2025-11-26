@@ -448,6 +448,44 @@ export const useResumes = () => {
     }
   };
 
+  // Create a new generated resume
+  const createGeneratedResume = async (resumeData: GeneratedResumeInsert): Promise<Resume | null> => {
+    if (!user?.id) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('generated_resumes')
+        .insert(resumeData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newResume: Resume = {
+        id: data.id,
+        user_id: data.user_id,
+        name: data.name,
+        content: data.content,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        ats_score: data.ats_score,
+        ats_optimization_notes: data.ats_optimization_notes,
+        job_description: data.job_description,
+        job_title: data.job_title,
+        company_target: data.company_target,
+        type: 'generated'
+      };
+
+      setResumes(prev => [newResume, ...prev]);
+      toast.success('Resume created successfully!');
+      return newResume;
+    } catch (error: any) {
+      console.error('Error creating resume:', error);
+      toast.error(error.message || 'Failed to create resume');
+      return null;
+    }
+  };
+
   // Load resumes on mount and user change
   useEffect(() => {
     if (user?.id) {
@@ -464,6 +502,7 @@ export const useResumes = () => {
     updateResume,
     deleteResume,
     setActiveResume,
-    duplicateResume
+    duplicateResume,
+    createGeneratedResume
   };
 };

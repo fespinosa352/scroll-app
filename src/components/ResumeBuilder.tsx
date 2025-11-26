@@ -414,7 +414,7 @@ const ResumeBuilder = () => {
   const handleSaveResume = async () => {
     setIsSaving(true);
     try {
-      const success = await saveCurrentResume();
+      const success = await saveCurrentResume(resumeName);
       if (success) {
         // Could show success message or navigate back to resume list
       }

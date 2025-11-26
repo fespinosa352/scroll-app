@@ -72,7 +72,7 @@ interface ResumeDataContextType {
   convertToBlockFormat: (experiences: WorkExperience[]) => WorkExperienceWithBlocks[];
   loadResumeForEditing: (resume: ResumeVersion) => void;
   createNewResume: () => void;
-  saveCurrentResume: () => Promise<boolean>;
+  saveCurrentResume: (name?: string) => Promise<boolean>;
   handleUnknownSections: (sections: any[]) => void;
   // Cache update functions
   updateWorkExperienceCache: (updatedExp: any) => void;
@@ -104,8 +104,8 @@ interface ResumeDataProviderProps {
 export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children }) => {
   const { user } = useAuth();
   // Use optimized single query for all user data
-  const { 
-    data: userProfileData, 
+  const {
+    data: userProfileData,
     isLoading: profileLoading,
     updateProfile,
     updateWorkExperience: updateWorkExp,
@@ -119,7 +119,9 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     removeCertification: removeCert,
     invalidateUserData
   } = useUserProfileData();
-  
+
+  const { createGeneratedResume, updateResume } = useResumes();
+
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
   const [workExperienceBlocks, setWorkExperienceBlocks] = useState<WorkExperienceWithBlocks[]>([]);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
@@ -239,7 +241,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
 
   const updateFromParsedResume = (parsedData: any) => {
     console.log('Updating resume data from parsed resume:', parsedData);
-    
+
     // Update personal info
     if (parsedData.personalInfo) {
       setPersonalInfo(parsedData.personalInfo);
@@ -263,7 +265,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         isCurrentRole: exp.duration?.includes('Present') || false,
         skills: exp.skills || []
       }));
-      
+
       setWorkExperience(convertedExperience);
       console.log('Converted work experience:', convertedExperience);
     }
@@ -280,7 +282,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         gpa: edu.gpa || '',
         isCurrentlyEnrolled: false
       }));
-      
+
       setLocalEducation(convertedEducation);
       console.log('Converted education:', convertedEducation);
     }
@@ -297,7 +299,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         credentialUrl: cert.credentialUrl || '',
         doesNotExpire: !cert.expiryDate
       }));
-      
+
       setLocalCertifications(convertedCertifications);
       console.log('Converted certifications:', convertedCertifications);
     }
@@ -308,7 +310,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
       setWorkExperienceBlocks(blockExperiences);
       console.log('Converted to block format:', blockExperiences);
     }
-    
+
     // Handle unknown sections if they exist
     if (parsedData.unknownSections && parsedData.unknownSections.length > 0) {
       handleUnknownSections(parsedData.unknownSections);
@@ -344,7 +346,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
       }
 
       const sections: BlockSection[] = [];
-      
+
       // Create a single section with the complete experience description
       if (exp.description) {
         const experienceSection: BlockSection = {
@@ -404,7 +406,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
   // Helper function to convert date formats
   const convertDateFormat = (dateStr: string) => {
     if (!dateStr || dateStr === 'Present' || dateStr === 'Current') return '';
-    
+
     // Handle month-year formats like "January 2020", "Jan 2020"
     const monthYearMatch = dateStr.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(19|20)\d{2}\b/i);
     if (monthYearMatch) {
@@ -417,25 +419,25 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
       const year = monthYearMatch[2];
       return `${year}-${month}`;
     }
-    
+
     // Handle year-only formats
     const yearMatch = dateStr.match(/\b(19|20)\d{2}\b/);
     if (yearMatch) {
       return `${yearMatch[0]}-01`; // Default to January for year-only dates
     }
-    
+
     // Handle MM/YYYY format
     const mmyyyyMatch = dateStr.match(/\b(0[1-9]|1[0-2])\/(19|20)\d{2}\b/);
     if (mmyyyyMatch) {
       return `${mmyyyyMatch[2]}-${mmyyyyMatch[1]}`;
     }
-    
+
     return dateStr;
   };
 
   const loadResumeForEditing = (resume: ResumeVersion) => {
     setCurrentEditingResume(resume);
-    
+
     // Load resume sections - create empty sections for now as JobAnalysis doesn't have content blocks
     const sections: ResumeSection[] = [
       {
@@ -471,7 +473,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         visible: true,
       }
     ];
-    
+
     setResumeSections(sections);
   };
 
@@ -487,9 +489,9 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
       status: 'draft',
       matchedAchievements: 0,
     };
-    
+
     setCurrentEditingResume(newResume);
-    
+
     // Set up default empty sections
     const defaultSections: ResumeSection[] = [
       {
@@ -525,7 +527,7 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         visible: true,
       }
     ];
-    
+
     setResumeSections(defaultSections);
   };
 
@@ -533,29 +535,65 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
     // For now, we'll just log them and potentially show a toast
     // In a full implementation, you'd show a modal dialog asking the user where to place these
     console.log('Found unknown sections in resume:', unknownSections);
-    
+
     if (unknownSections.length > 0) {
       const sectionNames = unknownSections.map(s => s.title || 'Unnamed Section').join(', ');
       toast.info(`Found additional sections: ${sectionNames}. These can be manually added to your profile.`);
     }
   };
 
-  const saveCurrentResume = async (): Promise<boolean> => {
-    if (!currentEditingResume) return false;
-    
+  const saveCurrentResume = async (name?: string): Promise<boolean> => {
+    if (!currentEditingResume || !user) return false;
+
     try {
-      // The actual saving is now handled by the individual components
-      // using their respective database hooks. This function just confirms
-      // that the current resume state is ready for use.
-      console.log('Resume data prepared for saving:', currentEditingResume.id);
-      console.log('Resume sections:', resumeSections);
-      
-      // All data is automatically saved by the component hooks
-      toast.success('Resume data is synchronized with database!');
-      return true;
+      const resumeName = name || currentEditingResume.name;
+
+      if (currentEditingResume.id.startsWith('new-')) {
+        // Create new resume
+        const newResume = await createGeneratedResume({
+          user_id: user.id,
+          name: resumeName,
+          content: resumeSections as any, // Save the sections as content
+          ats_score: 0
+        });
+
+        if (newResume) {
+          // Convert the returned Resume to ResumeVersion format
+          const newResumeVersion: ResumeVersion = {
+            id: newResume.id,
+            name: newResume.name,
+            targetRole: newResume.job_title || 'Target Role',
+            company: newResume.company_target || 'Target Company',
+            createdDate: newResume.created_at.split('T')[0],
+            atsScore: newResume.ats_score || 0,
+            status: 'draft',
+            matchedAchievements: 0
+          };
+          setCurrentEditingResume(newResumeVersion);
+          toast.success('Resume saved!');
+          return true;
+        }
+      } else {
+        // Update existing resume
+        const updatedResume = await updateResume(currentEditingResume.id, {
+          name: resumeName,
+          content: resumeSections as any
+        });
+
+        if (updatedResume) {
+          // Update local state
+          setCurrentEditingResume({
+            ...currentEditingResume,
+            name: updatedResume.name
+          });
+          toast.success('Resume updated!');
+          return true;
+        }
+      }
+      return false;
     } catch (error) {
-      console.error('Error confirming resume save:', error);
-      toast.error('Failed to confirm resume save');
+      console.error('Error saving resume:', error);
+      toast.error('Failed to save resume');
       return false;
     }
   };
@@ -571,10 +609,10 @@ export const ResumeDataProvider: React.FC<ResumeDataProviderProps> = ({ children
         linkedin_url: info.linkedinUrl,
         bio: info.professionalSummary
       });
-      
+
       // Update local state
       setPersonalInfo(info);
-      
+
       toast.success('Personal information saved successfully!');
     } catch (error) {
       console.error('Error saving personal info:', error);
