@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useResumes } from './useResumes';
+import { useResumes, type Resume } from './useResumes';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { JobAnalysis } from './useJobAnalysis';
-import type { Database } from '@/integrations/supabase/types';
 import { ResumeOptimizer } from '@/services/resumeOptimizer';
-
-type Resume = Database['public']['Tables']['resumes']['Row'];
 
 export interface ResumeVersion {
   id: string;
@@ -23,14 +20,14 @@ export interface ResumeVersion {
 }
 
 // Convert database resume to ResumeVersion format
-const convertToResumeVersion = (resume: Partial<Resume> & { id: string; name: string; created_at: string }): ResumeVersion => {
+const convertToResumeVersion = (resume: Resume): ResumeVersion => {
   const content = resume.content as any; // Cast JSONB to any for flexibility
-  
+
   return {
     id: resume.id,
     name: resume.name,
-    targetRole: content?.targetRole || 'Unknown Role',
-    company: content?.company || 'Unknown Company',
+    targetRole: content?.targetRole || 'Target Role',
+    company: content?.company || 'Target Company',
     createdDate: resume.created_at.split('T')[0],
     atsScore: resume.ats_score ?? 0,
     status: resume.is_active ? "active" : "draft",
@@ -42,13 +39,13 @@ const convertToResumeVersion = (resume: Partial<Resume> & { id: string; name: st
 
 export const useResumeVersions = () => {
   const { user } = useAuth();
-  const { 
-    resumes: dbResumes, 
-    duplicateResume: dbDuplicateResume, 
-    deleteResume: dbDeleteResume, 
+  const {
+    resumes: dbResumes,
+    duplicateResume: dbDuplicateResume,
+    deleteResume: dbDeleteResume,
     updateResume,
     saveResume,
-    setActiveResume 
+    setActiveResume
   } = useResumes();
   const [resumes, setResumes] = useState<ResumeVersion[]>([]);
 
@@ -80,12 +77,12 @@ export const useResumeVersions = () => {
     // Use the saveResume function to create the resume in the database
     try {
       const newResume = await saveResume(resumeData);
-      
+
       if (newResume) {
         toast.success(`Resume created and saved to vault!`, {
           description: `${resumeData.name} • ATS Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
         });
-        
+
         return newResume;
       } else {
         throw new Error('Failed to create resume');
@@ -113,12 +110,12 @@ export const useResumeVersions = () => {
 
     try {
       const newResume = await saveResume(resumeData);
-      
+
       if (newResume) {
         toast.success(`Optimized resume created!`, {
           description: `${resumeData.name} • Match Score: ${resumeData.ats_score}% • ${resumeData.content.matchedAchievements} matched skills`
         });
-        
+
         return newResume;
       } else {
         throw new Error('Failed to create resume');
@@ -144,8 +141,8 @@ export const useResumeVersions = () => {
     if (status === "active") {
       await setActiveResume(resumeId);
     } else {
-      await updateResume(resumeId, { 
-        is_active: false 
+      await updateResume(resumeId, {
+        is_active: false
       });
     }
   };
@@ -160,7 +157,7 @@ export const useResumeVersions = () => {
       }
 
       const content = resumeToRefresh.content as any;
-      
+
       // Check if the resume has the original analysis data
       if (!content?.analysis) {
         throw new Error('Resume missing original analysis data for regeneration');
@@ -192,11 +189,11 @@ export const useResumeVersions = () => {
 
       // Generate updated resume content with fresh data using optimizer if analysis exists
       let updatedResumeContent = '';
-      
+
       if (content?.analysis) {
         // Use the optimizer for job-targeted content
         try {
-          
+
           // Convert database format to optimizer format
           const userData = {
             workExperience: freshWorkExperience?.map(exp => ({
@@ -221,26 +218,26 @@ export const useResumeVersions = () => {
               issueDate: cert.issue_date
             }))
           };
-          
+
           const optimizedContent = await ResumeOptimizer.optimizeResumeForJob(content.analysis, userData);
           updatedResumeContent = ResumeOptimizer.generateResumeContent(optimizedContent);
-          
+
         } catch (error) {
           console.error('Error using optimizer, falling back to standard generation:', error);
           // Fall back to standard generation if optimizer fails
           updatedResumeContent = generateStandardResumeContent(
-            freshWorkExperience || [], 
-            freshEducation || [], 
-            freshSkills || [], 
+            freshWorkExperience || [],
+            freshEducation || [],
+            freshSkills || [],
             freshCertifications || []
           );
         }
       } else {
         // Standard generation for resumes without analysis
         updatedResumeContent = generateStandardResumeContent(
-          freshWorkExperience || [], 
-          freshEducation || [], 
-          freshSkills || [], 
+          freshWorkExperience || [],
+          freshEducation || [],
+          freshSkills || [],
           freshCertifications || []
         );
       }
@@ -270,13 +267,13 @@ export const useResumeVersions = () => {
 
   // Helper method for standard resume generation (fallback)
   const generateStandardResumeContent = (
-    freshWorkExperience: any[], 
-    freshEducation: any[], 
-    freshSkills: any[], 
+    freshWorkExperience: any[],
+    freshEducation: any[],
+    freshSkills: any[],
     freshCertifications: any[]
   ): string => {
     let content = '';
-    
+
     // Add work experience
     if (freshWorkExperience && freshWorkExperience.length > 0) {
       content += '## Professional Experience\n\n';
